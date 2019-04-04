@@ -1,0 +1,33 @@
+version: '2'
+services:
+
+    reverseproxy:
+        build: 
+            context: ./reverseproxy
+            dockerfile: Dockerfile
+        ports:
+            - 443:8081
+        restart: always
+
+    vue:
+        build: 
+            context: ./frontend-demo
+            dockerfile: Dockerfile
+        depends_on:
+            - reverseproxy
+    flask:
+        build:
+            context: ./backend-demo
+            dockerfile: Dockerfile
+        volumes:
+            - ./backend-demo:/usr/src/app
+        depends_on:
+            - reverseproxy
+#        links:      
+#            - mongo
+
+
+#    mongo:
+#        build: ./database-demo
+#        ports:
+#            - "27017:27017"
