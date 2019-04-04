@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd ~/git/docker-compose
+cd ~/git/forum40
 git submodule update --recursive --remote
 git pull
 
