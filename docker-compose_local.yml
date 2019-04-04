@@ -25,11 +25,14 @@ services:
             - ./backend-demo:/usr/src/app
         depends_on:
             - reverseproxy
-#        links:      
-#            - mongo
+        links:      
+           - mongo
+    mongo:
+        image: mongo
+        volumes:
+            - mongodb:/data/db
+        ports:
+            - 27017:27017
 
-
-#    mongo:
-#        build: ./database-demo
-#        ports:
-#            - "27017:27017"
+volumes:
+    mongodb:
