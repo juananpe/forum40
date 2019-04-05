@@ -1,18 +1,9 @@
-image: docker
-
-services:
-  - docker:dind
-
 stages:
   - deploy
 
 step-deploy-prod:
   stage: deploy
   before_script:
-    - mkdir -p ~/.ssh/
-    - echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts
-
     - 'which ssh-agent || ( apk update && apk add openssh-client)'
 
     ##
@@ -34,7 +25,10 @@ step-deploy-prod:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
 
+    - echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+
+
   script:
-    - echo run deployment in this action
     - ssh -tt gitlabrunner@mast-se.informatik.uni-hamburg.de "pwd"
   
