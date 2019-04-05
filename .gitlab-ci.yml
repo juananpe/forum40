@@ -32,5 +32,5 @@ step-deploy-prod:
 
 
   script:
-    - ssh -tt gitlabrunner@mast-se.informatik.uni-hamburg.de "pwd"
+    - ssh -tt gitlabrunner@mast-se.informatik.uni-hamburg.de "~/forum40/deployment.sh"
   
