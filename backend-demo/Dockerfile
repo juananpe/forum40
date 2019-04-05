@@ -1,7 +1,4 @@
-FROM ubuntu:16.04
-
-RUN apt-get update -y && \
-    apt-get install -y python-pip python-dev
+FROM python:3.6
 
 WORKDIR /usr/src/app
 
