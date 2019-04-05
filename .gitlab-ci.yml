@@ -36,5 +36,5 @@ step-deploy-prod:
 
   script:
     - echo run deployment in this action
-    - ssh -t gitlabrunner@mast-se.informatik.uni-hamburg.de "~/forum40/deployment.sh"
+    - ssh -tt gitlabrunner@mast-se.informatik.uni-hamburg.de "~/forum40/deployment.sh"
   
