@@ -1,8 +1,8 @@
 #!/bin/bash
 
-cd ~/git/forum40
+cd ~/forum40
 git pull
 
 docker-compose down
 
-docker-compose up --build
+docker-compose up --build -d
