@@ -1,3 +1,4 @@
+
 version: '2'
 services:
 
@@ -20,7 +21,7 @@ services:
             context: ./backend-demo
             dockerfile: Dockerfile
         volumes:
-            - ./backend-demo:/usr/src/app
+            - ./backend-demo:/app
         depends_on:
             - reverseproxy
         links:      
@@ -34,9 +35,3 @@ services:
 
 volumes:
     mongodb:
-
-
-#    mongo:
-#        build: ./database-demo
-#        ports:
-#            - "27017:27017"

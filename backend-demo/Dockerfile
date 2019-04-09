@@ -1,11 +1,12 @@
-FROM python:3.6
+FROM continuumio/miniconda3
 
-WORKDIR /usr/src/app
+RUN apt-get update -y
 
-COPY ./requirements.txt /usr/src/app/requirements.txt
+COPY ./requirements.txt /app/requirements.txt
 
-RUN pip install -r requirements.txt
+WORKDIR /app
+
+RUN while read requirement; do conda install --yes $requirement || pip install $requirement; done < requirements.txt
 
 EXPOSE 5050
-
-CMD ["python", "/usr/src/app/run.py"]
+CMD [ "python", "run.py" ]
