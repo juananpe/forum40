@@ -22,7 +22,7 @@ services:
             context: ./backend-demo
             dockerfile: Dockerfile
         volumes:
-            - ./backend-demo:/app
+            - ./backend-demo:/usr/src/app
         depends_on:
             - reverseproxy
         links:      
