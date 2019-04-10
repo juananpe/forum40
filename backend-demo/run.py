@@ -1,57 +1,44 @@
 #!/usr/bin/env python3.6
-
-from flask import Flask, make_response
+from flask import Flask, Blueprint
 from flask_cors import CORS
-from flask_restplus import Resource, apidoc, Api
+from flask_restplus import Api
 
-class ReverseProxied(object):
-    '''Wrap the application in this middleware and configure the 
-    front-end server to add these headers, to let you quietly bind 
-    this to a URL other than / and to an HTTP scheme that is 
-    different than what is used locally.
+import settings
+from db import mongo
+from apis import api
+from core.proxy_wrapper import ReverseProxied
 
-    In nginx:
-    location /myprefix {
-        proxy_pass http://192.168.0.1:5001;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Scheme $scheme;
-        proxy_set_header X-Script-Name /myprefix;
-        }
+from apis.comments import ns as comments_namespace
+from apis.documents import ns as documents_namespace
+from apis.labels import ns as labels_namespace
+from apis.sources import ns as sources_namespace
+from apis.users import ns as users_namespace
 
-    :param app: the WSGI application
-    '''
-    def __init__(self, app):
-        self.app = app
-
-    def __call__(self, environ, start_response):
-        script_name = environ.get('HTTP_X_SCRIPT_NAME', '')
-        if script_name:
-            environ['SCRIPT_NAME'] = script_name
-            path_info = environ['PATH_INFO']
-            if path_info.startswith(script_name):
-                environ['PATH_INFO'] = path_info[len(script_name):]
-
-        scheme = environ.get('HTTP_X_SCHEME', '')
-        if scheme:
-            environ['wsgi.url_scheme'] = scheme
-        return self.app(environ, start_response)
-        
 app = Flask(__name__)
-api = Api(app)
+
+# configure app
+app.config['MONGO_DBNAME'] = settings.MONGO_DBNAME
+app.config['MONGO_URI'] = settings.MONGO_URI
+app.config['RESTPLUS_MASK_SWAGGER'] = settings.RESTPLUS_MASK_SWAGGER
+app.config['RESTPLUS_VALIDATE'] = settings.RESTPLUS_VALIDATE
+app.config['SWAGGER_UI_DOC_EXPANSION'] = settings.SWAGGER_UI_DOC_EXPANSION
+
+# add blueprint
+blueprint = Blueprint('api', __name__)
+api.init_app(blueprint)
+app.register_blueprint(blueprint)
+
+# add namespaces
+api.add_namespace(comments_namespace)
+api.add_namespace(documents_namespace)
+api.add_namespace(labels_namespace)
+api.add_namespace(sources_namespace)
+api.add_namespace(users_namespace)
+
+# add extensions
 app.wsgi_app = ReverseProxied(app.wsgi_app)
 CORS(app)
-
-
-@api.route('/hello', doc=False)
-class ApiDoc(Resource):
-    def get(self):
-        return {"Hello": "from Flask"}
-
-@api.route('/doc', doc=False)
-class ApiHello(Resource):
-    def get(self):
-        return make_response(apidoc.ui_for(api))
+mongo.init_app(app)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5050, debug=True)
