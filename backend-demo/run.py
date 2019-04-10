@@ -1,3 +1,5 @@
+#!/usr/bin/env python3.6
+
 from flask import Flask, make_response
 from flask_cors import CORS
 from flask_restplus import Resource, apidoc, Api
