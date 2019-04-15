@@ -7,6 +7,7 @@ import settings
 from db import mongo
 from apis import api
 from core.proxy_wrapper import ReverseProxied
+from core.encoder import JSONMongoEncoder
 
 from apis.comments import ns as comments_namespace
 from apis.documents import ns as documents_namespace
@@ -39,6 +40,7 @@ api.add_namespace(users_namespace)
 app.wsgi_app = ReverseProxied(app.wsgi_app)
 CORS(app)
 mongo.init_app(app)
+app.json_encoder = JSONMongoEncoder
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5050, debug=True)
