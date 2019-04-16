@@ -1,8 +1,0 @@
-version: '2'
-services:
-    flask:
-        build: .
-        ports:
-            - "5050:5050"
-        volumes:
-            - .:/app

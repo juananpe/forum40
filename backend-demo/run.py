@@ -1,19 +1,15 @@
 #!/usr/bin/env python3.6
-from flask import Flask, Blueprint
+from flask import Flask, request
 from flask_cors import CORS
-from flask_restplus import Api
 
 import settings
+
 from db import mongo
-from apis import api
 from core.proxy_wrapper import ReverseProxied
 from core.encoder import JSONMongoEncoder
 
-from apis.comments import ns as comments_namespace
-from apis.documents import ns as documents_namespace
-from apis.labels import ns as labels_namespace
-from apis.sources import ns as sources_namespace
-from apis.users import ns as users_namespace
+from apis.db import blueprint as db_blueprint
+from apis.service import blueprint as service_blueprint
 
 app = Flask(__name__)
 
@@ -24,17 +20,15 @@ app.config['RESTPLUS_MASK_SWAGGER'] = settings.RESTPLUS_MASK_SWAGGER
 app.config['RESTPLUS_VALIDATE'] = settings.RESTPLUS_VALIDATE
 app.config['SWAGGER_UI_DOC_EXPANSION'] = settings.SWAGGER_UI_DOC_EXPANSION
 
-# add blueprint
-blueprint = Blueprint('api', __name__)
-api.init_app(blueprint)
-app.register_blueprint(blueprint)
+# main page
+@app.route("/")
+def hello():
+    url = str(request.url_rule)
+    return '<a href="{0}api/db/">User-Comments-API</a> </br> <a href="{0}api/service/">Service-API</a> </br>'.format(url)
 
-# add namespaces
-api.add_namespace(comments_namespace)
-api.add_namespace(documents_namespace)
-api.add_namespace(labels_namespace)
-api.add_namespace(sources_namespace)
-api.add_namespace(users_namespace)
+# add blueprints
+app.register_blueprint(db_blueprint, url_prefix='/db')
+app.register_blueprint(service_blueprint, url_prefix='/service')
 
 # add extensions
 app.wsgi_app = ReverseProxied(app.wsgi_app)

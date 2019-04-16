@@ -1,24 +1,24 @@
 from flask import request
 from flask_restplus import Resource, reqparse
 
-from apis import api
-from apis import aggregate_parser
+from apis.db import api
+from models.db_models import aggregate_parser
 
 from db import mongo
 from db.mongo_util import aggregate
 
-ns = api.namespace('sources', description="sources api")
+ns = api.namespace('labels', description="labels api")
 
 @ns.route('/count')
-class SourcesCount(Resource):
+class LabelsCount(Resource):
     def get(self):
-        coll = mongo.db.Sources
+        coll = mongo.db.Labels
         return {'count': coll.find().count()}, 200
 
 @ns.route('/aggregate')
 @api.expect(aggregate_parser)
-class SourcesAggregate(Resource):
+class LabelsTest(Resource):
     def post(self):
-        coll = mongo.db.Sources
+        coll = mongo.db.Labels
         body = aggregate_parser.parse_args()
         return aggregate(coll, body), 200

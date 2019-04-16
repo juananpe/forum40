@@ -1,15 +1,13 @@
 from flask import request
 from flask_restplus import Resource, reqparse
 
-from apis import api
-from apis import aggregate_parser
+from apis.db import api
+from models.db_models import aggregate_parser
 
 from db import mongo
 from db.mongo_util import aggregate
 
-
 ns = api.namespace('comments', description="comments api")
-
 
 @ns.route('/')
 class CommentsGet(Resource):
