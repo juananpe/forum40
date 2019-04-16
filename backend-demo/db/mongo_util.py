@@ -10,6 +10,5 @@ def aggregate(coll, body):
     if body['options']:
         options = body['options']
 
-    cursor = coll.aggregate(pipeline, options)
-    res = [json.dumps(doc, default=json_util.default) for doc in cursor]
-    return res
+    cursor = list(coll.aggregate(pipeline, options))
+    return json_util.dumps(cursor)
