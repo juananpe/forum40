@@ -22,7 +22,7 @@ export default {
     console.log(process.env);
 
     axios
-      .post(process.env.VUE_APP_ROOT_API + "comments/aggregate", config)
+      .get(process.env.VUE_APP_ROOT_API + "db/comments/count", config)
       .then(response => {
         this.msg = response.data;
       })

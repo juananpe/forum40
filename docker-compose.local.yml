@@ -1,0 +1,7 @@
+version: '2'
+services:
+    vue:
+        build: 
+            dockerfile: DockerfileLocal
+        volumes:
+            - ./frontend-demo:/app
