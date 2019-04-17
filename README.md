@@ -8,7 +8,7 @@ npm install
 
 For local development environment use:
 
-`docker-compose -f docker-compose_local.yml up --build`
+`docker-compose -f docker-compose.yml -f docker-compose.local.yml up --build`
 
 
 https://mast-se.informatik.uni-hamburg.de/
