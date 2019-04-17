@@ -25,6 +25,16 @@ services:
             - reverseproxy
         links:      
            - mongo
+    meta:
+        build:
+            context: ./metacomment-service
+            dockerfile: Dockerfile
+        volumes:
+            - ./metacomment-service:/app
+        depends_on:
+            - reverseproxy
+        links:      
+           - mongo
     mongo:
         image: mongo
         volumes:
