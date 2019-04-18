@@ -11,21 +11,27 @@ import Service from "../api/db"
 
 export default {
   name: "HelloWorld",
-  props: {
-    msg: String,
-    msg2 : String
+  data: function() {
+    return {
+      msg: String,
+      msg2 : String
+    }
   },
   mounted: function() {
     var payload = {
-      "pipeline":[
-        { "$match": { "title": { "$exists": true }}},
-        { "$limit": 10}
-      ],
-      "options": { }
-      };
+	"pipeline":[
+		{ "$match": 
+			{ "title": 
+				{ "$exists": true }
+			}
+		},
+		{ "$limit": 10}
+	],
+	    "options": { }
+};
 
     Service.get("db/comments/count", (status, data) => this.msg = data)
-    Service.post("db/labels/aggregate", payload, (status, data) => this.msg2 = data)
+    Service.post("db/comments/aggregate", payload, (status, data) => this.msg2 = data)
   }
 };
 </script>

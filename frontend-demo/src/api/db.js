@@ -11,7 +11,9 @@ class Service {
       }
 
     static post(path, payload, callback) {
-        return axios.post(`${API_URL}${path}`, payload).then((response) => callback(response.status, response.data));
+        return axios.post(`${API_URL}${path}`, payload).then(
+            (response) => callback(response.status, response.data)
+        );
     }
 
 }
