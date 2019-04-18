@@ -7,31 +7,25 @@
 
 <script>
 import axios from "axios";
-import Service from "../api/db"
+import Service from "../api/db";
 
 export default {
   name: "HelloWorld",
   data: function() {
     return {
       msg: String,
-      msg2 : String
-    }
+      msg2: String
+    };
   },
   mounted: function() {
     var payload = {
-	"pipeline":[
-		{ "$match": 
-			{ "title": 
-				{ "$exists": true }
-			}
-		},
-		{ "$limit": 10}
-	],
-	    "options": { }
-};
+      pipeline: [{ $match: { title: { $exists: true } } }, { $limit: 10 }],
+      options: {}
+    };
 
-    Service.get("db/comments/count", (status, data) => this.msg = data)
-    Service.post("db/comments/aggregate", payload, (status, data) => this.msg2 = data)
+    Service.get("db/comments/count", (status, data) => (this.msg = data));
+    Service.post("db/comments/aggregate",payload, (status, data) => (this.msg2 = data));
+
   }
 };
 </script>
