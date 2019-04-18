@@ -2,7 +2,7 @@ from flask import request
 from flask_restplus import Resource, reqparse
 
 from apis.db import api
-from models.db_models import aggregate_parser
+from models.db_models import aggregate_model
 
 from db import mongo
 from db.mongo_util import aggregate
@@ -16,9 +16,9 @@ class LabelsCount(Resource):
         return {'count': coll.find().count()}, 200
 
 @ns.route('/aggregate')
-@api.expect(aggregate_parser)
+@api.expect(aggregate_model)
 class LabelsTest(Resource):
     def post(self):
         coll = mongo.db.Labels
-        body = aggregate_parser.parse_args()
+        body = api.payload
         return aggregate(coll, body), 200

@@ -3,9 +3,10 @@ from bson import json_util
 
 
 def aggregate(coll, body):
-    pipeline = []
+    pipeline = [{ "$limit": 10}] # TODO set as default value
     options = {}
-    if body['pipeline']:
+    tmp = body['pipeline']
+    if tmp and len(tmp) and len(tmp[0]):
         pipeline = body['pipeline']
     if body['options']:
         options = body['options']
