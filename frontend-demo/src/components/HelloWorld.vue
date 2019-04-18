@@ -1,35 +1,31 @@
 <template>
   <div class="hello">
     <h1>{{ msg }}</h1>
+    <h1>{{ msg2 }}</h1>
   </div>
 </template>
 
 <script>
 import axios from "axios";
+import Service from "../api/db"
 
 export default {
   name: "HelloWorld",
   props: {
-    msg: String
+    msg: String,
+    msg2 : String
   },
-
   mounted: function() {
-    var config = {
-      pipeline: [{ $match: { title: { $exists: true } } }, { $limit: 10 }],
-      options: {}
-    };
+    var payload = {
+      "pipeline":[
+        { "$match": { "title": { "$exists": true }}},
+        { "$limit": 10}
+      ],
+      "options": { }
+      };
 
-    console.log(process.env);
-
-    axios
-      .get(process.env.VUE_APP_ROOT_API + "db/comments/count", config)
-      .then(response => {
-        this.msg = response.data;
-      })
-      .catch(e => {
-        this.msg = e;
-        console.log(e);
-      });
+    Service.get("db/comments/count", (status, data) => this.msg = data)
+    Service.post("db/labels/aggregate", payload, (status, data) => this.msg2 = data)
   }
 };
 </script>
