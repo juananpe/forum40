@@ -2,10 +2,13 @@ from flask import request
 from flask_restplus import Resource, reqparse
 
 from apis.db import api
-from models.db_models import aggregate_model
+from models.db_models import aggregate_model, label_time_model
 
 from db import mongo
 from db.mongo_util import aggregate
+
+from db.queries.comments_label_by_time import get as clbt
+from bson import json_util
 
 ns = api.namespace('comments', description="comments api")
 
@@ -27,3 +30,12 @@ class CommentsTest(Resource):
         coll = mongo.db.Comments
         body = api.payload
         return aggregate(coll, body), 200
+
+@ns.route('/timeseriesByLabel')
+@api.expect(label_time_model)
+class CommentssTest(Resource):
+    def post(self):
+        coll = mongo.db.Comments
+        body = api.payload
+        cursor = list(coll.aggregate(clbt(body['id'], body['time_intervall'])))
+        return json_util.dumps(cursor)
