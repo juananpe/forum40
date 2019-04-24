@@ -1,5 +1,8 @@
 version: '2'
 services:
+    reverseproxy:
+        build: 
+            dockerfile: DockerfileLocal
     vue:
         build: 
             dockerfile: DockerfileLocal
