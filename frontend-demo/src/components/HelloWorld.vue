@@ -1,7 +1,15 @@
 <template>
   <div class="hello">
+
+    <div id="example-1">
+      <button v-on:click="getData()">getData</button>
+    </div>
+
+    <h1>{{ id }}</h1>
+    <h1>{{ playload_time_list }}</h1>
     <h1>{{ msg }}</h1>
-    <h1>{{ msg2 }}</h1>
+
+
   </div>
 </template>
 
@@ -13,19 +21,29 @@ export default {
   name: "HelloWorld",
   data: function() {
     return {
-      msg: String,
-      msg2: String
+      id: String,
+      msg: "noData"
     };
   },
+  computed : {
+    playload_time_list: function() {
+      return {
+        "id": this.id,
+        "time_intervall": 360000000
+      }
+    }
+  },
+  methods: {
+    getData: function() {
+      Service.post("db/comments/timeseriesByLabel", this.playload_time_list, (status, data) => (this.msg = data));
+      console.log(this.msg)
+    }
+  },
   mounted: function() {
-    var payload = {
-      pipeline: [{ $match: { title: { $exists: true } } }, { $limit: 10 }],
-      options: {}
-    };
 
-    Service.get("db/comments/count", (status, data) => (this.msg = data));
-    Service.post("db/comments/aggregate",payload, (status, data) => (this.msg2 = data));
+    Service.get("db/labels/id/sentimentnegative", (status, data) => (this.id = data['id']));
 
+    console.log(this.playload_time_list)
   }
 };
 </script>
