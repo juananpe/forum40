@@ -21,7 +21,11 @@ class LabelsCount(Resource):
 class LabelsId(Resource):
     def get(self, name):
         coll = mongo.db.Labels
-        return json_util.dumps(list(coll.find({"description" : name}, {"_id": 1}))), 200
+        c = coll.find_one({"description" : name}, {"_id": 1})
+        id = None
+        if c: 
+            id = str(c["_id"])
+        return {"id" : id }, 200
 
 @ns.route('/aggregate')
 @api.expect(aggregate_model)
