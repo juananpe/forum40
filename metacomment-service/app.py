@@ -9,12 +9,6 @@ import os
 import numpy as np
 import ptvsd
 
-# Allow other computers to attach to ptvsd at this IP address and port.
-# ptvsd.enable_attach(address=('0.0.0.0', 3000), redirect_output=True)
-
-# Pause the program until a remote debugger is attached
-# ptvsd.wait_for_attach()
-
 MAX_SEQUENCE_LENGTH = 1000
 META_CLASSES = ['meta', 'non-meta']
 
@@ -29,35 +23,78 @@ app = Flask(__name__)
 app.wsgi_app = ReverseProxied(app.wsgi_app)
 api = Api(app, version='0.1', title='Meta-Comment-Classification-API',
           description="An API for classifying user comments")
+
 comment_model = api.model(
-    'comment', {'text': fields.String('The text of the comment.')})
+    'comment', {
+        'title': fields.String('Title of the comment.'),
+        'text': fields.String('Text of the comment.')})
+
+comments_model = api.model('comments', {
+    'comments': fields.List(fields.Nested(comment_model))
+})
+
+
+def __get_data_tensor(texts):
+    # finally, vectorize the text samples into a 2D integer tensor
+    sequences = tokenizer.texts_to_sequences(texts)
+    word_index = tokenizer.word_index
+    print('Found %s unique tokens.' % len(word_index))
+    return pad_sequences(sequences, maxlen=MAX_SEQUENCE_LENGTH), word_index
+
+
+def concat(title: str, text: str) -> str:
+    """
+    Concatenates comment's title and text
+    :param title: comment title
+    :param text: comment text
+    :return: concatenated comment text
+    """
+    return (title + ' ' + text).strip()
+
+
+def classify(text):
+    pad_sequences, _ = __get_data_tensor([text])
+    prediction = model.predict(pad_sequences)
+    ylabel = META_CLASSES[np.argmax(prediction)]
+    print(ylabel)
+    return {'label': ylabel,
+            'confidence': prediction[0].tolist()}
+
+
+def classify_many(texts):
+    pad_sequences, _ = __get_data_tensor(texts)
+    prediction = model.predict(pad_sequences)
+    label_indexes = np.argmax(prediction, axis=1)
+    result_labels = [{'label': META_CLASSES[index],
+                      'confidence':prediction[i].tolist()} for i, index in enumerate(label_indexes)]
+    return result_labels
 
 
 @api.route('/comment')
-class HelloWorld(Resource):
+class MetaCommentClassifier(Resource):
 
     @api.expect(comment_model)
     def post(self):
+        comment_title = api.payload.get('title', '')
         comment_text = api.payload.get('text', '')
+        comment_text = concat(comment_title, comment_text)
         if comment_text:
-            pad_sequences, _ = self.__get_data_tensor([comment_text])
-            prediction = model.predict(pad_sequences)
-            ylabel = META_CLASSES[np.argmax(prediction)]
-            print(ylabel)
-            return {'msg': comment_text,
-                    'label': ylabel,
-                    'confidence': prediction[0].tolist()}
+            return classify(comment_text)
         return 'no comment text provided'
 
-    def __get_data_tensor(self, texts):
-        # finally, vectorize the text samples into a 2D integer tensor
-        sequences = tokenizer.texts_to_sequences(texts)
-        word_index = tokenizer.word_index
-        print('Found %s unique tokens.' % len(word_index))
-        return pad_sequences(sequences, maxlen=MAX_SEQUENCE_LENGTH), word_index
+
+@api.route('/comments')
+class MetaCommentsClassifier(Resource):
+    @api.expect(comments_model)
+    def post(self):
+        comments = api.payload.get('comments', [])
+        comment_texts = [
+            concat(c.get('title', ''), c.get('text', ''))for c in comments
+        ]
+        results = classify_many(comment_texts)
+        return results, 200
 
 
 # run app manuelly
 if __name__ == "__main__":
-    print('hallo')
     app.run(host='0.0.0.0', port=5060, debug=True)
