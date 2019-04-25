@@ -17,4 +17,11 @@ For local development environment use:
 `docker-compose -f docker-compose.yml -f docker-compose.local.yml up --build`
 
 
+Run the database migration project:
+
+https://gitlab.informatik.haw-hamburg.de/forum40/databasemigration
+
+
+The project is live on:
+
 https://mast-se.informatik.uni-hamburg.de/
