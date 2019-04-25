@@ -1,16 +1,19 @@
 <template>
   <div id="app">
+    <TimeChart />
     <HelloWorld msg="Welcome to Your Vue.js App"/>
   </div>
 </template>
 
 <script>
 import HelloWorld from './components/HelloWorld.vue'
+import TimeChart from './components/TimeChart.vue'
 
 export default {
   name: 'app',
   components: {
-    HelloWorld
+    HelloWorld,
+    TimeChart
   }
 }
 </script>

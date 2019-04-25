@@ -1,14 +1,6 @@
 <template>
   <div class="hello">
 
-    <div id="example-1">
-      <button v-on:click="getData()">getData</button>
-    </div>
-
-    <h1>{{ id }}</h1>
-    <h1>{{ playload_time_list }}</h1>
-    <h1>{{ msg }}</h1>
-
 
   </div>
 </template>
@@ -34,16 +26,9 @@ export default {
     }
   },
   methods: {
-    getData: function() {
-      Service.post("db/comments/timeseriesByLabel", this.playload_time_list, (status, data) => (this.msg = data));
-      console.log(this.msg)
-    }
   },
   mounted: function() {
-
-    Service.get("db/labels/id/sentimentnegative", (status, data) => (this.id = data['id']));
-
-    console.log(this.playload_time_list)
+  
   }
 };
 </script>
