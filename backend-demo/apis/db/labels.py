@@ -7,6 +7,8 @@ from models.db_models import aggregate_model
 from db import mongo
 from db.mongo_util import aggregate
 
+from bson import json_util
+
 ns = api.namespace('labels', description="labels api")
 
 @ns.route('/count')
@@ -14,6 +16,12 @@ class LabelsCount(Resource):
     def get(self):
         coll = mongo.db.Labels
         return {'count': coll.find().count()}, 200
+
+@ns.route('/id/<string:name>')
+class LabelsId(Resource):
+    def get(self, name):
+        coll = mongo.db.Labels
+        return json_util.dumps(list(coll.find({"description" : name}, {"_id": 1}))), 200
 
 @ns.route('/aggregate')
 @api.expect(aggregate_model)
