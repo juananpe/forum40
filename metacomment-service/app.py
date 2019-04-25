@@ -49,6 +49,8 @@ def concat(title: str, text: str) -> str:
     :param text: comment text
     :return: concatenated comment text
     """
+    title = title if title else ''
+    text = text if text else ''
     return (title + ' ' + text).strip()
 
 
