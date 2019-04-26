@@ -1,9 +1,0 @@
-[submodule "frontend-demo"]
-	path = frontend-demo
-	url = git@gitlab.informatik.haw-hamburg.de:forum40/frontend-demo.git
-[submodule "backend-demo"]
-	path = backend-demo
-	url = git@gitlab.informatik.haw-hamburg.de:forum40/backend-demo.git
-[submodule "reverseproxy"]
-	path = reverseproxy
-	url = git@gitlab.informatik.haw-hamburg.de:forum40/reverseproxy.git
