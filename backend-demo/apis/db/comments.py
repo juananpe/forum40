@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, jsonify, Response
 from flask_restplus import Resource, reqparse
 
 from apis.db import api
@@ -9,19 +9,26 @@ from db.mongo_util import aggregate
 
 from db.queries.comments_label_by_time import get as clbt
 from bson import json_util
+import json
 
 ns = api.namespace('comments', description="comments api")
+
 
 @ns.route('/')
 class CommentsGet(Resource):
     def get(self):
-        return {'hello': 'comments'}, 200
+        comments_collection = mongo.db.Comments
+        comments = list(comments_collection.find().limit(10))
+        return Response(json.dumps(comments, default=json_util.default),
+                mimetype='application/json')
+
 
 @ns.route('/count')
 class CommentsCount(Resource):
     def get(self):
         coll = mongo.db.Comments
         return {'count': coll.find().count()}, 200
+
 
 @ns.route('/aggregate')
 @api.expect(aggregate_model)
@@ -30,6 +37,7 @@ class CommentsTest(Resource):
         coll = mongo.db.Comments
         body = api.payload
         return aggregate(coll, body), 200
+
 
 @ns.route('/timeseriesByLabel')
 @api.expect(label_time_model)
