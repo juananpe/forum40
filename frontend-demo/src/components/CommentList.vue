@@ -1,17 +1,15 @@
 <template>
   <div>
     <h3>Comment List</h3>
-    <button v-on:click="fetchComments()">Load placeholder comments</button>
+    <button v-on:click="fetchComments()">Load comments</button>
 
     <div class="container">
       <div v-for="comment in allComments" :key="comment.id" class="comment">
         <div>
-          <b>{{comment.name}}</b>
-          <div>
-            <a :href="'mailto:'+comment.email" target="_top">{{comment.email}}</a>
-          </div>
+          <b>{{comment.title}}</b>
+          <div>{{comment.timestamp['$date']}}</div>
         </div>
-        <div>{{comment.body}}</div>
+        <div>{{comment.text}}</div>
       </div>
     </div>
   </div>

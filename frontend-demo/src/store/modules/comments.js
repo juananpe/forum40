@@ -1,4 +1,5 @@
 import axios from 'axios';
+import Service from "../../api/db";
 
 const state = {
     comments: []
@@ -10,9 +11,10 @@ const getters = {
 
 const actions = {
     async fetchComments({ commit }) {
-        const response = await axios.get('https://jsonplaceholder.typicode.com/comments');
-
-        commit('setComments', response.data);
+        Service.get("db/comments", (status, data) => {
+            this.comments = data;
+            commit('setComments', data);
+        });
     }
 };
 

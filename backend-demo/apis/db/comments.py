@@ -18,7 +18,7 @@ ns = api.namespace('comments', description="comments api")
 class CommentsGet(Resource):
     def get(self):
         comments_collection = mongo.db.Comments
-        comments = list(comments_collection.find().limit(10))
+        comments = list(comments_collection.find().limit(50))
         return Response(json.dumps(comments, default=json_util.default),
                 mimetype='application/json')
 
