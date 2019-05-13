@@ -4,3 +4,8 @@
 __pycache__/
 *.py[cod]
 *$py.class
+
+offlang-service/model/wiki.de.bin
+offlang-service/src
+
+.idea

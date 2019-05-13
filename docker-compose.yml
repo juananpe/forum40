@@ -42,6 +42,15 @@ services:
             - mongodb:/data/db
         ports:
             - 27017:27017
-
+    offlang:
+        build:
+            context: ./offlang-service
+            dockerfile: Dockerfile
+        volumes:
+            - ./offlang-service:/app
+        depends_on:
+            - reverseproxy
+        links:
+            - mongo
 volumes:
     mongodb:
