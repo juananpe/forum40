@@ -10,8 +10,7 @@
       </div>
 
       <div id="streamgraph"> </div>
-
-      {{ msg }}
+      {{ id }} <br /> {{ playload_time_list }} <br /> {{ msg }}
 
 
   </div>
@@ -22,43 +21,44 @@ import axios from "axios";
 import Service from "../api/db";
 import streamgraph from "../charts/streamgraph"
 
+import { mapGetters } from "vuex";
+
 export default {
   name: "TimeChart",
   data: function() {
     return {
       msg: "noData",
       id: null,
-      data: []
+      data: [],
+      chart: streamgraph()
     };
   },
   computed : {
+    ...mapGetters(["currentLabel"]),
     playload_time_list: function() {
       return {
-        "id": this.id,
+        "name": this.currentLabel,
         "time_intervall": 120000000
       }
     }
-  },
-    mounted: function() {
-        Service.get("db/labels/id/sentimentnegative", (status, data) => (this.id = data['id']));
   },
   methods: {
     getData: function() {
       Service.post("db/comments/timeseriesByLabel", this.playload_time_list, (status, data) => (this.msg = JSON.parse(data)));
     },
     drawChart: function() {
-
-        this.msg.forEach(d => {
-    	    d["time"] = new Date(d["_id"])
-    	    delete d["_id"]
-    	    delete d["sum"]
+        
+        if(typeof this.msg[0]["_id"] != 'undefined') {
+              this.msg.forEach(d => {
+    	        d["time"] = new Date(d["_id"])
+    	        delete d["_id"]
+    	        delete d["sum"]
         })
-
-        var chart = streamgraph();
+        }
 
         d3.select("#streamgraph")
             .datum(this.msg)
-            .call(chart)
+            .call(this.chart)
         }
     }
 };
