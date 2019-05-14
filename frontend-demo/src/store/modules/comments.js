@@ -2,11 +2,13 @@ import axios from 'axios';
 import Service from "../../api/db";
 
 const state = {
-    comments: []
+    comments: [],
+    label: 'argumentsused'
 };
 
 const getters = {
-    allComments: (state) => state.comments
+    allComments: (state) => state.comments,
+    currentLabel: (state) => state.label
 };
 
 const actions = {
@@ -19,7 +21,8 @@ const actions = {
 };
 
 const mutations = {
-    setComments: (state, comments) => (state.comments = comments)
+    setComments: (state, comments) => (state.comments = comments),
+    setCurrentLabel: (state, label) => (state.label = label)
 };
 
 export default {
