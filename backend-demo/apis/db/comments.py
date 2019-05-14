@@ -43,7 +43,18 @@ class CommentsTest(Resource):
 @api.expect(label_time_model)
 class CommentssTest(Resource):
     def post(self):
+        # get id
+        coll = mongo.db.Labels
+        body = api.payload
+        
+        name = body['name']
+        c = coll.find_one({"description" : name}, {"_id": 1})
+        id = None
+        if c: 
+            id = str(c["_id"])
+
+        # aggregate comments
         coll = mongo.db.Comments
         body = api.payload
-        cursor = list(coll.aggregate(clbt(body['id'], body['time_intervall'])))
+        cursor = list(coll.aggregate(clbt(id, body['time_intervall'])))
         return json_util.dumps(cursor)

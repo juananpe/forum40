@@ -9,6 +9,6 @@ aggregate_model = api.model('Aggregate', {
 })
 
 label_time_model = api.model('Q', {
-    'id': fields.String(default='5cac4dadbbf6b808fc6f5e0b'),
+    'name': fields.String(default='personalstories'),
     'time_intervall': fields.Integer(default=36000000),
 })
