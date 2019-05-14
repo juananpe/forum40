@@ -1,5 +1,6 @@
 <template>
   <div id="app">
+    <DataSelector/>
     <TimeChart/>
     <CommentList/>
   </div>
@@ -8,12 +9,14 @@
 <script>
 import TimeChart from "./components/TimeChart.vue";
 import CommentList from "./components/CommentList.vue";
+import DataSelector from "./components/DataSelector.vue";
 
 export default {
   name: "app",
   components: {
+    DataSelector,
     TimeChart,
-    CommentList
+    CommentList,
   }
 };
 </script>
