@@ -57,4 +57,4 @@ class CommentssTest(Resource):
         coll = mongo.db.Comments
         body = api.payload
         cursor = list(coll.aggregate(clbt(id, body['time_intervall'])))
-        return json_util.dumps(cursor)
+        return Response(json.dumps(cursor, default=json_util.default), mimetype='application/json')

@@ -44,7 +44,7 @@ export default {
   },
   methods: {
     getData: function() {
-      Service.post("db/comments/timeseriesByLabel", this.playload_time_list, (status, data) => (this.msg = JSON.parse(data)));
+      Service.post("db/comments/timeseriesByLabel", this.playload_time_list, (status, data) => (this.msg = data));
     },
     drawChart: function() {
         
