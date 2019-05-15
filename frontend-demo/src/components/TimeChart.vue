@@ -44,18 +44,16 @@ export default {
   },
   methods: {
     getData: function() {
-      Service.post("db/comments/timeseriesByLabel", this.playload_time_list, (status, data) => (this.msg = data));
+      Service.post("db/comments/timeseriesByLabel", this.playload_time_list, (status, data) => {
+        data.forEach(d => {
+    	    d["time"] = new Date(d["_id"])
+    	    delete d["_id"]
+    	    delete d["sum"]
+        })
+        this.msg = data
+      });
     },
     drawChart: function() {
-        
-        if(typeof this.msg[0]["_id"] != 'undefined') {
-              this.msg.forEach(d => {
-    	        d["time"] = new Date(d["_id"])
-    	        delete d["_id"]
-    	        delete d["sum"]
-        })
-        }
-
         d3.select("#streamgraph")
             .datum(this.msg)
             .call(this.chart)
