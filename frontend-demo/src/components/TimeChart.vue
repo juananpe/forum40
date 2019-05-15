@@ -32,6 +32,9 @@ export default {
       }
     }
   },
+  mounted : function() {
+    this.getData()
+  },
   watch: {
     currentLabel(newValue, oldValue) {
       this.getData()
