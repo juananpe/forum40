@@ -1,17 +1,7 @@
 <template>
   <div class="timechart">
-      <h1>Test Chart</h1>
-
-      <div id="example-1">
-        <button v-on:click="getData()">getData</button>
-      </div>
-      <div id="example-1">
-        <button v-on:click="drawChart()">drawChart</button>
-      </div>
 
       <div id="streamgraph"> </div>
-      {{ id }} <br /> {{ playload_time_list }} <br /> {{ msg }}
-
 
   </div>
 </template>
@@ -27,7 +17,7 @@ export default {
   name: "TimeChart",
   data: function() {
     return {
-      msg: "noData",
+      data: "noData",
       id: null,
       data: [],
       chart: streamgraph()
@@ -42,6 +32,14 @@ export default {
       }
     }
   },
+  watch: {
+    currentLabel(newValue, oldValue) {
+      this.getData()
+    },
+    data : function() {
+      this.drawChart()
+    }
+  },
   methods: {
     getData: function() {
       Service.post("db/comments/timeseriesByLabel", this.playload_time_list, (status, data) => {
@@ -50,12 +48,12 @@ export default {
     	    delete d["_id"]
     	    delete d["sum"]
         })
-        this.msg = data
+        this.data = data
       });
     },
     drawChart: function() {
         d3.select("#streamgraph")
-            .datum(this.msg)
+            .datum(this.data)
             .call(this.chart)
         }
     }
