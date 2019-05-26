@@ -5,25 +5,28 @@
 
     <div class="container">
       <div v-for="comment in allComments" :key="comment.id" class="comment">
-        <div>
-          <b>{{comment.title}}</b>
-          <div>{{comment.timestamp['$date']}}</div>
-        </div>
-        <div>{{comment.text}}</div>
+        <user-comment v-bind="comment" @annotated="annotated"></user-comment>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import UserComment from "./UserComment";
 import { mapGetters, mapActions } from "vuex";
 
 export default {
   name: "CommentList",
   methods: {
-    ...mapActions(["fetchComments"])
+    ...mapActions(["fetchComments"]),
+    annotated: function({ comment_id, label }) {
+      console.log(`Annotated ${comment_id} with ${label}`);
+    }
   },
-  computed: mapGetters(["allComments"])
+  computed: mapGetters(["allComments"]),
+  components: {
+    UserComment
+  }
 };
 </script>
 

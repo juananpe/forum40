@@ -1,4 +1,3 @@
-import axios from 'axios';
 import Service from "../../api/db";
 
 const state = {

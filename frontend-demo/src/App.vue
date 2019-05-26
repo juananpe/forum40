@@ -2,13 +2,13 @@
   <div id="app">
     <DataSelector/>
     <TimeChart/>
-    <CommentList/>
+    <UserCommentList/>
   </div>
 </template>
 
 <script>
 import TimeChart from "./components/TimeChart.vue";
-import CommentList from "./components/CommentList.vue";
+import UserCommentList from "./components/UserCommentList.vue";
 import DataSelector from "./components/DataSelector.vue";
 
 export default {
@@ -16,7 +16,7 @@ export default {
   components: {
     DataSelector,
     TimeChart,
-    CommentList,
+    UserCommentList,
   }
 };
 </script>
