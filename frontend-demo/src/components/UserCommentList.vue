@@ -13,14 +13,16 @@
 
 <script>
 import UserComment from "./UserComment";
-import { mapGetters, mapActions } from "vuex";
+import { mapGetters, mapActions, mapMutations } from "vuex";
 
 export default {
   name: "CommentList",
   methods: {
     ...mapActions(["fetchComments"]),
+    ...mapMutations(["setComments"]),
     annotated: function({ comment_id, label }) {
-      console.log(`Annotated ${comment_id} with ${label}`);
+      let comments = this.allComments.filter((comment) => comment._id.$oid !== comment_id);
+      this.setComments(comments);
     }
   },
   computed: mapGetters(["allComments"]),
