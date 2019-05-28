@@ -1,6 +1,7 @@
 <template>
   <div>
     <h3>Comment List</h3>
+
     <button v-on:click="fetchComments()">Load comments</button>
 
     <div class="container">
