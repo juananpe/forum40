@@ -1,6 +1,6 @@
 function streamgraph() {
 
-var w = 1000
+var w = 800
 var h = 500
 
 var margin = {top: 20, right: 20, bottom: 110, left: 40}

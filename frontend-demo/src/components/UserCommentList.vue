@@ -1,10 +1,10 @@
 <template>
   <div>
-    <h3>Comment List</h3>
+    <h3>Kommentarliste</h3>
 
     <div class="container">
       <v-layout row wrap>
-        <v-flex xs3 v-for="comment in comments" :key="comment.id">
+        <v-flex xs12 v-for="comment in comments" :key="comment.id">
           <user-comment v-bind="comment" @annotated="annotated"></user-comment>
         </v-flex>
       </v-layout>
