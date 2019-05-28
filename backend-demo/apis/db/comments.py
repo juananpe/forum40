@@ -2,23 +2,34 @@ from flask import request, jsonify, Response
 from flask_restplus import Resource, reqparse
 
 from apis.db import api
-from models.db_models import aggregate_model, label_time_model
+from models.db_models import aggregate_model, label_time_model, comments_model
 
 from db import mongo
 from db.mongo_util import aggregate
 
 from db.queries.comments_label_by_time import get as clbt
-from bson import json_util
+from bson import json_util, ObjectId
+
 import json
 
 ns = api.namespace('comments', description="comments api")
 
 
-@ns.route('/')
+@ns.route('/<string:label>/<int:skip>/<int:limit>')
+#@api.expect(comments_model)
 class CommentsGet(Resource):
-    def get(self):
+    def get(self, label, skip, limit):
+
+        # get id
+        coll = mongo.db.Labels
+        
+        c = coll.find_one({"description" : label}, {"_id": 1})
+        id = None
+        if c: 
+            id = str(c["_id"])
+        
         comments_collection = mongo.db.Comments
-        comments = list(comments_collection.find().limit(50))
+        comments = list(comments_collection.find({"labels.labelId" : ObjectId(id)}).skip(skip).limit(limit))
         return Response(json.dumps(comments, default=json_util.default),
                 mimetype='application/json')
 
