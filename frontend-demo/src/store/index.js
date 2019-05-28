@@ -1,13 +1,27 @@
 import Vuex from 'vuex'
 import Vue from 'vue'
-import comments from './modules/comments'
 
 // Load Vuex
 Vue.use(Vuex);
 
+const state = {
+    label: 'argumentsused'
+};
+
+const getters = {
+    currentLabel: (state) => state.label
+};
+
+const actions = {};
+
+const mutations = {
+    setCurrentLabel: (state, label) => (state.label = label)
+};
+
 // Create store
 export default new Vuex.Store({
-    modules: {
-        comments
-    }
+    state,
+    getters,
+    actions,
+    mutations
 });

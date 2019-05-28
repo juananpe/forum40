@@ -3,7 +3,7 @@
 </template>
 
 <script>
-import { mapGetters, mapMutations } from "vuex";
+import { mapState, mapMutations } from "vuex";
 
 export default {
   name: "DataSelector",
@@ -20,13 +20,13 @@ export default {
     ...mapMutations(["setCurrentLabel"])
   },
   computed: {
-    ...mapGetters(["currentLabel"]),
+    ...mapState(["label"]),
     selection: {
       set(state) {
         this.setCurrentLabel(state);
       },
       get() {
-        return this.currentLabel;
+        return this.label;
       }
     }
   }

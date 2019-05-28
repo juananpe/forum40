@@ -141,7 +141,6 @@ function chart(selection) {
  drawChart()
 
  function drawChart() {
-   console.log('draw')
 
    var series = stack(data);
 

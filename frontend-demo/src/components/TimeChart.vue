@@ -11,7 +11,7 @@ import axios from "axios";
 import Service from "../api/db";
 import streamgraph from "../charts/streamgraph"
 
-import { mapGetters } from "vuex";
+import { mapState } from "vuex";
 
 export default {
   name: "TimeChart",
@@ -24,10 +24,10 @@ export default {
     };
   },
   computed : {
-    ...mapGetters(["currentLabel"]),
+    ...mapState(["label"]),
     playload_time_list: function() {
       return {
-        "name": this.currentLabel,
+        "name": this.label,
         "time_intervall": 120000000
       }
     }
@@ -36,7 +36,7 @@ export default {
     this.getData()
   },
   watch: {
-    currentLabel(newValue, oldValue) {
+    label(newValue, oldValue) {
       this.getData()
     },
     data : function() {

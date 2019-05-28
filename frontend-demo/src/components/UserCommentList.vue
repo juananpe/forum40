@@ -2,11 +2,9 @@
   <div>
     <h3>Comment List</h3>
 
-    <button v-on:click="fetchComments()">Load comments</button>
-
     <div class="container">
       <v-layout row wrap>
-        <v-flex xs3 v-for="comment in allComments" :key="comment.id">
+        <v-flex xs3 v-for="comment in comments" :key="comment.id">
           <user-comment v-bind="comment" @annotated="annotated"></user-comment>
         </v-flex>
       </v-layout>
@@ -16,21 +14,39 @@
 
 <script>
 import UserComment from "./UserComment";
-import { mapGetters, mapActions, mapMutations } from "vuex";
+import Service from "../api/db";
+import { mapGetters, mapState } from "vuex";
 
 export default {
-  name: "CommentList",
-  methods: {
-    ...mapActions(["fetchComments"]),
-    ...mapMutations(["setComments"]),
-    annotated: function({ comment_id, label }) {
-      let comments = this.allComments.filter(
-        comment => comment._id.$oid !== comment_id
-      );
-      this.setComments(comments);
+  name: "UserCommentList",
+  data() {
+    return {
+      comments: []
+    };
+  },
+  computed: {
+    ...mapState(['label'])
+  },
+  mounted() {
+    this.fetchComments(this.label);
+  },
+  watch: {
+    label(newLabel) {
+      console.log(`Label changed to ${newLabel}`);
+      this.fetchComments(newLabel);
     }
   },
-  computed: mapGetters(["allComments"]),
+  methods: {
+    fetchComments(label) {
+      Service.get("db/comments/" + label + "/0/10", (status, data) => {
+        this.comments = data;
+      });
+    },
+
+    annotated: function({ comment_id, label }) {
+      console.log(`Annotated ${comment_id} with label ${label}`);
+    }
+  },
   components: {
     UserComment
   }
