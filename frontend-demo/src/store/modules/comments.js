@@ -12,7 +12,8 @@ const getters = {
 
 const actions = {
     async fetchComments({ commit }) {
-        Service.get("db/comments", (status, data) => {
+        // TODO 
+        Service.get("db/comments/" + state.label + "/0/10", (status, data) => {
             this.comments = data;
             commit('setComments', data);
         });
