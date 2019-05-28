@@ -5,9 +5,11 @@
     <button v-on:click="fetchComments()">Load comments</button>
 
     <div class="container">
-      <div v-for="comment in allComments" :key="comment.id" class="comment">
-        <user-comment v-bind="comment" @annotated="annotated"></user-comment>
-      </div>
+      <v-layout row wrap>
+        <v-flex xs3 v-for="comment in allComments" :key="comment.id">
+          <user-comment v-bind="comment" @annotated="annotated"></user-comment>
+        </v-flex>
+      </v-layout>
     </div>
   </div>
 </template>
@@ -22,7 +24,9 @@ export default {
     ...mapActions(["fetchComments"]),
     ...mapMutations(["setComments"]),
     annotated: function({ comment_id, label }) {
-      let comments = this.allComments.filter((comment) => comment._id.$oid !== comment_id);
+      let comments = this.allComments.filter(
+        comment => comment._id.$oid !== comment_id
+      );
       this.setComments(comments);
     }
   },
@@ -38,11 +42,5 @@ export default {
 .container {
   display: flex;
   flex-wrap: wrap;
-}
-
-.comment {
-  flex: 1 0 21%;
-  padding: 10px;
-  border: 1px solid #ddd;
 }
 </style>
