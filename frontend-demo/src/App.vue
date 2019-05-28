@@ -1,14 +1,16 @@
 <template>
   <div id="app">
-    <TopToolbar/>
-    <v-layout row wrap>
-      <v-flex xs12 md8>
-        <TimeChart/>
-      </v-flex>
-      <v-flex xs12 md4>
-        <UserCommentList/>
-      </v-flex>
-    </v-layout>
+    <v-app>
+      <TopToolbar/>
+      <v-layout row wrap>
+        <v-flex xs12 md8>
+          <TimeChart/>
+        </v-flex>
+        <v-flex xs12 md4>
+          <UserCommentList/>
+        </v-flex>
+      </v-layout>
+    </v-app>
   </div>
 </template>
 

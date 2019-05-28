@@ -1,5 +1,5 @@
 <template>
-    <v-select :items="items" v-model="selection" label="Label" class="select"></v-select>
+  <v-select :items="items" v-model="selection" label="Label" class="select"></v-select>
 </template>
 
 <script>
@@ -36,7 +36,7 @@ export default {
 <style>
 .select {
   width: 50px;
-  padding-left:20px;
+  padding-left: 20px;
   padding-top: 30px;
 }
 </style>

@@ -2,53 +2,97 @@
   <div>
     <h3>Kommentarliste</h3>
 
-    <div class="container">
-      <v-layout row wrap>
-        <v-flex xs12 v-for="comment in comments" :key="comment.id">
-          <user-comment v-bind="comment" @annotated="annotated"></user-comment>
-        </v-flex>
-      </v-layout>
-    </div>
+    <v-data-table
+      v-bind:headers="commentsTableHeader"
+      :items="comments"
+      selected-key="title"
+      v-model="selected"
+      :pagination.sync="pagination"
+      :total-items="totalItems"
+    >
+      <template slot="items" scope="props">
+        <td>
+          <b>{{props.item.title}}</b>
+          <br>
+          {{ props.item.text }}
+        </td>
+
+        <td class="text-xs-right">{{ props.item.timestamp['$date'] | moment}}</td>
+      </template>
+    </v-data-table>
   </div>
 </template>
 
 <script>
-import UserComment from "./UserComment";
 import Service from "../api/db";
-import { mapGetters, mapState } from "vuex";
+import { mapState } from "vuex";
+import moment from "moment";
 
 export default {
   name: "UserCommentList",
   data() {
     return {
-      comments: []
+      comments: [],
+      selected: [],
+      totalItems: 100,
+      pagination: {
+        page: 1,
+        rowsPerPage: 5,
+        descending: true,
+        sortBy: "likes"
+      },
+      commentsTableHeader: [
+        {
+          text: "Kommentartext",
+          align: "left",
+          sortable: false,
+          value: "text"
+        },
+        {
+          text: "Datum",
+          align: "right",
+          sortable: false
+        }
+      ]
     };
   },
+  filters: {
+    moment: function(date) {
+      return moment(date)
+        .locale("de")
+        .format("MMMM Do YYYY");
+    }
+  },
   computed: {
-    ...mapState(['label'])
+    ...mapState(["label"])
   },
   mounted() {
-    this.fetchComments(this.label);
+    this.fetchComments();
   },
   watch: {
-    label(newLabel) {
-      console.log(`Label changed to ${newLabel}`);
-      this.fetchComments(newLabel);
+    label() {
+      this.pagination.page = 1;
+      this.fetchComments();
+    },
+    pagination() {
+      this.fetchComments();
     }
   },
   methods: {
-    fetchComments(label) {
-      Service.get("db/comments/" + label + "/0/10", (status, data) => {
-        this.comments = data;
-      });
+    fetchComments() {
+      Service.get(
+        `db/comments/${this.label}/${this.pagination.page - 1}/${
+          this.pagination.rowsPerPage
+        }`,
+        (status, data) => {
+          this.comments = data;
+        }
+      );
     },
 
     annotated: function({ comment_id, label }) {
       console.log(`Annotated ${comment_id} with label ${label}`);
     }
-  },
-  components: {
-    UserComment
   }
 };
 </script>
