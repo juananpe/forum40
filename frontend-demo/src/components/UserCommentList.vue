@@ -96,10 +96,13 @@ export default {
   methods: {
     async fetchComments() {
       this.loading = true;
+      const numberOfElements =
+        this.pagination.rowsPerPage === -1
+          ? this.totalItems
+          : this.pagination.rowsPerPage;
       const { data } = await Service.get(
-        `db/comments/${this.label}/${this.pagination.page - 1}/${
-          this.pagination.rowsPerPage
-        }`
+        `db/comments/${this.label}/${this.pagination.page -
+          1}/${numberOfElements}`
       );
       this.loading = false;
       this.comments = data;
