@@ -35,7 +35,9 @@ class CommentsGet(Resource):
 
 
 @ns.route('/count')
+#@api.doc(security='apiKey')
 class CommentsCount(Resource):
+
     def get(self):
         coll = mongo.db.Comments
         return {'count': coll.find().count()}, 200
