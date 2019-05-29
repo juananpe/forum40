@@ -3,15 +3,17 @@
     <v-toolbar-title>Nutzerkommentare</v-toolbar-title>
     <DataSelector/>
     <v-spacer></v-spacer>
-    <v-btn flat>Login</v-btn>
+    <UserLogin/>
   </v-toolbar>
 </template>
 
 <script>
 import DataSelector from "./DataSelector";
+import UserLogin from "./UserLogin";
 export default {
   components: {
-    DataSelector
+    DataSelector,
+    UserLogin
   }
 };
 </script>
