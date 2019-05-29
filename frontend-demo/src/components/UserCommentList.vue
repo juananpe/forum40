@@ -12,13 +12,13 @@
       :total-items="totalItems"
     >
       <template slot="items" scope="props">
-        <td>
+        <td class="text-xs-left">
           <b>{{props.item.title}}</b>
           <br>
           {{ props.item.text }}
         </td>
 
-        <td class="text-xs-right">{{ props.item.timestamp['$date'] | moment}}</td>
+        <td class="text-xs-left">{{ props.item.timestamp['$date'] | moment}}</td>
         <td>
           <v-btn small outline block color="success" class="action-left">
             <v-icon>done</v-icon>
