@@ -41,6 +41,7 @@
 </template>
 
 <script>
+import { mapActions } from "vuex";
 export default {
   data() {
     return {
@@ -51,9 +52,10 @@ export default {
     };
   },
   methods: {
+    ...mapActions(["fetchJWT"]),
     login() {
       this.dialog = false;
-      // TODO: login API call
+      this.fetchJWT({ username: this.username, password: this.password });
     }
   }
 };
