@@ -7,6 +7,7 @@
       :items="comments"
       selected-key="title"
       v-model="selected"
+      :loading="loading"
       :pagination.sync="pagination"
       :total-items="totalItems"
     >
@@ -33,6 +34,7 @@ export default {
   data() {
     return {
       comments: [],
+      loading: false,
       selected: [],
       totalItems: 100,
       pagination: {
@@ -80,11 +82,13 @@ export default {
   },
   methods: {
     async fetchComments() {
+      this.loading = true;
       const { data } = await Service.get(
         `db/comments/${this.label}/${this.pagination.page - 1}/${
           this.pagination.rowsPerPage
         }`
       );
+      this.loading = false;
       this.comments = data;
     }
   }
