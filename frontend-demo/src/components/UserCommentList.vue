@@ -19,6 +19,14 @@
         </td>
 
         <td class="text-xs-right">{{ props.item.timestamp['$date'] | moment}}</td>
+        <td>
+          <v-btn small outline block color="success" class="action-left">
+            <v-icon>done</v-icon>
+          </v-btn>
+          <v-btn small outline block color="error" class="action-right">
+            <v-icon>clear</v-icon>
+          </v-btn>
+        </td>
       </template>
     </v-data-table>
   </div>
@@ -52,7 +60,12 @@ export default {
         },
         {
           text: "Datum",
-          align: "right",
+          align: "left",
+          sortable: false
+        },
+        {
+          text: "Annotation",
+          align: "left",
           sortable: false
         }
       ]
