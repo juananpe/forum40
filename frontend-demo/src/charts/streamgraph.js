@@ -28,11 +28,11 @@ var zColors = d3.scaleOrdinal()
 var svg
 var focus, focusPaths
 var kontext
-var g 
+//var g
 var x
 var x2
 var y
-var b
+//var b
 var kontextPaths
 
 var area = d3.area()
@@ -103,7 +103,7 @@ function chart(selection) {
    .attr("height", h)
 
 
- if(focus) { } else {
+ if(!focus) {
 
    focusPaths = svgEnter
      .append("g")
@@ -134,7 +134,7 @@ function chart(selection) {
      .attr("class", "axis-x")
      .attr("transform", "translate(0," + height2 + ")")
 
-   b = kontext.append("g")
+   kontext.append("g") // b
      .attr("class", "brush")
      .call(brush)
      .call(brush.move, [0, 0]);
