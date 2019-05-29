@@ -3,7 +3,7 @@ FROM node:lts-alpine
 # install simple http server for serving static content
 RUN npm config set unsafe-perm true
 RUN npm install -g http-server
-
+ENV NODE_ENV=production
 # make the 'app' folder the current working directory
 WORKDIR /app
 
