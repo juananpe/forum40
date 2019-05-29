@@ -3,30 +3,38 @@
     <h3>Kommentarliste</h3>
 
     <v-data-table
-      v-bind:headers="commentsTableHeader"
+      :headers="commentsTableHeader"
       :items="comments"
-      selected-key="title"
-      v-model="selected"
+      :expand="expand"
       :loading="loading"
       :pagination.sync="pagination"
       :total-items="totalItems"
+      item-key="_id.$oid"
     >
-      <template slot="items" scope="props">
-        <td class="text-xs-left">
-          <b>{{props.item.title}}</b>
-          <br>
-          {{ props.item.text }}
-        </td>
-
-        <td class="text-xs-left">{{ props.item.timestamp['$date'] | moment}}</td>
-        <td>
-          <v-btn small outline block color="success" class="action-left">
-            <v-icon>done</v-icon>
-          </v-btn>
-          <v-btn small outline block color="error" class="action-right">
-            <v-icon>clear</v-icon>
-          </v-btn>
-        </td>
+      <template v-slot:items="props">
+        <tr @click="props.expanded = !props.expanded">
+          <td class="text-xs-left">
+            <div
+              v-if="!props.expanded"
+            >{{((props.item.title||'') + props.item.text) | truncate(teaserTextLength)}}</div>
+            <b v-else>{{(props.item.title||'') + props.item.text}}</b>
+          </td>
+          <td class="text-xs-left">{{ props.item.timestamp['$date'] | moment}}</td>
+          <td>
+            <v-layout row>
+              <v-flex pr-1>
+                <v-btn small outline color="success" class="action-left">
+                  <v-icon>done</v-icon>
+                </v-btn>
+              </v-flex>
+              <v-flex pl-1>
+                <v-btn small outline color="error" class="action-right">
+                  <v-icon>clear</v-icon>
+                </v-btn>
+              </v-flex>
+            </v-layout>
+          </td>
+        </tr>
       </template>
     </v-data-table>
   </div>
@@ -44,7 +52,9 @@ export default {
       comments: [],
       loading: false,
       selected: [],
+      expand: false,
       totalItems: 100,
+      teaserTextLength: 80,
       pagination: {
         page: 1,
         rowsPerPage: 5,
@@ -56,17 +66,22 @@ export default {
           text: "Kommentartext",
           align: "left",
           sortable: false,
-          value: "text"
+          value: "text",
+          width: "85%"
         },
         {
           text: "Datum",
           align: "left",
-          sortable: false
+          sortable: false,
+          value: "timestamp",
+          width: "10%"
         },
         {
           text: "Annotation",
           align: "left",
-          sortable: false
+          sortable: false,
+          value: "annotation",
+          width: "5%"
         }
       ]
     };
@@ -75,7 +90,7 @@ export default {
     moment: function(date) {
       return moment(date)
         .locale("de")
-        .format("MMMM Do YYYY");
+        .format("MMMM Do YY");
     }
   },
   computed: {
@@ -100,9 +115,9 @@ export default {
         this.pagination.rowsPerPage === -1
           ? this.totalItems
           : this.pagination.rowsPerPage;
+      const skip = (this.pagination.page - 1) * numberOfElements;
       const { data } = await Service.get(
-        `db/comments/${this.label}/${this.pagination.page -
-          1}/${numberOfElements}`
+        `db/comments/${this.label}/${skip}/${numberOfElements}`
       );
       this.loading = false;
       this.comments = data;

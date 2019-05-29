@@ -2,6 +2,8 @@
   <v-toolbar color="indigo" dark>
     <v-toolbar-title>Nutzerkommentare</v-toolbar-title>
     <DataSelector/>
+    <v-spacer></v-spacer>
+    <v-btn flat>Login</v-btn>
   </v-toolbar>
 </template>
 
@@ -15,4 +17,5 @@ export default {
 </script>
 
 <style>
+
 </style>
