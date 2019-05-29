@@ -79,19 +79,13 @@ export default {
     }
   },
   methods: {
-    fetchComments() {
-      Service.get(
+    async fetchComments() {
+      const { data } = await Service.get(
         `db/comments/${this.label}/${this.pagination.page - 1}/${
           this.pagination.rowsPerPage
-        }`,
-        (status, data) => {
-          this.comments = data;
-        }
+        }`
       );
-    },
-
-    annotated: function({ comment_id, label }) {
-      console.log(`Annotated ${comment_id} with label ${label}`);
+      this.comments = data;
     }
   }
 };
