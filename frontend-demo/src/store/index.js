@@ -8,7 +8,8 @@ Vue.use(Vuex);
 
 const state = {
     label: 'argumentsused',
-    currentJWT: ''
+    currentJWT: '',
+    now: new Date()
 };
 
 const getters = {
@@ -16,7 +17,7 @@ const getters = {
     jwtData: (state, getters) => state.currentJWT ? JSON.parse(atob(getters.jwt.split('.')[1])) : null,
     jwtUser: (state, getters) => state.currentJWT ? getters.jwtData.user : null,
     jwtExpiration: (state, getters) => getters.jwtData ? getters.jwtData.exp : null,
-    jwtLoggedIn: (state, getters) => getters.jwt && getters.jwtExpiration * 1000 >= Date.now()
+    jwtLoggedIn: (state, getters) => getters.jwt && getters.jwtExpiration * 1000 >= state.now
 };
 
 const actions = {
@@ -33,12 +34,18 @@ const actions = {
                 return false;
             }
         }
+    },
+    start({ commit }) {
+        setInterval(() => {
+            commit('updateTime')
+        }, 1000)
     }
 };
 
 const mutations = {
     setCurrentLabel: (state, label) => (state.label = label),
-    setJWT: (state, jwt) => (state.currentJWT = jwt)
+    setJWT: (state, jwt) => (state.currentJWT = jwt),
+    updateTime: (state) => (state.now = new Date())
 };
 
 // Create store

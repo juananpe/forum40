@@ -1,6 +1,6 @@
 <template>
   <div class="text-xs-center">
-    <div v-if="jwtLoggedIn" @click="checkLogin">Eingeloggt als {{jwtUser}}</div>
+    <div v-if="jwtLoggedIn" @click="checkLogin">Eingeloggt als {{jwtUser}} ({{timeLeft | moment}})</div>
     <div v-else>
       <v-dialog v-model="dialog" width="500">
         <template v-slot:activator="{ on }">
@@ -46,7 +46,8 @@
 </template>
 
 <script>
-import { mapGetters, mapActions } from "vuex";
+import { mapGetters, mapActions, mapState } from "vuex";
+import moment from "moment";
 import Service from "../api/db";
 export default {
   data() {
@@ -59,7 +60,17 @@ export default {
     };
   },
   computed: {
-    ...mapGetters(["jwt", "jwtUser", "jwtLoggedIn"])
+    ...mapGetters(["jwt", "jwtUser", "jwtLoggedIn", "jwtExpiration"]),
+    ...mapState(["now"]),
+    timeLeft() {
+      return moment(this.jwtExpiration * 1000 - this.now);
+    }
+  },
+  filters: {
+    moment: time =>
+      moment(time - 3600000) // no idea why there is an exta hour
+        .locale("de")
+        .format("LTS")
   },
   methods: {
     ...mapActions(["fetchJWT"]),

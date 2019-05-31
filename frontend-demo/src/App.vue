@@ -18,6 +18,7 @@
 import TopToolbar from "./components/TopToolbar.vue";
 import TimeChart from "./components/TimeChart.vue";
 import UserCommentList from "./components/UserCommentList.vue";
+import { mapActions } from "vuex";
 
 export default {
   name: "app",
@@ -25,6 +26,12 @@ export default {
     TopToolbar,
     TimeChart,
     UserCommentList
+  },
+  methods: {
+    ...mapActions(["start"])
+  },
+  created() {
+    this.start();
   }
 };
 </script>
