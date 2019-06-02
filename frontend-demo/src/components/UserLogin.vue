@@ -2,7 +2,7 @@
   <div class="text-xs-center">
     <div v-if="jwtLoggedIn" @click="checkLogin">Eingeloggt als {{jwtUser}} ({{timeLeft | moment}})</div>
     <div v-else>
-      <v-dialog v-model="dialog" width="500">
+      <v-dialog v-model="dialog" width="500" @keydown.enter.prevent="login">
         <template v-slot:activator="{ on }">
           <v-btn flat v-on="on">Login</v-btn>
         </template>
