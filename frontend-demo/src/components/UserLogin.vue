@@ -14,7 +14,13 @@
             <v-container fluid>
               <v-layout row wrap>
                 <v-flex xs12 sm6>
-                  <v-text-field v-model="username" label="Username" clearable></v-text-field>
+                  <v-text-field
+                    v-if="dialog"
+                    autofocus
+                    v-model="username"
+                    label="Username"
+                    clearable
+                  ></v-text-field>
                 </v-flex>
 
                 <v-flex xs12 sm6>
