@@ -1,6 +1,23 @@
 <template>
   <div class="text-xs-center">
-    <div v-if="jwtLoggedIn" @click="checkLogin">Eingeloggt als {{jwtUser}} ({{timeLeft | moment}})</div>
+    <div v-if="jwtLoggedIn">
+      <v-menu bottom left>
+        <template v-slot:activator="{ on }">
+          <v-btn flat v-on="on">{{jwtUser}}</v-btn>
+        </template>
+
+        <v-list>
+          <v-list-tile @click="checkLogin">
+            <v-list-tile-title>Check login</v-list-tile-title>
+          </v-list-tile>
+
+          <v-list-tile @click="logout">
+            <v-list-tile-title>Logout</v-list-tile-title>
+          </v-list-tile>
+        </v-list>
+      </v-menu>
+      <v-alert v-model="testalert" dismissible type="success">Sie sind authentifiziert!</v-alert>
+    </div>
     <div v-else>
       <v-dialog v-model="dialog" width="500" @keydown.enter.prevent="login">
         <template v-slot:activator="{ on }">
@@ -53,13 +70,13 @@
 
 <script>
 import { mapGetters, mapActions, mapState } from "vuex";
-import moment from "moment";
 import Service from "../api/db";
 export default {
   data() {
     return {
       dialog: false,
       error: false,
+      testalert: false,
       username: "",
       password: "",
       show: false
@@ -67,19 +84,10 @@ export default {
   },
   computed: {
     ...mapGetters(["jwt", "jwtUser", "jwtLoggedIn", "jwtExpiration"]),
-    ...mapState(["now"]),
-    timeLeft() {
-      return moment(this.jwtExpiration * 1000 - this.now);
-    }
-  },
-  filters: {
-    moment: time =>
-      moment(time - 3600000) // no idea why there is an exta hour
-        .locale("de")
-        .format("LTS")
+    ...mapState(["now"])
   },
   methods: {
-    ...mapActions(["fetchJWT"]),
+    ...mapActions(["fetchJWT", "logout"]),
     async login() {
       this.dialog = false;
       const success = await this.fetchJWT({
@@ -90,7 +98,9 @@ export default {
     },
     async checkLogin() {
       const { data } = await Service.get("db/auth/test", this.jwt);
-      console.log(data);
+      if (data.ok === this.jwtUser) {
+        this.testalert = true;
+      }
     }
   }
 };

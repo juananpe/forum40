@@ -35,6 +35,11 @@ const actions = {
             }
         }
     },
+    async logout({ commit, state }) {
+        const { data } = await Service.get('db/auth/logout', state.currentJWT);
+        if (data.logout === "ok")
+            commit('setJWT', '');
+    },
     start({ commit }) {
         setInterval(() => {
             commit('updateTime')
