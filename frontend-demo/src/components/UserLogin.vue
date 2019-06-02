@@ -57,12 +57,12 @@
 
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="primary" flat @click="login">Login</v-btn>
+            <v-btn color="primary" flat @click="loginUser">Login</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
 
-      <v-alert :value="error" type="error" dismissible>Login fehlgeschlagen!</v-alert>
+      <v-alert v-model="error" type="error" dismissible>Login fehlgeschlagen!</v-alert>
     </div>
   </div>
 </template>
@@ -93,6 +93,8 @@ export default {
         username: this.username,
         password: this.password
       });
+      this.username = "";
+      this.password = "";
       if (!success) this.error = true;
     },
     async checkLogin() {
