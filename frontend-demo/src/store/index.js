@@ -27,7 +27,6 @@ const actions = {
             const { data } = await Service.get(`db/auth/login/${username}/${password}`);
             commit('setJWT', data.token);
             state.refreshTokenInterval = setInterval(() => {
-                console.log(`checking token: ${getters.jwtExpiration * 1000 - state.now}`);
                 if ((getters.jwtExpiration * 1000 - state.now) <= Const.refreshTokenBefore)
                     dispatch('refreshToken');
             }, Const.refreshTokenCheckInterval);
