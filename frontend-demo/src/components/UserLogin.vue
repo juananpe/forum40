@@ -10,7 +10,6 @@
           <v-list-tile @click="checkLogin">
             <v-list-tile-title>Check login</v-list-tile-title>
           </v-list-tile>
-
           <v-list-tile @click="logout">
             <v-list-tile-title>Logout</v-list-tile-title>
           </v-list-tile>
@@ -19,7 +18,7 @@
       <v-alert v-model="testalert" dismissible type="success">Sie sind authentifiziert!</v-alert>
     </div>
     <div v-else>
-      <v-dialog v-model="dialog" width="500" @keydown.enter.prevent="login">
+      <v-dialog v-model="dialog" width="500" @keydown.enter.prevent="loginUser">
         <template v-slot:activator="{ on }">
           <v-btn flat v-on="on">Login</v-btn>
         </template>
@@ -87,10 +86,10 @@ export default {
     ...mapState(["now"])
   },
   methods: {
-    ...mapActions(["fetchJWT", "logout"]),
-    async login() {
+    ...mapActions(["login", "logout"]),
+    async loginUser() {
       this.dialog = false;
-      const success = await this.fetchJWT({
+      const success = await this.login({
         username: this.username,
         password: this.password
       });

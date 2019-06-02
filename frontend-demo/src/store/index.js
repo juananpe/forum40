@@ -1,7 +1,7 @@
 import Vuex from 'vuex'
 import Vue from 'vue'
 import Service from '../api/db'
-import axios from 'axios'
+import Const from '../const'
 
 Vue.use(Vuex);
 
@@ -9,7 +9,8 @@ Vue.use(Vuex);
 const state = {
     label: 'argumentsused',
     currentJWT: '',
-    now: new Date()
+    now: new Date(),
+    refreshTokenInterval: null
 };
 
 const getters = {
@@ -21,11 +22,15 @@ const getters = {
 };
 
 const actions = {
-    async fetchJWT({ commit }, { username, password }) {
-        // TODO: User real endpoint
+    async login({ commit, getters, state, dispatch }, { username, password }) {
         try {
             const { data } = await Service.get(`db/auth/login/${username}/${password}`);
             commit('setJWT', data.token);
+            state.refreshTokenInterval = setInterval(() => {
+                console.log(`checking token: ${getters.jwtExpiration * 1000 - state.now}`);
+                if ((getters.jwtExpiration * 1000 - state.now) <= Const.refreshTokenBefore)
+                    dispatch('refreshToken');
+            }, Const.refreshTokenCheckInterval);
             return true;
         }
         catch (error) {
@@ -35,15 +40,25 @@ const actions = {
             }
         }
     },
+    async refreshToken({ commit, state }) {
+        const { data } = await Service.get('db/auth/refreshToken', state.currentJWT);
+        if (data.token) {
+            commit('setJWT', data.token);
+            return true;
+        }
+        return false;
+    },
     async logout({ commit, state }) {
         const { data } = await Service.get('db/auth/logout', state.currentJWT);
-        if (data.logout === "ok")
+        if (data.logout === "ok") {
             commit('setJWT', '');
+            clearInterval(state.refreshTokenInterval);
+        }
     },
     start({ commit }) {
         setInterval(() => {
             commit('updateTime')
-        }, 1000)
+        }, Const.updateNowInterval)
     }
 };
 
