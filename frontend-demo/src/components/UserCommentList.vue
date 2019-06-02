@@ -12,8 +12,8 @@
       item-key="_id.$oid"
     >
       <template v-slot:items="props">
-        <tr @click="props.expanded = !props.expanded">
-          <td class="text-xs-left">
+        <tr>
+          <td @click="props.expanded = !props.expanded" class="text-xs-left">
             <div
               v-if="!props.expanded"
             >{{((props.item.title||'') + props.item.text) | truncate(teaserTextLength)}}</div>
