@@ -1,4 +1,5 @@
 import Vuex from 'vuex'
+import VuexPersist from 'vuex-persist';
 import Vue from 'vue'
 import Service from '../api/db'
 import Const from '../const'
@@ -67,10 +68,23 @@ const mutations = {
     updateTime: (state) => (state.now = new Date())
 };
 
+const notSyncedMutations = [
+    'setCurrentLabel',
+    'updateTime'
+]
+
+const vuexLocalStorage = new VuexPersist({
+    key: 'vuex',
+    storage: window.localStorage,
+    reducer: state => ({ currentJWT: state.currentJWT }),
+    filter: mutation => (notSyncedMutations.indexOf(mutation.type) === -1)
+});
+
 // Create store
 export default new Vuex.Store({
     state,
     getters,
     actions,
-    mutations
+    mutations,
+    plugins: [vuexLocalStorage.plugin]
 });
