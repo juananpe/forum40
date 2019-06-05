@@ -3,7 +3,7 @@
     <div v-if="jwtLoggedIn">
       <v-menu bottom left>
         <template v-slot:activator="{ on }">
-          <v-btn flat v-on="on">{{jwtUser}}</v-btn>
+          <v-btn color="primary" v-on="on">{{jwtUser}}</v-btn>
         </template>
 
         <v-list>
@@ -15,12 +15,17 @@
           </v-list-tile>
         </v-list>
       </v-menu>
-      <v-alert v-model="testalert" dismissible type="success">Sie sind authentifiziert!</v-alert>
+      <v-alert
+        v-model="testalert"
+        dismissible
+        type="success"
+        class="center"
+      >Sie sind authentifiziert!</v-alert>
     </div>
     <div v-else>
       <v-dialog v-model="dialog" width="500" @keydown.enter.prevent="loginUser">
         <template v-slot:activator="{ on }">
-          <v-btn flat v-on="on">Login</v-btn>
+          <v-btn color="primary" v-on="on">Login</v-btn>
         </template>
 
         <v-card>
@@ -62,7 +67,7 @@
         </v-card>
       </v-dialog>
 
-      <v-alert v-model="error" type="error" dismissible>Login fehlgeschlagen!</v-alert>
+      <v-alert v-model="error" type="error" dismissible class="center">Login fehlgeschlagen!</v-alert>
     </div>
   </div>
 </template>
@@ -108,4 +113,9 @@ export default {
 </script>
 
 <style>
+.center {
+  position: fixed;
+  right: 20px;
+  top: 50%;
+}
 </style>

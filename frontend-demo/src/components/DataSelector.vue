@@ -35,7 +35,6 @@ export default {
 
 <style>
 .select {
-  padding-left: 20px;
-  padding-top: 30px;
+  padding-top: 22px;
 }
 </style>

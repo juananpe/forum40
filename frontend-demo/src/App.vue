@@ -3,11 +3,18 @@
     <v-app>
       <TopToolbar/>
       <v-layout row wrap>
-        <v-flex xs12 md6>
+        <v-flex xs12 md10 offset-md1 mt-3>
+          <UserCommentFilter/>
+        </v-flex>
+
+        <v-flex xs12 md10 offset-md1>
           <TimeChart/>
         </v-flex>
-        <v-flex xs12 md6>
+        <v-flex xs12 md10 offset-md1>
           <UserCommentList/>
+        </v-flex>
+        <v-flex xs12 md10 offset-md1>
+          <UserCommentThread/>
         </v-flex>
       </v-layout>
     </v-app>
@@ -15,9 +22,11 @@
 </template>
 
 <script>
-import TopToolbar from "./components/TopToolbar.vue";
-import TimeChart from "./components/TimeChart.vue";
-import UserCommentList from "./components/UserCommentList.vue";
+import TopToolbar from "./components/TopToolbar";
+import TimeChart from "./components/TimeChart";
+import UserCommentList from "./components/UserCommentList";
+import UserCommentFilter from "./components/UserCommentFilter";
+import UserCommentThread from "./components/UserCommentThread";
 import { mapActions } from "vuex";
 
 export default {
@@ -25,7 +34,9 @@ export default {
   components: {
     TopToolbar,
     TimeChart,
-    UserCommentList
+    UserCommentList,
+    UserCommentFilter,
+    UserCommentThread
   },
   methods: {
     ...mapActions(["start"])

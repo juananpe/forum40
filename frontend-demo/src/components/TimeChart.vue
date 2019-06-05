@@ -1,5 +1,6 @@
 <template>
   <div class="timechart">
+    <h3>Kommentarverteilung</h3>
     <div id="streamgraph"></div>
   </div>
 </template>
