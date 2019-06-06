@@ -212,12 +212,9 @@ class BertFeatureExtractor(object):
         return examples
 
 
-    def extract_features(self, sequences, return_as_json = True):
-
+    def extract_features(self, sequences):
 
         examples = self.convert_sequences_to_examples(sequences)
-
-        # print(tokenizer)
 
         features = self.convert_examples_to_features(
             examples=examples, seq_length=self.max_seq_length, tokenizer=self.tokenizer)
@@ -258,25 +255,6 @@ class BertFeatureExtractor(object):
                     sequence_embedding = np.mean(all_layers, axis=0)
                     output_json["embedding"] = [round(x.item(), 6) for x in sequence_embedding]
 
-                    # for (i, token) in enumerate(feature.tokens):
-                    #     all_layers = []
-                    #     for (j, layer_index) in enumerate(layer_indexes):
-                    #         layer_output = all_encoder_layers[int(layer_index)].detach().cpu().numpy()
-                    #         layer_output = layer_output[b]
-                    #         layers = collections.OrderedDict()
-                    #         layers["index"] = layer_index
-                    #         layers["values"] = [
-                    #             round(x.item(), 6) for x in layer_output[i]
-                    #         ]
-                    #         all_layers.append(layers)
-                    #     out_features = collections.OrderedDict()
-                    #     out_features["token"] = token
-                    #     out_features["layers"] = all_layers
-                    #     all_out_features.append(out_features)
-
                     json_result.append(output_json)
 
-        if return_as_json:
-            return json.dumps(json_result)
-        else:
-            return json_result
+        return json_result
