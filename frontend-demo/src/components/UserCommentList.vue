@@ -127,12 +127,12 @@ export default {
           : this.pagination.rowsPerPage;
       const skip = (this.pagination.page - 1) * numberOfElements;
       const { data } = await Service.get(
-        `db/comments/${this.label}/${skip}/${numberOfElements}`
+        `db/comments?label=${this.label}&skip=${skip}&limit=${numberOfElements}`
       );
       this.comments = data;
     },
     async setToalCommentNumber() {
-      const { data } = await Service.get(`/db/comments/${this.label}/count`);
+      const { data } = await Service.get(`/db/comments/count?label=${this.label}`);
       this.totalItems = data.count;
     }
   }
