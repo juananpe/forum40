@@ -11,6 +11,14 @@ from bson import json_util
 
 ns = api.namespace('labels', description="labels api")
 
+@ns.route('/')
+class LabelsGetAll(Resource):
+    def get(self):
+        coll = mongo.db.Labels
+        descriptions = coll.find({}, {"description" : 1, "_id": 0})
+        d_list = [d["description"] for d in  descriptions]
+        return {'labels': d_list}, 200
+
 @ns.route('/count')
 class LabelsCount(Resource):
     def get(self):
