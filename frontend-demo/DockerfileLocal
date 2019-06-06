@@ -3,9 +3,6 @@ FROM node:lts-alpine
 # make the 'app' folder the current working directory
 WORKDIR /app
 
-# install project dependencies
-RUN npm install
-
 # build app for production with minification
 EXPOSE 8080
 

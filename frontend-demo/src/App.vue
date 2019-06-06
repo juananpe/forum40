@@ -1,19 +1,48 @@
 <template>
   <div id="app">
-    <TimeChart/>
-    <CommentList/>
+    <v-app>
+      <TopToolbar/>
+      <v-layout row wrap>
+        <v-flex xs12 md10 offset-md1 mt-3>
+          <UserCommentFilter/>
+        </v-flex>
+
+        <v-flex xs12 md10 offset-md1>
+          <TimeChart/>
+        </v-flex>
+        <v-flex xs12 md10 offset-md1>
+          <UserCommentList/>
+        </v-flex>
+        <v-flex xs12 md10 offset-md1>
+          <UserCommentThread/>
+        </v-flex>
+      </v-layout>
+    </v-app>
   </div>
 </template>
 
 <script>
-import TimeChart from "./components/TimeChart.vue";
-import CommentList from "./components/CommentList.vue";
+import TopToolbar from "./components/TopToolbar";
+import TimeChart from "./components/TimeChart";
+import UserCommentList from "./components/UserCommentList";
+import UserCommentFilter from "./components/UserCommentFilter";
+import UserCommentThread from "./components/UserCommentThread";
+import { mapActions } from "vuex";
 
 export default {
   name: "app",
   components: {
+    TopToolbar,
     TimeChart,
-    CommentList
+    UserCommentList,
+    UserCommentFilter,
+    UserCommentThread
+  },
+  methods: {
+    ...mapActions(["start"])
+  },
+  created() {
+    this.start();
   }
 };
 </script>
@@ -25,6 +54,5 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
 }
 </style>

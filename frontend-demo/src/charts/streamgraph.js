@@ -1,10 +1,12 @@
+import * as d3 from "d3";
+
 function streamgraph() {
 
-var w = 1000
-var h = 500
+var w = 1300
+var h = 350
 
-var margin = {top: 20, right: 20, bottom: 110, left: 40}
-var margin2 = {top: 430, right: 20, bottom: 30, left: 40}
+var margin = {top: 20, right: 20, bottom: 90, left: 40}
+var margin2 = {top: 280, right: 20, bottom: 30, left: 40}
 var width = w - margin.left - margin.right
 var height = h - margin.top - margin.bottom
 var height2 = h - margin2.top - margin2.bottom
@@ -26,11 +28,11 @@ var zColors = d3.scaleOrdinal()
 var svg
 var focus, focusPaths
 var kontext
-var g 
+//var g
 var x
 var x2
 var y
-var b
+//var b
 var kontextPaths
 
 var area = d3.area()
@@ -101,7 +103,7 @@ function chart(selection) {
    .attr("height", h)
 
 
- if(focus) { } else {
+ if(!focus) {
 
    focusPaths = svgEnter
      .append("g")
@@ -132,7 +134,7 @@ function chart(selection) {
      .attr("class", "axis-x")
      .attr("transform", "translate(0," + height2 + ")")
 
-   b = kontext.append("g")
+   kontext.append("g") // b
      .attr("class", "brush")
      .call(brush)
      .call(brush.move, [0, 0]);
@@ -141,7 +143,6 @@ function chart(selection) {
  drawChart()
 
  function drawChart() {
-   console.log('draw')
 
    var series = stack(data);
 

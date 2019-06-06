@@ -19,6 +19,7 @@ app.config['MONGO_URI'] = settings.MONGO_URI
 app.config['RESTPLUS_MASK_SWAGGER'] = settings.RESTPLUS_MASK_SWAGGER
 app.config['RESTPLUS_VALIDATE'] = settings.RESTPLUS_VALIDATE
 app.config['SWAGGER_UI_DOC_EXPANSION'] = settings.SWAGGER_UI_DOC_EXPANSION
+app.config['JWT_SECRET_KEY'] = settings.JWT_SECRET_KEY
 
 # main page
 @app.route("/")
