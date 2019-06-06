@@ -7,6 +7,7 @@
       :items="comments"
       :expand="expand"
       :loading="loading"
+      :rows-per-page-items="rowsPerPage"
       :pagination.sync="pagination"
       :total-items="totalItems"
       item-key="_id.$oid"
@@ -53,7 +54,8 @@ export default {
       loading: false,
       selected: [],
       expand: false,
-      totalItems: 100,
+      totalItems: 0,
+      rowsPerPage: [5, 10],
       teaserTextLength: 80,
       pagination: {
         page: 1,
@@ -97,20 +99,28 @@ export default {
     ...mapState(["label"])
   },
   mounted() {
-    this.fetchComments();
+    this.loadTable();
   },
   watch: {
     label() {
-      this.pagination.page = 1;
-      this.fetchComments();
+      this.loadTable();
     },
-    pagination() {
-      this.fetchComments();
+    async pagination() {
+      this.loading = true;
+      await this.fetchComments();
+      this.loading = false;
     }
   },
   methods: {
-    async fetchComments() {
+    async loadTable() {
       this.loading = true;
+      this.pagination.page = 1;
+      const p1 = this.setToalCommentNumber();
+      const p2 = this.fetchComments();
+      await Promise.all([p1, p2]);
+      this.loading = false;
+    },
+    async fetchComments() {
       const numberOfElements =
         this.pagination.rowsPerPage === -1
           ? this.totalItems
@@ -119,8 +129,11 @@ export default {
       const { data } = await Service.get(
         `db/comments/${this.label}/${skip}/${numberOfElements}`
       );
-      this.loading = false;
       this.comments = data;
+    },
+    async setToalCommentNumber() {
+      const { data } = await Service.get(`/db/comments/${this.label}/count`);
+      this.totalItems = data.count;
     }
   }
 };
