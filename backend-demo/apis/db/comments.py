@@ -57,6 +57,7 @@ class CommentssTest(Resource):
         cursor = list(coll.aggregate(clbt(id, time_intervall)))
         return Response(json.dumps(cursor, default=json_util.default), mimetype='application/json')
 
+
 @ns.route('/parent/<string:id>/')
 #@api.expect(comments_model)
 class CommentsParent(Resource):
@@ -65,8 +66,42 @@ class CommentsParent(Resource):
         try:
             base_comment = coll.find_one({"_id" : ObjectId(id)})
         except:
-            return {"msg": "{} is not a valid ObjectId".format(id)}
-        if base_comment:
-            parent_id = base_comment["parentDocumentId"]
+            return {"msg": "{} is not a valid ObjectId".format(id)}, 400
+        if "parentCommentId" in base_comment:
+            parent_id = base_comment["parentCommentId"]
             parent_comment = coll.find_one({"_id" : parent_id})
+            
             return Response(json.dumps(parent_comment, default=json_util.default), mimetype='application/json')
+        else:
+            return Response(json.dumps({}, default=json_util.default), mimetype='application/json')
+
+@ns.route('/parent_recursive/<string:id>/')
+#@api.expect(comments_model)
+class CommentsParentRec(Resource):
+    def get(self, id):
+        coll = mongo.db.Comments
+        try:
+            base_comment = coll.find_one({"_id" : ObjectId(id)})
+        except:
+            return {"msg": "{} is not a valid ObjectId".format(id)}, 400
+
+        if not base_comment:
+            return Response(json.dumps([], default=json_util.default), mimetype='application/json')
+        
+        i = 1
+        c_list = [base_comment]
+
+        parent = base_comment
+        while "parentCommentId" in parent:
+            next_parentId = parent["parentCommentId"]
+            next_parent = coll.find_one({"_id" : next_parentId})
+            c_list.insert(0, next_parent)
+            i += 1
+            parent = next_parent
+        response = {
+            "comments" : c_list,
+            "size" : i
+        }
+
+        return Response(json.dumps(response, default=json_util.default), mimetype='application/json')
+
