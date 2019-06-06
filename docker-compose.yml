@@ -52,5 +52,16 @@ services:
             - reverseproxy
         links:
             - mongo
+    embedding:
+        build:
+            context: ./embedding-service
+            dockerfile: Dockerfile
+        volumes:
+            - ./embedding-service:/app
+            - ./embedding-service/model:/app/model
+        depends_on:
+            - reverseproxy
+        links:
+            - mongo
 volumes:
     mongodb:

@@ -24,7 +24,11 @@ app.config['SWAGGER_UI_DOC_EXPANSION'] = settings.SWAGGER_UI_DOC_EXPANSION
 @app.route("/")
 def hello():
     url = str(request.url_rule)
-    return '<a href="{0}api/db/">User-Comments-API</a> </br> <a href="{0}api/service/">Service-API</a> </br> <a href="{0}api/meta/">Meta-Comment-API</a> </br> <a href="{0}api/offlang">Offensive-Language-API</a> </br>'.format(url)
+    return '<a href="{0}api/db/">User-Comments-API</a> </br> ' \
+           '<a href="{0}api/service/">Service-API</a> </br> ' \
+           '<a href="{0}api/meta/">Meta-Comment-API</a> </br> ' \
+           '<a href="{0}api/offlang">Offensive-Language-API</a> </br>' \
+           '<a href="{0}api/embedding">Embedding-API</a> </br>'.format(url)
 
 # add blueprints
 app.register_blueprint(db_blueprint, url_prefix='/db')
