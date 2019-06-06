@@ -32,11 +32,11 @@ def token_required(func):
         if not user_mongo or user_mongo["blocked"]:
             return {'message' : 'Access denied.'}, 401
 
-        tokens_coll = mongo.cx["admin"].Tokens
-        token_mongo = tokens_coll.find_one({"user" : data["user"]})
+        #tokens_coll = mongo.cx["admin"].Tokens
+        #token_mongo = tokens_coll.find_one({"user" : data["user"]})
 
-        if not token_mongo or not token_mongo["token"] or str(token_mongo["token"], 'utf-8') != token:
-            return {'message' : 'The token is invalid because the user is not logged in or the token has been updated.'}, 401
+        #if not token_mongo or not token_mongo["token"] or str(token_mongo["token"], 'utf-8') != token:
+        #    return {'message' : 'The token is invalid because the user is not logged in or the token has been updated.'}, 401
 
         return func(data, *args, **kwargs)
 

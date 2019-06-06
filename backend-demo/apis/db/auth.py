@@ -40,7 +40,7 @@ class AuthLogin(Resource):
             token = jwt.encode({
                 'user' : username, 
                 'exp' : datetime.datetime.utcnow() + datetime.timedelta(minutes=30)}, 
-                secret_mongo) # TODO hide pwd
+                secret_mongo)
 
             login_log_coll.insert({ "user": username, "timeStamp" : datetime.datetime.now(), "success": True })
             tokens_coll.update({ "user": username}, { "user": username, "token": token}, upsert=True)
@@ -54,6 +54,7 @@ class AuthLogin(Resource):
 class AuthLogout(Resource):
     @token_required
     @api.doc(security='apikey')
+    @api.deprecated
     def get(self, data):
         
         user = self["user"]
