@@ -2,11 +2,11 @@ import * as d3 from "d3";
 
 function streamgraph() {
 
-var w = 860
-var h = 300
+var w = 1300
+var h = 350
 
-var margin = {top: 20, right: 20, bottom: 110, left: 40}
-var margin2 = {top: 430, right: 20, bottom: 30, left: 40}
+var margin = {top: 20, right: 20, bottom: 80, left: 40}
+var margin2 = {top: 280, right: 20, bottom: 30, left: 40}
 var width = w - margin.left - margin.right
 var height = h - margin.top - margin.bottom
 var height2 = h - margin2.top - margin2.bottom
