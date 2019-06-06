@@ -2,7 +2,7 @@ from flask import request, jsonify, Response
 from flask_restplus import Resource, reqparse
 
 from apis.db import api
-from models.db_models import aggregate_model, label_time_model, comments_model
+from models.db_models import label_time_model, comments_parser, comments_parser_sl
 
 from db import mongo
 from db.mongo_util import aggregate
@@ -26,21 +26,36 @@ def getLabelIdVyName(name):
 
 def getCommentsByLabel(label):
     coll = mongo.db.Comments
-    id = getLabelIdVyName(label)
-    return coll.find({"labels.labelId" : ObjectId(id)})
+    labelIds = [ObjectId(getLabelIdVyName(i)) for i in label]
+    query = {}
+    if len(label) > 0:
+        query = {"labels.labelId" : { "$in": labelIds }}
+    return coll.find(query)
 
-@ns.route('/<string:label>/<int:skip>/<int:limit>')
-#@api.expect(comments_model)
+@ns.route('/')
+@api.expect(comments_parser_sl)
 class CommentsGet(Resource):
-    def get(self, label, skip, limit):
+    def get(self):
+        args = comments_parser_sl.parse_args()
+        label = args["label"]
+        if not label:
+            label = []
+        skip = args["skip"]
+        limit = args["limit"]
+
         cursor = getCommentsByLabel(label)
         comments = list(cursor.skip(skip).limit(limit))
         return Response(json.dumps(comments, default=json_util.default), mimetype='application/json')
 
-@ns.route('/<string:label>/count')
-#@api.expect(comments_model)
+@ns.route('/count')
+@api.expect(comments_parser)
 class CommentsCount(Resource):
-    def get(self, label):
+    def get(self):
+        args = comments_parser.parse_args()
+        label = args["label"]
+        if not label:
+            label = []
+
         cursor = getCommentsByLabel(label)
         comments_count = cursor.count()
         return {"count" : comments_count}
