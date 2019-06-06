@@ -5,7 +5,7 @@ function streamgraph() {
 var w = 1300
 var h = 350
 
-var margin = {top: 20, right: 20, bottom: 80, left: 40}
+var margin = {top: 20, right: 20, bottom: 90, left: 40}
 var margin2 = {top: 280, right: 20, bottom: 30, left: 40}
 var width = w - margin.left - margin.right
 var height = h - margin.top - margin.bottom
