@@ -4,20 +4,26 @@
 
 <script>
 import { mapState, mapMutations } from "vuex";
+import Service from "../api/db";
 
 export default {
   name: "DataSelector",
   data: () => ({
     // TODO DB query
-    items: [
-      "argumentsused",
-      "personalstories",
-      "possiblyfeedback",
-      "discriminating"
-    ]
+     items: []
   }),
   methods: {
-    ...mapMutations(["setCurrentLabel"])
+    ...mapMutations(["setCurrentLabel"]),
+    async loadData() {
+      this.fetchLabels()
+    },
+    async fetchLabels() {
+      const { data }  = await Service.get('/db/labels/')
+      this.items = data.labels
+    }
+  },
+  mounted() {
+    this.loadData()
   },
   computed: {
     ...mapState(["label"]),
