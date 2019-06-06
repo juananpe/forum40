@@ -43,7 +43,7 @@
 
 <script>
 import Service from "../api/db";
-import { mapState } from "vuex";
+import { mapState, mapGetters } from "vuex";
 import moment from "moment";
 
 export default {
@@ -96,13 +96,14 @@ export default {
     }
   },
   computed: {
-    ...mapState(["label"])
+    ...mapState(["selectedLabels"]),
+    ...mapGetters(["labelParameters"])
   },
   mounted() {
     this.loadTable();
   },
   watch: {
-    label() {
+    selectedLabels() {
       this.loadTable();
     },
     async pagination() {
@@ -127,12 +128,14 @@ export default {
           : this.pagination.rowsPerPage;
       const skip = (this.pagination.page - 1) * numberOfElements;
       const { data } = await Service.get(
-        `db/comments?label=${this.label}&skip=${skip}&limit=${numberOfElements}`
+        `db/comments?${this.labelParameters}&skip=${skip}&limit=${numberOfElements}`
       );
       this.comments = data;
     },
     async setToalCommentNumber() {
-      const { data } = await Service.get(`db/comments/count?label=${this.label}`);
+      const { data } = await Service.get(
+        `db/comments/count?${this.labelParameters}`
+      );
       this.totalItems = data.count;
     }
   }

@@ -8,7 +8,7 @@ Vue.use(Vuex);
 
 
 const state = {
-    label: 'argumentsused',
+    selectedLabels: [],
     currentJWT: '',
     now: new Date(),
     refreshTokenInterval: null
@@ -19,7 +19,8 @@ const getters = {
     jwtData: (state, getters) => state.currentJWT ? JSON.parse(atob(getters.jwt.split('.')[1])) : null,
     jwtUser: (state, getters) => state.currentJWT ? getters.jwtData.user : null,
     jwtExpiration: (state, getters) => getters.jwtData ? getters.jwtData.exp : null,
-    jwtLoggedIn: (state, getters) => getters.jwt && getters.jwtExpiration * 1000 >= state.now
+    jwtLoggedIn: (state, getters) => getters.jwt && getters.jwtExpiration * 1000 >= state.now,
+    labelParameters: (state, getters) => state.selectedLabels.map((label)=>`label=${label}`).join('&')
 };
 
 const actions = {
@@ -63,13 +64,13 @@ const actions = {
 };
 
 const mutations = {
-    setCurrentLabel: (state, label) => (state.label = label),
+    setSelectedLabels: (state, selection) => (state.selectedLabels = selection),
     setJWT: (state, jwt) => (state.currentJWT = jwt),
     updateTime: (state) => (state.now = new Date())
 };
 
 const notSyncedMutations = [
-    'setCurrentLabel',
+    'setSelectedLabels',
     'updateTime'
 ]
 

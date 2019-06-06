@@ -1,5 +1,11 @@
 <template>
-  <v-select :items="items" v-model="selection" label="Label" class="select"></v-select>
+  <v-combobox v-model="selection" :items="items" label="Label" chips clearable multiple>
+    <template v-slot:selection="data">
+      <v-chip :selected="data.selected" close @input="remove(data.item)">
+        <strong>{{ data.item }}</strong>
+      </v-chip>
+    </template>
+  </v-combobox>
 </template>
 
 <script>
@@ -9,30 +15,30 @@ import Service from "../api/db";
 export default {
   name: "DataSelector",
   data: () => ({
-    // TODO DB query
-     items: []
+    items: []
   }),
   methods: {
-    ...mapMutations(["setCurrentLabel"]),
-    async loadData() {
-      this.fetchLabels()
-    },
+    ...mapMutations(["setSelectedLabels"]),
     async fetchLabels() {
-      const { data }  = await Service.get('db/labels/')
-      this.items = data.labels
+      const { data } = await Service.get("db/labels/");
+      this.items = data.labels;
+    },
+    remove(item) {
+      this.selection.splice(this.selection.indexOf(item), 1);
+      this.selection = [...this.selection];
     }
   },
   mounted() {
-    this.loadData()
+    this.fetchLabels();
   },
   computed: {
-    ...mapState(["label"]),
+    ...mapState(["selectedLabels"]),
     selection: {
       set(state) {
-        this.setCurrentLabel(state);
+        this.setSelectedLabels(state);
       },
       get() {
-        return this.label;
+        return this.selectedLabels;
       }
     }
   }
@@ -40,7 +46,4 @@ export default {
 </script>
 
 <style>
-.select {
-  padding-top: 22px;
-}
 </style>

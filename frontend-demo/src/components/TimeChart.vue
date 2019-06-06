@@ -10,7 +10,6 @@ import Service from "../api/db";
 import * as d3 from "d3";
 import streamgraph from "../charts/streamgraph";
 
-
 import { mapState } from "vuex";
 
 export default {
@@ -23,20 +22,20 @@ export default {
     };
   },
   computed: {
-    ...mapState(["label"]),
+    ...mapState(["selectedLabels"]),
     playload_time_list: function() {
       return {
-        name: this.label,
+        name: this.selectedLabels[0],
         time_intervall: 120000000
       };
     }
   },
   mounted: function() {
-    this.getData();
+    if (this.selectedLabels.length > 0) this.getData();
   },
   watch: {
-    label() {
-      this.getData();
+    selectedLabels() {
+      if (this.selectedLabels.length > 0) this.getData();
     },
     data: function() {
       this.drawChart();
