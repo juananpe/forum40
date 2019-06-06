@@ -68,6 +68,6 @@ class OfflangCommentsClassifier(Resource):
         return results, 200
 
 
-# run app manuelly
+# run app manually
 if __name__ == "__main__":
     app.run(threaded = True)
