@@ -14,11 +14,3 @@ class DocumentsCount(Resource):
     def get(self):
         coll = mongo.db.Documents
         return {'count': coll.find().count()}, 200
-
-@ns.route('/aggregate')
-@api.expect(aggregate_model)
-class DocumentsTest(Resource):
-    def post(self):
-        coll = mongo.db.Documents
-        body = api.payload
-        return aggregate(coll, body), 200

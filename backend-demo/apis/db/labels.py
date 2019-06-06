@@ -26,11 +26,3 @@ class LabelsId(Resource):
         if c: 
             id = str(c["_id"])
         return {"id" : id }, 200
-
-@ns.route('/aggregate')
-@api.expect(aggregate_model)
-class LabelsTest(Resource):
-    def post(self):
-        coll = mongo.db.Labels
-        body = api.payload
-        return aggregate(coll, body), 200

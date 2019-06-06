@@ -34,24 +34,6 @@ class CommentsGet(Resource):
                 mimetype='application/json')
 
 
-@ns.route('/count')
-#@api.doc(security='apiKey')
-class CommentsCount(Resource):
-
-    def get(self):
-        coll = mongo.db.Comments
-        return {'count': coll.find().count()}, 200
-
-
-@ns.route('/aggregate')
-@api.expect(aggregate_model)
-class CommentsTest(Resource):
-    def post(self):
-        coll = mongo.db.Comments
-        body = api.payload
-        return aggregate(coll, body), 200
-
-
 @ns.route('/timeseriesByLabel')
 @api.expect(label_time_model)
 class CommentssTest(Resource):

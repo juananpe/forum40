@@ -14,11 +14,3 @@ class UsersCount(Resource):
     def get(self):
         coll = mongo.db.Users
         return {'count': coll.find().count()}, 200
-
-@ns.route('/aggregate')
-@api.expect(aggregate_model)
-class UsersAggregate(Resource):
-    def post(self):
-        coll = mongo.db.Users
-        body = api.payload
-        return aggregate(coll, body), 200
