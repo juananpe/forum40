@@ -15,41 +15,44 @@ import json
 ns = api.namespace('comments', description="comments api")
 
 
+def getLabelIdVyName(name):
+    coll = mongo.db.Labels
+        
+    c = coll.find_one({"description" : name}, {"_id": 1})
+    id = None
+    if c: 
+        id = str(c["_id"])
+    return id
+
+def getCommentsByLabel(label):
+    coll = mongo.db.Comments
+    id = getLabelIdVyName(label)
+    return coll.find({"labels.labelId" : ObjectId(id)})
+
 @ns.route('/<string:label>/<int:skip>/<int:limit>')
 #@api.expect(comments_model)
 class CommentsGet(Resource):
     def get(self, label, skip, limit):
+        cursor = getCommentsByLabel(label)
+        comments = list(cursor.skip(skip).limit(limit))
+        return Response(json.dumps(comments, default=json_util.default), mimetype='application/json')
 
-        # get id
-        coll = mongo.db.Labels
-        
-        c = coll.find_one({"description" : label}, {"_id": 1})
-        id = None
-        if c: 
-            id = str(c["_id"])
-        
-        comments_collection = mongo.db.Comments
-        comments = list(comments_collection.find({"labels.labelId" : ObjectId(id)}).skip(skip).limit(limit))
-        return Response(json.dumps(comments, default=json_util.default),
-                mimetype='application/json')
-
+@ns.route('/<string:label>/count')
+#@api.expect(comments_model)
+class CommentsCount(Resource):
+    def get(self, label):
+        cursor = getCommentsByLabel(label)
+        comments_count = cursor.count()
+        return {"count" : comments_count}
 
 @ns.route('/timeseriesByLabel')
 @api.expect(label_time_model)
 class CommentssTest(Resource):
     def post(self):
-        # get id
-        coll = mongo.db.Labels
-        body = api.payload
-        
-        name = body['name']
-        c = coll.find_one({"description" : name}, {"_id": 1})
-        id = None
-        if c: 
-            id = str(c["_id"])
-
-        # aggregate comments
         coll = mongo.db.Comments
         body = api.payload
-        cursor = list(coll.aggregate(clbt(id, body['time_intervall'])))
+        label = body['name']
+        time_intervall = body['time_intervall']
+        id = getLabelIdVyName(label)
+        cursor = list(coll.aggregate(clbt(id, time_intervall)))
         return Response(json.dumps(cursor, default=json_util.default), mimetype='application/json')
