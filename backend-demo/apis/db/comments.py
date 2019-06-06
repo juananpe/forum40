@@ -56,3 +56,17 @@ class CommentssTest(Resource):
         id = getLabelIdVyName(label)
         cursor = list(coll.aggregate(clbt(id, time_intervall)))
         return Response(json.dumps(cursor, default=json_util.default), mimetype='application/json')
+
+@ns.route('/parent/<string:id>/')
+#@api.expect(comments_model)
+class CommentsParent(Resource):
+    def get(self, id):
+        coll = mongo.db.Comments
+        try:
+            base_comment = coll.find_one({"_id" : ObjectId(id)})
+        except:
+            return {"msg": "{} is not a valid ObjectId".format(id)}
+        if base_comment:
+            parent_id = base_comment["parentDocumentId"]
+            parent_comment = coll.find_one({"_id" : parent_id})
+            return Response(json.dumps(parent_comment, default=json_util.default), mimetype='application/json')
