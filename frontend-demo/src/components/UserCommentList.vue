@@ -132,7 +132,7 @@ export default {
       this.comments = data;
     },
     async setToalCommentNumber() {
-      const { data } = await Service.get(`/db/comments/count?label=${this.label}`);
+      const { data } = await Service.get(`db/comments/count?label=${this.label}`);
       this.totalItems = data.count;
     }
   }

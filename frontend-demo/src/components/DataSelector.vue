@@ -18,7 +18,7 @@ export default {
       this.fetchLabels()
     },
     async fetchLabels() {
-      const { data }  = await Service.get('/db/labels/')
+      const { data }  = await Service.get('db/labels/')
       this.items = data.labels
     }
   },
