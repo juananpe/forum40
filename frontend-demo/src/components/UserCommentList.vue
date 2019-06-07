@@ -53,6 +53,7 @@
 
 <script>
 import Service from "../api/db";
+import { State, Getters, Mutations } from "../store/const";
 import { mapState, mapGetters, mapMutations } from "vuex";
 import moment from "moment";
 
@@ -107,8 +108,8 @@ export default {
     }
   },
   computed: {
-    ...mapState(["selectedLabels"]),
-    ...mapGetters(["labelParameters"]),
+    ...mapState([State.selectedLabels]),
+    ...mapGetters([Getters.labelParameters]),
     countQueryString() {
       const getParams = [`${this.labelParameters}`];
       if (this.textsearch) getParams.push(`keyword=${this.textsearch}`);
@@ -142,7 +143,7 @@ export default {
     }
   },
   methods: {
-    ...mapMutations(["setSelectedComment"]),
+    ...mapMutations([Mutations.setSelectedComment]),
     async loadTable() {
       this.loading = true;
       this.pagination.page = 1;

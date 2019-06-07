@@ -9,6 +9,7 @@
 </template>
 
 <script>
+import { State, Mutations } from "../store/const";
 import { mapState, mapMutations } from "vuex";
 import Service from "../api/db";
 
@@ -18,7 +19,7 @@ export default {
     items: []
   }),
   methods: {
-    ...mapMutations(["setSelectedLabels"]),
+    ...mapMutations([Mutations.setSelectedLabels]),
     async fetchLabels() {
       const { data } = await Service.get("db/labels/");
       this.items = data.labels;
@@ -32,7 +33,7 @@ export default {
     this.fetchLabels();
   },
   computed: {
-    ...mapState(["selectedLabels"]),
+    ...mapState([State.selectedLabels]),
     selection: {
       set(state) {
         this.setSelectedLabels(state);

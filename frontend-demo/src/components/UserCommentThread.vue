@@ -16,6 +16,7 @@
 </template>
 
 <script>
+import { State, Getters } from "../store/const";
 import { mapState, mapGetters } from "vuex";
 import Service from "../api/db";
 import UserComment from "./UserComment";
@@ -41,8 +42,8 @@ export default {
     }
   },
   computed: {
-    ...mapState(["selectedComment"]),
-    ...mapGetters(["selectedCommentId"])
+    ...mapState([State.selectedComment]),
+    ...mapGetters([Getters.selectedCommentId])
   },
   watch: {
     async selectedComment() {
