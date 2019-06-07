@@ -9,8 +9,8 @@
 </template>
 
 <script>
-import { State, Mutations } from "../store/const";
-import { mapState, mapMutations } from "vuex";
+import { Getters, Mutations } from "../store/const";
+import { mapGetters, mapMutations } from "vuex";
 import Service, { Endpoint } from "../api/db";
 
 export default {
@@ -33,13 +33,13 @@ export default {
     this.fetchLabels();
   },
   computed: {
-    ...mapState([State.selectedLabels]),
+    ...mapGetters([Getters.selectedLabels]),
     selection: {
       set(state) {
-        this.setSelectedLabels(state);
+        this[Mutations.setSelectedLabels](state);
       },
       get() {
-        return this.selectedLabels;
+        return this[Getters.selectedLabels];
       }
     }
   }

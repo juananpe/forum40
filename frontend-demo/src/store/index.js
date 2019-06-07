@@ -2,7 +2,7 @@ import Vuex from 'vuex'
 import VuexPersist from 'vuex-persist';
 import Vue from 'vue'
 
-import {State, Mutations} from './const'
+import { State, Mutations } from './const'
 import getters from './getters'
 import mutations from './mutations'
 import actions from './actions'
@@ -11,7 +11,9 @@ Vue.use(Vuex);
 
 
 const state = {
-    [State.selectedLabels]: [],
+    [State.selectedFilters]: {
+        [State.selectedLabels]: []
+    },
     [State.selectedComment]: {},
     [State.currentJWT]: '',
     [State.now]: new Date(),

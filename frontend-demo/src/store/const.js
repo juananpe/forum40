@@ -1,4 +1,5 @@
 export const State = {
+    selectedFilters: 'selectedFilters',
     selectedLabels: 'selectedLabels',
     selectedComment: 'selectedComment',
     currentJWT: 'currentJWT',
@@ -13,7 +14,8 @@ export const Getters = {
     jwtExpiration: 'jwtExpiration',
     jwtLoggedIn: 'jwtLoggedIn',
     labelParameters: 'labelParameters',
-    selectedCommentId: 'selectedCommentId'
+    selectedCommentId: 'selectedCommentId',
+    selectedLabels: 'selectedLabels'
 }
 
 export const Mutations = {

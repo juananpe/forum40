@@ -53,8 +53,8 @@
 
 <script>
 import Service, { Endpoint } from "../api/db";
-import { State, Getters, Mutations } from "../store/const";
-import { mapState, mapGetters, mapMutations } from "vuex";
+import { Getters, Mutations } from "../store/const";
+import { mapGetters, mapMutations } from "vuex";
 import moment from "moment";
 
 export default {
@@ -108,10 +108,9 @@ export default {
     }
   },
   computed: {
-    ...mapState([State.selectedLabels]),
-    ...mapGetters([Getters.labelParameters]),
+    ...mapGetters([Getters.selectedLabels, Getters.labelParameters]),
     countQueryString() {
-      const getParams = [`${this.labelParameters}`];
+      const getParams = [`${this[Getters.labelParameters]}`];
       if (this.textsearch) getParams.push(`keyword=${this.textsearch}`);
       const queryString = getParams.filter(e => e).join("&");
       return queryString;
@@ -131,7 +130,7 @@ export default {
     this.loadTable();
   },
   watch: {
-    selectedLabels() {
+    [Getters.selectedLabels]: function() {
       this.setSelectedComment({});
       this.loadTable();
     },
@@ -184,9 +183,9 @@ export default {
       props.expanded = !props.expanded;
       if (props.expanded) {
         const selectedComment = props.item;
-        this.setSelectedComment(selectedComment);
+        this[Mutations.setSelectedComment](selectedComment);
       } else {
-        this.setSelectedComment({});
+        this[Mutations.setSelectedComment]({});
       }
     }
   }

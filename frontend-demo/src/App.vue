@@ -1,8 +1,8 @@
 <template>
   <div id="app">
     <v-app>
+      <TopToolbar/>
       <v-container>
-        <TopToolbar/>
         <v-layout row wrap>
           <v-flex xs12>
             <UserCommentFilter/>

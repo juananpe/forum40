@@ -10,8 +10,8 @@ import Service, { Endpoint } from "../api/db";
 import * as d3 from "d3";
 import streamgraph from "../charts/streamgraph";
 
-import { State } from "../store/const";
-import { mapState } from "vuex";
+import { Getters } from "../store/const";
+import { mapGetters } from "vuex";
 
 export default {
   name: "TimeChart",
@@ -23,20 +23,20 @@ export default {
     };
   },
   computed: {
-    ...mapState([State.selectedLabels]),
+    ...mapGetters([Getters.selectedLabels]),
     playload_time_list: function() {
       return {
-        name: this.selectedLabels[0],
+        name: this[Getters.selectedLabels][0],
         time_intervall: 120000000
       };
     }
   },
   mounted: function() {
-    if (this.selectedLabels.length > 0) this.getData();
+    if (this[Getters.selectedLabels].length > 0) this.getData();
   },
   watch: {
     selectedLabels() {
-      if (this.selectedLabels.length > 0) this.getData();
+      if (this[Getters.selectedLabels].length > 0) this.getData();
     },
     data: function() {
       this.drawChart();
