@@ -17,9 +17,9 @@
           <td @click="commentClicked(props)" class="text-xs-left">
             <div
               v-if="!props.expanded"
-            >{{((props.item.title||'') + props.item.text) | truncate(teaserTextLength)}}</div>
+            >{{((props.item.title||'') + ' ' + props.item.text) | truncate(teaserTextLength)}}</div>
 
-            <b v-else>{{(props.item.title||'') + props.item.text}}</b>
+            <b v-else>{{(props.item.title||'') + ' ' + props.item.text}}</b>
           </td>
           <td class="text-xs-left">{{ props.item.timestamp['$date'] | moment}}</td>
           <td>
