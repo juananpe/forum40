@@ -2,6 +2,17 @@
   <div>
     <h3>Kommentarliste</h3>
 
+    <v-layout row>
+      <v-flex xs2>
+        <v-text-field
+          v-model="textsearch"
+          label="Kommentartextsuche"
+          @change="loadTable"
+          clearable
+        ></v-text-field>
+      </v-flex>
+    </v-layout>
+
     <v-data-table
       :headers="commentsTableHeader"
       :items="comments"
@@ -53,6 +64,7 @@ export default {
     return {
       comments: [],
       loading: false,
+      textsearch: "",
       selected: [],
       expand: false,
       totalItems: 0,
@@ -98,7 +110,26 @@ export default {
   },
   computed: {
     ...mapState(["selectedLabels"]),
-    ...mapGetters(["labelParameters"])
+    ...mapGetters(["labelParameters"]),
+    countQueryString() {
+      const getParams = [`${this.labelParameters}`];
+      if (this.textsearch) getParams.push(`keyword=${this.textsearch}`);
+      const queryString = getParams.filter(e => e).join("&");
+      console.log(queryString);
+
+      return queryString;
+    },
+    pageQueryString() {
+      const limit =
+        this.pagination.rowsPerPage === -1
+          ? this.totalItems
+          : this.pagination.rowsPerPage;
+      const skip = (this.pagination.page - 1) * limit;
+      const pageQueryString =
+        this.countQueryString + `&skip=${skip}&limit=${limit}`;
+      console.log(pageQueryString);
+      return pageQueryString;
+    }
   },
   mounted() {
     this.loadTable();
@@ -126,23 +157,12 @@ export default {
       this.loading = false;
     },
     async fetchComments() {
-      const numberOfElements =
-        this.pagination.rowsPerPage === -1
-          ? this.totalItems
-          : this.pagination.rowsPerPage;
-      const skip = (this.pagination.page - 1) * numberOfElements;
-      const getParams = [
-        `${this.labelParameters}`,
-        `skip=${skip}`,
-        `limit=${numberOfElements}`
-      ];
-      const queryString = getParams.filter(e => e).join("&");
-      const { data } = await Service.get(`db/comments?${queryString}`);
+      const { data } = await Service.get(`db/comments?${this.pageQueryString}`);
       this.comments = data;
     },
     async setToalCommentNumber() {
       const { data } = await Service.get(
-        `db/comments/count?${this.labelParameters}`
+        `db/comments/count?${this.countQueryString}`
       );
       this.totalItems = data.count;
     },
