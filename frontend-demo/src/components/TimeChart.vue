@@ -6,7 +6,7 @@
 </template>
 
 <script>
-import Service from "../api/db";
+import Service, { Endpoint } from "../api/db";
 import * as d3 from "d3";
 import streamgraph from "../charts/streamgraph";
 
@@ -45,7 +45,7 @@ export default {
   methods: {
     getData: async function() {
       const { data } = await Service.post(
-        "db/comments/timeseriesByLabel",
+        Endpoint.TIMESERIES_BYLABEL,
         this.playload_time_list
       );
       data.forEach(d => {

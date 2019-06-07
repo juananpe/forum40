@@ -74,7 +74,7 @@
 
 <script>
 import { mapGetters, mapActions, mapState } from "vuex";
-import Service from "../api/db";
+import Service, { Endpoint } from "../api/db";
 export default {
   data() {
     return {
@@ -103,7 +103,7 @@ export default {
       if (!success) this.error = true;
     },
     async checkLogin() {
-      const { data } = await Service.get("db/auth/test", this.jwt);
+      const { data } = await Service.get(Endpoint.TEST_LOGIN, this.jwt);
       if (data.ok === this.jwtUser) {
         this.testalert = true;
       }

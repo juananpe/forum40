@@ -11,7 +11,7 @@
 <script>
 import { State, Mutations } from "../store/const";
 import { mapState, mapMutations } from "vuex";
-import Service from "../api/db";
+import Service, { Endpoint } from "../api/db";
 
 export default {
   name: "DataSelector",
@@ -21,7 +21,7 @@ export default {
   methods: {
     ...mapMutations([Mutations.setSelectedLabels]),
     async fetchLabels() {
-      const { data } = await Service.get("db/labels/");
+      const { data } = await Service.get(Endpoint.LABELS);
       this.items = data.labels;
     },
     remove(item) {

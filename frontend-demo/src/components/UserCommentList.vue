@@ -52,7 +52,7 @@
 </template>
 
 <script>
-import Service from "../api/db";
+import Service, { Endpoint } from "../api/db";
 import { State, Getters, Mutations } from "../store/const";
 import { mapState, mapGetters, mapMutations } from "vuex";
 import moment from "moment";
@@ -169,12 +169,14 @@ export default {
       return words;
     },
     async fetchComments() {
-      const { data } = await Service.get(`db/comments?${this.pageQueryString}`);
+      const { data } = await Service.get(
+        `${Endpoint.COMMENTS}?${this.pageQueryString}`
+      );
       this.comments = data;
     },
     async setToalCommentNumber() {
       const { data } = await Service.get(
-        `db/comments/count?${this.countQueryString}`
+        `${Endpoint.COMMENTS_COUNT}?${this.countQueryString}`
       );
       this.totalItems = data.count;
     },

@@ -18,7 +18,7 @@
 <script>
 import { State, Getters } from "../store/const";
 import { mapState, mapGetters } from "vuex";
-import Service from "../api/db";
+import Service, { Endpoint } from "../api/db";
 import UserComment from "./UserComment";
 
 export default {
@@ -50,7 +50,7 @@ export default {
       //fetch parent comments
       if (this.selectedCommentId) {
         const { data } = await Service.get(
-          `/db/comments/parent_recursive/${this.selectedCommentId}/`
+          Endpoint.COMMENTS_PARENTS(this.selectedCommentId)
         );
         const comments = data.comments;
         this.comments = comments;

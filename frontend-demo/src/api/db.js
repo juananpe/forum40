@@ -2,6 +2,18 @@ import axios from "axios";
 
 const API_URL = process.env.VUE_APP_ROOT_API
 
+export const Endpoint = {
+    LABELS: "db/labels",
+    COMMENTS: 'db/comments',
+    COMMENTS_COUNT: 'db/comments/count',
+    COMMENTS_PARENTS: (commentId) => `db/comments/parent_recursive/${commentId}`,
+    TIMESERIES_BYLABEL: 'db/comments/timeseriesByLabel',
+    TEST_LOGIN: 'db/auth/test',
+    REFRESH_TOKEN: 'db/auth/refreshToken',
+    LOGIN: (username, password) => `db/auth/login/${username}/${password}`,
+    LOGOUT: 'db/auth/logout'
+}
+
 class Service {
 
     static async get(path, jwt) {
