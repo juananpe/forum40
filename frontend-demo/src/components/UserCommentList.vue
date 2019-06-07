@@ -4,7 +4,12 @@
 
     <v-layout row>
       <v-flex xs2>
-        <v-text-field v-model="textsearch" label="Kommentartextsuche" @change="loadTable" clearable></v-text-field>
+        <v-text-field
+          v-model="keyword"
+          label="Kommentartextsuche"
+          @change="keywordChanged"
+          clearable
+        ></v-text-field>
       </v-flex>
     </v-layout>
 
@@ -22,11 +27,11 @@
         <tr>
           <td @click="commentClicked(props)" class="text-xs-left commenttext">
             <div v-if="!props.expanded">
-              <span v-html="highlight(shortText(commentText(props)), textsearch)"></span>
+              <span v-html="highlight(shortText(commentText(props)), keyword)"></span>
             </div>
 
             <b v-else>
-              <span v-html="highlight(commentText(props), textsearch)"></span>
+              <span v-html="highlight(commentText(props), keyword)"></span>
               {{(props.item.title||'') + ' ' + props.item.text}}
             </b>
           </td>
@@ -63,7 +68,6 @@ export default {
     return {
       comments: [],
       loading: false,
-      textsearch: "",
       selected: [],
       expand: false,
       totalItems: 0,
@@ -108,10 +112,10 @@ export default {
     }
   },
   computed: {
-    ...mapGetters([Getters.selectedLabels, Getters.labelParameters]),
+    ...mapGetters([Getters.keywordfilter, Getters.selectedLabels, Getters.labelParameters]),
     countQueryString() {
       const getParams = [`${this[Getters.labelParameters]}`];
-      if (this.textsearch) getParams.push(`keyword=${this.textsearch}`);
+      if (this.keyword) getParams.push(`keyword=${this.keyword}`);
       const queryString = getParams.filter(e => e).join("&");
       return queryString;
     },
@@ -124,6 +128,14 @@ export default {
       const pageQueryString =
         this.countQueryString + `&skip=${skip}&limit=${limit}`;
       return pageQueryString;
+    },
+    keyword: {
+      set(state) {
+        this[Mutations.setKeywordfilter](state);
+      },
+      get() {
+        return this[Getters.keywordfilter];
+      }
     }
   },
   mounted() {
@@ -142,7 +154,7 @@ export default {
     }
   },
   methods: {
-    ...mapMutations([Mutations.setSelectedComment]),
+    ...mapMutations([Mutations.setSelectedComment, Mutations.setKeywordfilter]),
     async loadTable() {
       this.loading = true;
       this.pagination.page = 1;
@@ -187,6 +199,9 @@ export default {
       } else {
         this[Mutations.setSelectedComment]({});
       }
+    },
+    keywordChanged() {
+      this.loadTable();
     }
   }
 };

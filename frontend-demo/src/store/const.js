@@ -1,6 +1,7 @@
 export const State = {
     selectedFilters: 'selectedFilters',
     selectedLabels: 'selectedLabels',
+    keywordfilter: 'keywordfilter',
     selectedComment: 'selectedComment',
     currentJWT: 'currentJWT',
     now: 'now',
@@ -15,14 +16,16 @@ export const Getters = {
     jwtLoggedIn: 'jwtLoggedIn',
     labelParameters: 'labelParameters',
     selectedCommentId: 'selectedCommentId',
-    selectedLabels: 'selectedLabels'
+    selectedLabels: 'selectedLabels',
+    keywordfilter: 'keywordfilter'
 }
 
 export const Mutations = {
     setSelectedLabels: "setSelectedLabels",
     setJWT: "setJWT",
     updateTime: "updateTime",
-    setSelectedComment: "setSelectedComment"
+    setSelectedComment: "setSelectedComment",
+    setKeywordfilter: "setKeywordfilter" 
 }
 
 export const Actions = {

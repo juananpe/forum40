@@ -8,5 +8,6 @@ export default {
     [Getters.jwtLoggedIn]: (state, getters) => getters.jwt && getters.jwtExpiration * 1000 >= state.now,
     [Getters.labelParameters]: (state) => state[State.selectedFilters][State.selectedLabels].map((label) => `label=${label}`).join('&'),
     [Getters.selectedCommentId]: (state) => Object.entries(state.selectedComment).length !== 0 ? state.selectedComment._id.$oid : null,
-    [Getters.selectedLabels]: (state) => state[State.selectedFilters][State.selectedLabels]
+    [Getters.selectedLabels]: (state) => state[State.selectedFilters][State.selectedLabels],
+    [Getters.keywordfilter]: (state) => state[State.selectedFilters][State.keywordfilter]
 }

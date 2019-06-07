@@ -12,7 +12,8 @@ Vue.use(Vuex);
 
 const state = {
     [State.selectedFilters]: {
-        [State.selectedLabels]: []
+        [State.selectedLabels]: [],
+        [State.keywordfilter]: ''
     },
     [State.selectedComment]: {},
     [State.currentJWT]: '',
