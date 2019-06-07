@@ -14,10 +14,11 @@
     >
       <template v-slot:items="props">
         <tr>
-          <td @click="props.expanded = !props.expanded" class="text-xs-left">
+          <td @click="commentClicked(props)" class="text-xs-left">
             <div
               v-if="!props.expanded"
             >{{((props.item.title||'') + props.item.text) | truncate(teaserTextLength)}}</div>
+
             <b v-else>{{(props.item.title||'') + props.item.text}}</b>
           </td>
           <td class="text-xs-left">{{ props.item.timestamp['$date'] | moment}}</td>
@@ -43,7 +44,7 @@
 
 <script>
 import Service from "../api/db";
-import { mapState, mapGetters } from "vuex";
+import { mapState, mapGetters, mapMutations } from "vuex";
 import moment from "moment";
 
 export default {
@@ -104,15 +105,18 @@ export default {
   },
   watch: {
     selectedLabels() {
+      this.setSelectedComment({});
       this.loadTable();
     },
     async pagination() {
+      this.setSelectedComment({});
       this.loading = true;
       await this.fetchComments();
       this.loading = false;
     }
   },
   methods: {
+    ...mapMutations(["setSelectedComment"]),
     async loadTable() {
       this.loading = true;
       this.pagination.page = 1;
@@ -141,6 +145,15 @@ export default {
         `db/comments/count?${this.labelParameters}`
       );
       this.totalItems = data.count;
+    },
+    commentClicked(props) {
+      props.expanded = !props.expanded;
+      if (props.expanded) {
+        const selectedComment = props.item;
+        this.setSelectedComment(selectedComment);
+      } else {
+        this.setSelectedComment({});
+      }
     }
   }
 };

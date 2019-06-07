@@ -9,6 +9,7 @@ Vue.use(Vuex);
 
 const state = {
     selectedLabels: [],
+    selectedComment: {},
     currentJWT: '',
     now: new Date(),
     refreshTokenInterval: null
@@ -20,7 +21,8 @@ const getters = {
     jwtUser: (state, getters) => state.currentJWT ? getters.jwtData.user : null,
     jwtExpiration: (state, getters) => getters.jwtData ? getters.jwtData.exp : null,
     jwtLoggedIn: (state, getters) => getters.jwt && getters.jwtExpiration * 1000 >= state.now,
-    labelParameters: (state, getters) => state.selectedLabels.map((label)=>`label=${label}`).join('&')
+    labelParameters: (state) => state.selectedLabels.map((label)=>`label=${label}`).join('&'),
+    selectedCommentId: (state) => Object.entries(state.selectedComment).length !== 0? state.selectedComment._id.$oid : null
 };
 
 const actions = {
@@ -66,19 +68,19 @@ const actions = {
 const mutations = {
     setSelectedLabels: (state, selection) => (state.selectedLabels = selection),
     setJWT: (state, jwt) => (state.currentJWT = jwt),
-    updateTime: (state) => (state.now = new Date())
+    updateTime: (state) => (state.now = new Date()),
+    setSelectedComment: (state, comment) => (state.selectedComment = comment)
 };
 
-const notSyncedMutations = [
-    'setSelectedLabels',
-    'updateTime'
+const syncedMutations = [
+    'setJWT'
 ]
 
 const vuexLocalStorage = new VuexPersist({
     key: 'vuex',
     storage: window.localStorage,
     reducer: state => ({ currentJWT: state.currentJWT }),
-    filter: mutation => (notSyncedMutations.indexOf(mutation.type) === -1)
+    filter: mutation => (syncedMutations.indexOf(mutation.type) !== -1)
 });
 
 // Create store
