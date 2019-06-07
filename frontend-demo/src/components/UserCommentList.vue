@@ -4,12 +4,7 @@
 
     <v-layout row>
       <v-flex xs2>
-        <v-text-field
-          v-model="textsearch"
-          label="Kommentartextsuche"
-          @change="loadTable"
-          clearable
-        ></v-text-field>
+        <v-text-field v-model="textsearch" label="Kommentartextsuche" @change="loadTable" clearable></v-text-field>
       </v-flex>
     </v-layout>
 
@@ -25,12 +20,15 @@
     >
       <template v-slot:items="props">
         <tr>
-          <td @click="commentClicked(props)" class="text-xs-left">
-            <div
-              v-if="!props.expanded"
-            >{{((props.item.title||'') + ' ' + props.item.text) | truncate(teaserTextLength)}}</div>
+          <td @click="commentClicked(props)" class="text-xs-left commenttext">
+            <div v-if="!props.expanded">
+              <span v-html="highlight(shortText(commentText(props)), textsearch)"></span>
+            </div>
 
-            <b v-else>{{(props.item.title||'') + ' ' + props.item.text}}</b>
+            <b v-else>
+              <span v-html="highlight(commentText(props), textsearch)"></span>
+              {{(props.item.title||'') + ' ' + props.item.text}}
+            </b>
           </td>
           <td class="text-xs-left">{{ props.item.timestamp['$date'] | moment}}</td>
           <td>
@@ -115,8 +113,6 @@ export default {
       const getParams = [`${this.labelParameters}`];
       if (this.textsearch) getParams.push(`keyword=${this.textsearch}`);
       const queryString = getParams.filter(e => e).join("&");
-      console.log(queryString);
-
       return queryString;
     },
     pageQueryString() {
@@ -127,7 +123,6 @@ export default {
       const skip = (this.pagination.page - 1) * limit;
       const pageQueryString =
         this.countQueryString + `&skip=${skip}&limit=${limit}`;
-      console.log(pageQueryString);
       return pageQueryString;
     }
   },
@@ -155,6 +150,22 @@ export default {
       const p2 = this.fetchComments();
       await Promise.all([p1, p2]);
       this.loading = false;
+    },
+    commentText(props) {
+      return (props.item.title || "") + " " + props.item.text;
+    },
+    shortText(text) {
+      return this.$options.filters.truncate(text, this.teaserTextLength);
+    },
+    highlight: function(words, query) {
+      if (query) {
+        const highlightedText = words.replace(
+          query,
+          '<span class="highlight">' + query + "</span>"
+        );
+        return highlightedText;
+      }
+      return words;
     },
     async fetchComments() {
       const { data } = await Service.get(`db/comments?${this.pageQueryString}`);
@@ -184,5 +195,8 @@ export default {
 .container {
   display: flex;
   flex-wrap: wrap;
+}
+.commenttext >>> .highlight {
+  background-color: yellow;
 }
 </style>

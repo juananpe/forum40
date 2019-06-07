@@ -24,7 +24,7 @@ export default {
   data() {
     return {
       filters: [],
-      items: ["Zeit", "Genauigkeit", "Nutzer"]
+      items: ["Text", "Zeit", "Genauigkeit", "Nutzer"]
     };
   },
 
