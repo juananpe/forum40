@@ -112,7 +112,11 @@ export default {
     }
   },
   computed: {
-    ...mapGetters([Getters.keywordfilter, Getters.selectedLabels, Getters.labelParameters]),
+    ...mapGetters([
+      Getters.keywordfilter,
+      Getters.selectedLabels,
+      Getters.labelParameters
+    ]),
     countQueryString() {
       const getParams = [`${this[Getters.labelParameters]}`];
       if (this.keyword) getParams.push(`keyword=${this.keyword}`);

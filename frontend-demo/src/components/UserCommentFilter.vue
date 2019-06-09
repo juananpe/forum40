@@ -1,18 +1,15 @@
 <template>
   <div>
-    <h3>Kommentarfilter</h3>
+    <h3>Aktive Filter</h3>
     <v-layout row wrap>
-      <v-flex xs3>
-        <DataSelector />
+      <v-flex xs12>
+        <v-chip v-for="filter in _activeFilters" v-bind:key="filter">{{filter}}</v-chip>
       </v-flex>
-      <v-flex xs9 pl-2>
-        <v-combobox v-model="filters" :items="items" label="Aktive Filter" chips clearable multiple>
-          <template v-slot:selection="data">
-            <v-chip :selected="data.selected" close @input="remove(data.item)">
-              <strong>{{ data.item }}</strong>
-            </v-chip>
-          </template>
-        </v-combobox>
+    </v-layout>
+    
+    <v-layout row wrap>
+      <v-flex xs12>
+        <DataSelector/>
       </v-flex>
     </v-layout>
   </div>
@@ -20,20 +17,20 @@
 
 <script>
 import DataSelector from "./DataSelector";
+import { Getters } from "../store/const";
+import { mapGetters } from "vuex";
 export default {
   data() {
-    return {
-      filters: [],
-      items: ["Text", "Zeit", "Genauigkeit", "Nutzer"]
-    };
+    return {};
   },
-
-  methods: {
-    remove(item) {
-      this.filters.splice(this.filters.indexOf(item), 1);
-      this.filters = [...this.filters];
+  computed: {
+    ...mapGetters([Getters.activeFilters]),
+    _activeFilters() {
+      return this.activeFilters;
     }
   },
+
+  methods: {},
   components: {
     DataSelector
   }

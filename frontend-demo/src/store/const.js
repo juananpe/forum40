@@ -17,7 +17,8 @@ export const Getters = {
     labelParameters: 'labelParameters',
     selectedCommentId: 'selectedCommentId',
     selectedLabels: 'selectedLabels',
-    keywordfilter: 'keywordfilter'
+    keywordfilter: 'keywordfilter',
+    activeFilters: 'activeFilters' 
 }
 
 export const Mutations = {

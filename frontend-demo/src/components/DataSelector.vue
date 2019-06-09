@@ -1,5 +1,5 @@
 <template>
-  <v-combobox v-model="selection" :items="items" label="Label" chips clearable multiple>
+  <v-combobox v-model="selection" :items="items" label="Label-Filter" chips clearable multiple>
     <template v-slot:selection="data">
       <v-chip :selected="data.selected" close @input="remove(data.item)">
         <strong>{{ data.item }}</strong>
