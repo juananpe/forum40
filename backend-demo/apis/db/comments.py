@@ -29,7 +29,14 @@ def getCommentsByLabel(label):
     labelIds = [ObjectId(getLabelIdVyName(i)) for i in label]
     query = {}
     if len(label) > 0:
-        query = {"labels.labelId" : { "$in": labelIds }}
+        query = {
+            "labels" : { 
+                "$elemMatch" : {
+                    "labelId": { "$in": labelIds },
+                    "manualLabels.label" : 1
+                    } 
+                }
+            }
     return coll.find(query)
 
 @ns.route('/')
