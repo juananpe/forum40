@@ -24,19 +24,23 @@ def getLabelIdVyName(name):
         id = str(c["_id"])
     return id
 
-def getCommentsByLabel(label):
+def getCommentsByLabel(label, searchword):
     coll = mongo.db.Comments
     labelIds = [ObjectId(getLabelIdVyName(i)) for i in label]
+    searchwords = " ".join("\"{}\"".format(x) for x in searchword)
     query = {}
+    if len(searchword) > 0:
+        query["$text"] = {
+            "$search" : searchwords,
+            "$caseSensitive": False
+        }
     if len(label) > 0:
-        query = {
-            "labels" : { 
-                "$elemMatch" : {
-                    "labelId": { "$in": labelIds },
-                    "manualLabels.label" : 1
-                    } 
-                }
-            }
+        query["labels"] = {
+            "$elemMatch" : {
+                "labelId": { "$in": labelIds },
+                "manualLabels.label" : 1
+            } 
+        }
     return coll.find(query)
 
 @ns.route('/')
@@ -47,10 +51,13 @@ class CommentsGet(Resource):
         label = args["label"]
         if not label:
             label = []
+        searchword = args["keyword"]
+        if not searchword:
+            searchword = []
         skip = args["skip"]
         limit = args["limit"]
 
-        cursor = getCommentsByLabel(label)
+        cursor = getCommentsByLabel(label, searchword)
         comments = list(cursor.skip(skip).limit(limit))
         return Response(json.dumps(comments, default=json_util.default), mimetype='application/json')
 
@@ -62,8 +69,11 @@ class CommentsCount(Resource):
         label = args["label"]
         if not label:
             label = []
+        searchword = args["keyword"]
+        if not searchword:
+            searchword = []
 
-        cursor = getCommentsByLabel(label)
+        cursor = getCommentsByLabel(label, searchword)
         comments_count = cursor.count()
         return {"count" : comments_count}
 
