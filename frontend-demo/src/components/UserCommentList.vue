@@ -175,9 +175,9 @@ export default {
     },
     highlight: function(words, query) {
       if (query) {
-        const highlightedText = words.replace(
-          query,
-          '<span class="highlight">' + query + "</span>"
+        const regEx = new RegExp("(" + query + ")", "ig");
+        const highlightedText = words.replace(regEx,
+          '<span class="highlight">' + "$1" + "</span>"
         );
         return highlightedText;
       }
