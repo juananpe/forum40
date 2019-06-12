@@ -9,9 +9,14 @@ import VueTruncate from 'vue-truncate-filter'
 import axios from 'axios'
 import VueAxios from 'vue-axios'
 
+// ECharts
+import ECharts from 'vue-echarts'
+
 Vue.use(Vuetify)
 Vue.use(VueAxios, axios)
 Vue.use(VueTruncate)
+
+Vue.component('v-chart', ECharts)
 
 Vue.config.productionTip = false
 
