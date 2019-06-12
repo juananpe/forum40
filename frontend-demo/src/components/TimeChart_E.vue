@@ -1,5 +1,7 @@
 <template>
-    <v-chart :options="bar"/>
+    <div>
+        <v-chart :options="chart_options" />
+    </div>
 </template>
 
 <style>
@@ -24,47 +26,69 @@ export default {
   components: {
     'v-chart': ECharts
   },
+  methods : {
+
+  },
   data () {
+    var xAxisData = [];
+    var data1 = [];
+    var data2 = [];
+    for (var i = 0; i < 100; i++) {
+        xAxisData.push(i);
+        data1.push(60 + (Math.sin(i / 5) * (i / 5 -10) + i / 6) * 5);
+        data2.push(60 + (Math.cos(i / 5) * (i / 5 -10) + i / 6) * 5);
+    }
     return {
-      bar: {
-            color: ['#3398DB'],
-            tooltip : {
-                trigger: 'axis',
-                axisPointer : {            // 坐标轴指示器，坐标轴触发有效
-                    type : 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
-                }
+        series : [],
+        chart_options : {
+            title: {
+                text: '柱状图动画延迟'
             },
             legend: {
-                data:['销量']
+                data: ['bar', 'bar2'],
+                align: 'left'
             },
-            grid: {
-                left: '3%',
-                right: '4%',
-                bottom: '3%',
-                containLabel: true
-            },
-            xAxis : [
-                {
-                    type : 'category',
-                    data : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                    axisTick: {
-                        alignWithLabel: true
+            toolbox: {
+                feature: {
+                    magicType: {
+                        type: ['stack', 'tiled']
+                    },
+                    dataView: {},
+                    saveAsImage: {
+                        pixelRatio: 2
                     }
                 }
-            ],
-            yAxis : [
-                {
-                    type : 'value'
+            },
+            tooltip: {
+                trigger: 'axis',
+            },
+            xAxis: {
+                data: xAxisData,
+                silent: false,
+                splitLine: {
+                    show: false
                 }
-            ],
-            series : [
-                {
-                    name:'直接访问',
-                    type:'bar',
-                    barWidth: '60%',
-                    data:[10, 52, 200, 334, 390, 330, 220]
+            },
+            yAxis: {
+            },
+            series: [{
+                name: 'offtopic',
+                type: 'bar',
+                data: data1,
+                animationDelay: function (idx) {
+                    return idx * 10;
                 }
-            ]
+            }, {
+                name: 'inappropriate',
+                type: 'bar',
+                data: data2,
+                animationDelay: function (idx) {
+                    return idx * 10 + 100;
+                }
+            }],
+            animationDelayUpdate: function (idx) {
+                return idx * 5;
+            }
         }
     }
   }
