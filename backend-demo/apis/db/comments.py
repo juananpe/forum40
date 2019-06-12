@@ -1,4 +1,4 @@
-from flask import request, jsonify, Response
+from flask import Response
 from flask_restplus import Resource, reqparse
 
 from apis.db import api
@@ -15,66 +15,60 @@ import json
 ns = api.namespace('comments', description="comments api")
 
 
-def getLabelIdVyName(name):
+def getLabelIdByName(name):
     coll = mongo.db.Labels
-        
-    c = coll.find_one({"description" : name}, {"_id": 1})
-    id = None
-    if c: 
-        id = str(c["_id"])
-    return id
+    label = coll.find_one({"description" : name}, {"_id": 1})
+    return str(label["_id"]) if label else None
 
-def getCommentsByLabel(label, searchword):
-    coll = mongo.db.Comments
-    labelIds = [ObjectId(getLabelIdVyName(i)) for i in label]
-    searchwords = " ".join("\"{}\"".format(x) for x in searchword)
+def createCommentsQueryFromArgs(args):
     query = {}
-    if len(searchword) > 0:
-        query["$text"] = {
-            "$search" : searchwords,
-            "$caseSensitive": False
-        }
-    if len(label) > 0:
+    if 'label' in args and args['label']:
+        labelIds = [ObjectId(getLabelIdByName(i)) for i in args['label']]
         query["labels"] = {
             "$elemMatch" : {
                 "labelId": { "$in": labelIds },
                 "manualLabels.label" : 1
             } 
         }
+    if 'keyword' in args and args['keyword']:
+        searchwords = " ".join("\"{}\"".format(x) for x in args['keyword'])
+        query["$text"] = {
+            "$search" : searchwords,
+            "$caseSensitive": False
+        }
+    return query
+
+def getCursorByQuery(query):
+    coll = mongo.db.Comments
     return coll.find(query)
+
+def convertObjectToJSonResponse(obj):
+    return Response(json.dumps(obj, default=json_util.default), mimetype='application/json')
+
+def convertCursorToJSonResponse(cursor):
+    return convertObjectToJSonResponse(list(cursor))
 
 @ns.route('/')
 @api.expect(comments_parser_sl)
 class CommentsGet(Resource):
     def get(self):
         args = comments_parser_sl.parse_args()
-        label = args["label"]
-        if not label:
-            label = []
-        searchword = args["keyword"]
-        if not searchword:
-            searchword = []
         skip = args["skip"]
         limit = args["limit"]
 
-        cursor = getCommentsByLabel(label, searchword)
-        comments = list(cursor.skip(skip).limit(limit))
-        return Response(json.dumps(comments, default=json_util.default), mimetype='application/json')
+        query = createCommentsQueryFromArgs(args)
+        cursor = getCursorByQuery(query).skip(skip).limit(limit)
+        response = convertCursorToJSonResponse(cursor)
+        return response
 
 @ns.route('/count')
 @api.expect(comments_parser)
 class CommentsCount(Resource):
     def get(self):
         args = comments_parser.parse_args()
-        label = args["label"]
-        if not label:
-            label = []
-        searchword = args["keyword"]
-        if not searchword:
-            searchword = []
 
-        cursor = getCommentsByLabel(label, searchword)
-        comments_count = cursor.count()
+        query = createCommentsQueryFromArgs(args)
+        comments_count = getCursorByQuery(query).count()
         return {"count" : comments_count}
 
 @ns.route('/timeseriesByLabel')
@@ -85,13 +79,12 @@ class CommentssTest(Resource):
         body = api.payload
         label = body['name']
         time_intervall = body['time_intervall']
-        id = getLabelIdVyName(label)
-        cursor = list(coll.aggregate(clbt(id, time_intervall)))
-        return Response(json.dumps(cursor, default=json_util.default), mimetype='application/json')
+        id = getLabelIdByName(label)
+        cursor = coll.aggregate(clbt(id, time_intervall))
+        return convertCursorToJSonResponse(cursor)
 
 
 @ns.route('/parent/<string:id>/')
-#@api.expect(comments_model)
 class CommentsParent(Resource):
     def get(self, id):
         coll = mongo.db.Comments
@@ -99,16 +92,15 @@ class CommentsParent(Resource):
             base_comment = coll.find_one({"_id" : ObjectId(id)})
         except:
             return {"msg": "{} is not a valid ObjectId".format(id)}, 400
+            
         if "parentCommentId" in base_comment:
             parent_id = base_comment["parentCommentId"]
             parent_comment = coll.find_one({"_id" : parent_id})
-            
-            return Response(json.dumps(parent_comment, default=json_util.default), mimetype='application/json')
+            return convertObjectToJSonResponse(parent_comment)
         else:
-            return Response(json.dumps({}, default=json_util.default), mimetype='application/json')
+            return convertObjectToJSonResponse({})
 
 @ns.route('/parent_recursive/<string:id>/')
-#@api.expect(comments_model)
 class CommentsParentRec(Resource):
     def get(self, id):
         coll = mongo.db.Comments
@@ -118,7 +110,7 @@ class CommentsParentRec(Resource):
             return {"msg": "{} is not a valid ObjectId".format(id)}, 400
 
         if not base_comment:
-            return Response(json.dumps([], default=json_util.default), mimetype='application/json')
+            return convertObjectToJSonResponse([])
         
         i = 1
         c_list = [base_comment]
@@ -130,10 +122,10 @@ class CommentsParentRec(Resource):
             c_list.insert(0, next_parent)
             i += 1
             parent = next_parent
+
         response = {
             "comments" : c_list,
             "size" : i
         }
-
-        return Response(json.dumps(response, default=json_util.default), mimetype='application/json')
+        return convertObjectToJSonResponse(response)
 
