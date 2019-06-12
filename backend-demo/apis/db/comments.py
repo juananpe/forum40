@@ -14,7 +14,6 @@ import json
 
 ns = api.namespace('comments', description="comments api")
 
-
 def getLabelIdByName(name):
     coll = mongo.db.Labels
     label = coll.find_one({"description" : name}, {"_id": 1})
@@ -83,7 +82,6 @@ class CommentssTest(Resource):
         cursor = coll.aggregate(comments_as_timeseries_aggregate_query(id, time_intervall))
         return convertCursorToJSonResponse(cursor)
 
-
 @ns.route('/parent/<string:id>/')
 class CommentsParent(Resource):
     def get(self, id):
@@ -99,8 +97,6 @@ class CommentsParent(Resource):
             return convertObjectToJSonResponse(parent_comment)
         else:
             return convertObjectToJSonResponse({})
-
-
 
 @ns.route('/parent_recursive/<string:id>/')
 class CommentsParentRec(Resource):
