@@ -45,7 +45,7 @@ export default {
   methods: {
     getData: async function() {
       const { data } = await Service.post(
-        Endpoint.TIMESERIES_BYLABEL,
+        Endpoint.TIMESERIES,
         this.playload_time_list
       );
       data.forEach(d => {

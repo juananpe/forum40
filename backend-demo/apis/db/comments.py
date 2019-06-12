@@ -71,7 +71,7 @@ class CommentsCount(Resource):
         comments_count = getCursorByQuery(query).count()
         return {"count" : comments_count}
 
-@ns.route('/timeseriesByLabel')
+@ns.route('/timeseries')
 @api.expect(label_time_model)
 class CommentssTest(Resource):
     def post(self):
@@ -99,6 +99,8 @@ class CommentsParent(Resource):
             return convertObjectToJSonResponse(parent_comment)
         else:
             return convertObjectToJSonResponse({})
+
+
 
 @ns.route('/parent_recursive/<string:id>/')
 class CommentsParentRec(Resource):

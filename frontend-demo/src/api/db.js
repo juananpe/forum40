@@ -7,7 +7,7 @@ export const Endpoint = {
     COMMENTS: 'db/comments',
     COMMENTS_COUNT: 'db/comments/count',
     COMMENTS_PARENTS: (commentId) => `db/comments/parent_recursive/${commentId}`,
-    TIMESERIES_BYLABEL: 'db/comments/timeseriesByLabel',
+    TIMESERIES: 'db/comments/timeseries',
     TEST_LOGIN: 'db/auth/test',
     REFRESH_TOKEN: 'db/auth/refreshToken',
     LOGIN: (username, password) => `db/auth/login/${username}/${password}`,
