@@ -2,12 +2,14 @@ from flask import Response
 from flask_restplus import Resource, reqparse
 
 from apis.db import api
-from models.db_models import label_time_model, comments_parser, comments_parser_sl
+from models.db_models import label_time_model, comments_parser, comments_parser_sl, timeseries_parser
 
 from db import mongo
 from db.mongo_util import aggregate
 
 from db.queries.comments_timeseries import get as comments_as_timeseries_aggregate_query
+from db.queries.comments_timeseries_multi import get as comments_as_timeseries_aggregate_query_multi
+
 from bson import json_util, ObjectId
 
 import json
@@ -72,7 +74,9 @@ class CommentsCount(Resource):
 
 @ns.route('/timeseries')
 @api.expect(label_time_model)
-class CommentssTest(Resource):
+class CommentsTimeseries(Resource):
+
+    @api.deprecated
     def post(self):
         coll = mongo.db.Comments
         body = api.payload
@@ -80,6 +84,18 @@ class CommentssTest(Resource):
         time_intervall = body['time_intervall']
         id = getLabelIdByName(label)
         cursor = coll.aggregate(comments_as_timeseries_aggregate_query(id, time_intervall))
+        return convertCursorToJSonResponse(cursor)
+
+@ns.route('/timeseries_multi')
+@api.expect(timeseries_parser)
+class CommentsTimeseriesMulti(Resource):
+    def get(self):
+        coll = mongo.db.Comments
+        args = timeseries_parser.parse_args()
+        labels = args['name']
+        time_intervall = args['time_intervall']
+        ids = [getLabelIdByName(label) for label in labels] if labels else []
+        cursor = coll.aggregate(comments_as_timeseries_aggregate_query_multi(ids, time_intervall))
         return convertCursorToJSonResponse(cursor)
 
 @ns.route('/parent/<string:id>/')

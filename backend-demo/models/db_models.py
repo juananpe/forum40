@@ -14,12 +14,16 @@ label_time_model = api.model('Q', {
     'time_intervall': fields.Integer(default=36000000),
 })
 
+
+timeseries_parser = reqparse.RequestParser()
+timeseries_parser.add_argument('name', action='append')
+timeseries_parser.add_argument('time_intervall', type=int, default=36000000, required=True)
+
 comments_model = api.model('Q', {
     'labelName': fields.String(default='personalstories'),
     'skip': fields.Integer(default=1),
     'limit': fields.Integer(default=50)
 })
-
 
 comments_parser_sl = reqparse.RequestParser()
 comments_parser_sl.add_argument('label', action='append')
