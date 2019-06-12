@@ -7,7 +7,7 @@ from models.db_models import label_time_model, comments_parser, comments_parser_
 from db import mongo
 from db.mongo_util import aggregate
 
-from db.queries.comments_label_by_time import get as clbt
+from db.queries.comments_timeseries import get as comments_as_timeseries_aggregate_query
 from bson import json_util, ObjectId
 
 import json
@@ -18,12 +18,12 @@ ns = api.namespace('comments', description="comments api")
 def getLabelIdByName(name):
     coll = mongo.db.Labels
     label = coll.find_one({"description" : name}, {"_id": 1})
-    return str(label["_id"]) if label else None
+    return label["_id"] if label else None
 
 def createCommentsQueryFromArgs(args):
     query = {}
     if 'label' in args and args['label']:
-        labelIds = [ObjectId(getLabelIdByName(i)) for i in args['label']]
+        labelIds = [getLabelIdByName(i) for i in args['label']]
         query["labels"] = {
             "$elemMatch" : {
                 "labelId": { "$in": labelIds },
@@ -80,7 +80,7 @@ class CommentssTest(Resource):
         label = body['name']
         time_intervall = body['time_intervall']
         id = getLabelIdByName(label)
-        cursor = coll.aggregate(clbt(id, time_intervall))
+        cursor = coll.aggregate(comments_as_timeseries_aggregate_query(id, time_intervall))
         return convertCursorToJSonResponse(cursor)
 
 

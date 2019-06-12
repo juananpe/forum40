@@ -1,11 +1,9 @@
-from bson import ObjectId
-
 def get(id, intervall):
     return [
                 # Stage 1
                 {
                     "$match": {
-                        "labels.labelId" : ObjectId(id),
+                        "labels.labelId" : id,
                     }
                 },
 
@@ -19,7 +17,7 @@ def get(id, intervall):
                                     "$filter": {
                                         "input" : "$labels",
                                         "as" : "label",
-                                        "cond": { "$eq": [ "$$label.labelId", ObjectId(id)]}
+                                        "cond": { "$eq": [ "$$label.labelId", id]}
                                     }
                                 },
                                 "as": "label",
