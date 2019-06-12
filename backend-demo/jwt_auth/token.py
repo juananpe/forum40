@@ -1,42 +1,62 @@
-from __future__ import print_function
-
 from functools import wraps
-from flask import request, jsonify
+from flask import request
 import jwt
 
 from db import mongo
 
 import sys
 
+data = []
+
+def returnErrorMsg(msg):
+    return {'message' : msg}, 401
+
+def checkIfTokenExists(token):
+    return token is not None
+
+def checkIfTokenIsValidAndGetData(token):
+    secrets_coll = mongo.cx["admin"].Secrets
+    secret_mongo = secrets_coll.find_one().get('globalSecret')
+    try:
+        data = jwt.decode(token, secret_mongo)
+    except: 
+        return False, None
+    return True, data
+
+def checkIfUserIsAuthorised(token, data):
+    users_coll = mongo.cx["admin"].Users
+    user_mongo = users_coll.find_one({"user" : data["user"]})
+
+    if not user_mongo or user_mongo["blocked"]:
+        return False
+    return True
+
+def checkIfTheUSerIsLoggedIn(token, data):
+        tokens_coll = mongo.cx["admin"].Tokens
+        token_mongo = tokens_coll.find_one({"user" : data["user"]})
+
+        if not token_mongo or not token_mongo["token"] or str(token_mongo["token"], 'utf-8') != token:
+            return False
+        return True
+
 def token_required(func):
     @wraps(func)
     def decorated(*args, **kwargs):
-        token = None
-        if 'x-access-token' in request.headers:
-            token = request.headers['x-access-token']
+        token = request.headers['x-access-token'] if 'x-access-token' in request.headers else None
+        data = None
+        
+        if not checkIfTokenExists(token):
+            return returnErrorMsg('Token is missing.')
 
-        if not token:
-            return {'message' : 'Token is missing.'}, 401
+        success, data = checkIfTokenIsValidAndGetData(token)
+        if not success:
+            return returnErrorMsg('Token is invalid.')
 
-        secrets_coll = mongo.cx["admin"].Secrets
-        secret_mongo = secrets_coll.find_one().get('globalSecret')
+        if not checkIfUserIsAuthorised(token, data):
+            return returnErrorMsg('Access denied.')
 
-        try:
-            data = jwt.decode(token, secret_mongo) # TODO hide pwd
-        except: 
-            return {'message' : 'Token is invalid.'}, 401
-
-        users_coll = mongo.cx["admin"].Users
-        user_mongo = users_coll.find_one({"user" : data["user"]})
-
-        if not user_mongo or user_mongo["blocked"]:
-            return {'message' : 'Access denied.'}, 401
-
-        #tokens_coll = mongo.cx["admin"].Tokens
-        #token_mongo = tokens_coll.find_one({"user" : data["user"]})
-
-        #if not token_mongo or not token_mongo["token"] or str(token_mongo["token"], 'utf-8') != token:
-        #    return {'message' : 'The token is invalid because the user is not logged in or the token has been updated.'}, 401
+        #if not checkIfTheUSerIsLoggedIn(token, data):
+        #    return returnErrorMsg('The token is invalid because the user is not logged in or the token has been updated.')
 
         return func(data, *args, **kwargs)
 
