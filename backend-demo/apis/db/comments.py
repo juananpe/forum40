@@ -2,7 +2,7 @@ from flask import Response
 from flask_restplus import Resource, reqparse
 
 from apis.db import api
-from models.db_models import label_time_model, comments_parser, comments_parser_sl, timeseries_parser, timeseries_parser_single
+from models.db_models import label_time_model, comments_parser, comments_parser_sl, timeseries_parser, timeseries_parser_single, timeseries_parser_all
 
 from db import mongo
 from db.mongo_util import aggregate
@@ -10,6 +10,7 @@ from db.mongo_util import aggregate
 from db.queries.comments_timeseries import get as comments_as_timeseries_aggregate_query
 from db.queries.comments_timeseries_multi import get as comments_as_timeseries_aggregate_query_multi
 from db.queries.comments_timeseries_single import get as comments_as_timeseries_aggregate_query_single
+from db.queries.comments_timeseries_all import get as comments_as_timeseries_aggregate_query_all
 
 from bson import json_util, ObjectId
 
@@ -109,6 +110,18 @@ class CommentsTimeseriesSingle(Resource):
         time_intervall = args['time_intervall']
         id = getLabelIdByName(label)
         cursor = coll.aggregate(comments_as_timeseries_aggregate_query_single(id, time_intervall))
+        timeseries = addMissingTimeSlots(list(cursor), time_intervall)
+        response_obj = prepareForVisualisation(timeseries)
+        return convertObjectToJSonResponse(response_obj)
+
+@ns.route('/timeseries_all')
+@api.expect(timeseries_parser_all)
+class CommentsTimeseriesAll(Resource):
+    def get(self):
+        coll = mongo.db.Comments
+        args = timeseries_parser_all.parse_args()
+        time_intervall = args['time_intervall']
+        cursor = coll.aggregate(comments_as_timeseries_aggregate_query_all(time_intervall))
         timeseries = addMissingTimeSlots(list(cursor), time_intervall)
         response_obj = prepareForVisualisation(timeseries)
         return convertObjectToJSonResponse(response_obj)
