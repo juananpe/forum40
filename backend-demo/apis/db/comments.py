@@ -110,7 +110,8 @@ class CommentsTimeseriesSingle(Resource):
         id = getLabelIdByName(label)
         cursor = coll.aggregate(comments_as_timeseries_aggregate_query_single(id, time_intervall))
         timeseries = addMissingTimeSlots(list(cursor), time_intervall)
-        return convertObjectToJSonResponse(timeseries)
+        response_obj = prepareForVisualisation(timeseries)
+        return convertObjectToJSonResponse(response_obj)
 
 def addMissingTimeSlots(data, time_intervall):
     min_ = data[0].get("time")
@@ -122,6 +123,14 @@ def addMissingTimeSlots(data, time_intervall):
         min_ = min_ + time_intervall
     data = data + missing
     return sorted(data, key=lambda x: x["time"])
+
+def prepareForVisualisation(data):
+    time_list = []
+    data_list = []
+    for e in data:
+        time_list.append(e["time"])
+        data_list.append(e["count"])
+    return {"time": time_list, "data": data_list} 
 
 @ns.route('/parent/<string:id>/')
 class CommentsParent(Resource):
