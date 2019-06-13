@@ -8,7 +8,7 @@
             <UserCommentFilter/>
           </v-flex>
           <v-flex xs12>
-            <TimeChart/>
+          <!--  <TimeChart/> -->
             <TimeChart_E/>
           </v-flex>
           <v-flex xs12>
@@ -25,7 +25,7 @@
 
 <script>
 import TopToolbar from "./components/TopToolbar";
-import TimeChart from "./components/TimeChart";
+//import TimeChart from "./components/TimeChart";
 import TimeChart_E from "./components/TimeChart_E";
 import UserCommentList from "./components/UserCommentList";
 import UserCommentFilter from "./components/UserCommentFilter";
@@ -36,7 +36,7 @@ export default {
   name: "app",
   components: {
     TopToolbar,
-    TimeChart,
+//    TimeChart,
     TimeChart_E,
     UserCommentList,
     UserCommentFilter,
