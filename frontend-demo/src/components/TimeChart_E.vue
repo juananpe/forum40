@@ -53,28 +53,39 @@ export default {
   },
    watch: {
     selectedLabels() {
-      if (this[Getters.selectedLabels].length > 0) this.getData();
+      if (this[Getters.selectedLabels].length > 0) this.getData(); else this.getDataNoSelectionasync()
     }
   },
   mounted: function() {
-    if (this[Getters.selectedLabels].length > 0) this.getData();
+    if (this[Getters.selectedLabels].length > 0) this.getData(); else this.getDataNoSelectionasync();
   },
   methods: {
+    formatTimeArray: function (array) {
+      return array.map(x => new Date(x).toISOString().slice(0,10))
+    },
+    addSeriesToChat: function (data, name) {
+      data["time"] = this.formatTimeArray(data["time"])
+      this.chart_options.xAxis.data = data["time"]
+      var series = {
+            name: name,
+            type: "bar",
+            data: data["data"],
+            animationDelay: function(idx) {
+              return idx * 1;
+          }
+        }
+        this.chart_options.series.push(series)
+    },
+    getDataNoSelectionasync: async function() {
+      this.chart_options.series = []
+      const { data } = await Service.get(`db/comments/timeseries_all?time_intervall=262850000`); // TODO query
+      this.addSeriesToChat(data, "Gesamtheit")
+    },
     getData: async function() {
       this.chart_options.series = [] // TODO keep the required series
       this[Getters.selectedLabels].forEach( async element => {
         const { data } = await Service.get(`db/comments/timeseries_single?label=${element}&time_intervall=262850000`); // TODO query
-        data["time"] = data["time"].map(x => new Date(x).toISOString().slice(0,10))
-        this.chart_options.xAxis.data = data["time"] // TODO should be called only once
-        var series = {
-            name: element,
-            type: "bar",
-            data: data["data"],
-            animationDelay: function(idx) {
-              return idx * 10;
-          }
-        }
-        this.chart_options.series.push(series)
+        this.addSeriesToChat(data, element)
       });
     },
   },
