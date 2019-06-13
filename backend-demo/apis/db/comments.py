@@ -2,13 +2,14 @@ from flask import Response
 from flask_restplus import Resource, reqparse
 
 from apis.db import api
-from models.db_models import label_time_model, comments_parser, comments_parser_sl, timeseries_parser
+from models.db_models import label_time_model, comments_parser, comments_parser_sl, timeseries_parser, timeseries_parser_single
 
 from db import mongo
 from db.mongo_util import aggregate
 
 from db.queries.comments_timeseries import get as comments_as_timeseries_aggregate_query
 from db.queries.comments_timeseries_multi import get as comments_as_timeseries_aggregate_query_multi
+from db.queries.comments_timeseries_single import get as comments_as_timeseries_aggregate_query_single
 
 from bson import json_util, ObjectId
 
@@ -92,11 +93,35 @@ class CommentsTimeseriesMulti(Resource):
     def get(self):
         coll = mongo.db.Comments
         args = timeseries_parser.parse_args()
-        labels = args['name']
+        labels = args['label']
         time_intervall = args['time_intervall']
         ids = [getLabelIdByName(label) for label in labels] if labels else []
         cursor = coll.aggregate(comments_as_timeseries_aggregate_query_multi(ids, time_intervall))
         return convertCursorToJSonResponse(cursor)
+
+@ns.route('/timeseries_single')
+@api.expect(timeseries_parser_single)
+class CommentsTimeseriesSingle(Resource):
+    def get(self):
+        coll = mongo.db.Comments
+        args = timeseries_parser_single.parse_args()
+        label = args['label']
+        time_intervall = args['time_intervall']
+        id = getLabelIdByName(label)
+        cursor = coll.aggregate(comments_as_timeseries_aggregate_query_single(id, time_intervall))
+        timeseries = addMissingTimeSlots(list(cursor), time_intervall)
+        return convertObjectToJSonResponse(timeseries)
+
+def addMissingTimeSlots(data, time_intervall):
+    min_ = data[0].get("time")
+    missing = []
+    for el in data:
+        while min_ < el.get("time"):
+            missing.append({"time": min_, "count": 0})
+            min_ = min_ + time_intervall
+        min_ = min_ + time_intervall
+    data = data + missing
+    return sorted(data, key=lambda x: x["time"])
 
 @ns.route('/parent/<string:id>/')
 class CommentsParent(Resource):
