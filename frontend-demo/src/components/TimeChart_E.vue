@@ -1,7 +1,6 @@
 <template>
   <div>
     <v-chart :options="chart_options" :autoresize="true"/>
-
   </div>
 </template>
 
@@ -37,62 +36,83 @@ export default {
     ...mapGetters([
         Getters.selectedLabels, 
         Getters.labelParameters]),
-    
-    playload_time_list: function() {
-      return {
-        name: this[Getters.selectedLabels],
-        time_intervall: this.time_intervall
-      };
-    },
-    /*timeseriesQueryString() {
-       const getParams = [`${this[Getters.labelParameters]}`];
-       getParams.push(`time_intervall=${this.time_intervall}`);
-       const queryString = getParams.filter(e => e).join("&");
-       return queryString;
-    }*/
   },
    watch: {
     selectedLabels() {
       if (this[Getters.selectedLabels].length > 0) this.getData(); else this.getDataNoSelectionasync()
     }
   },
-  mounted: function() {
+  mounted: async function() {
+    var p1 = this.initChart()
+    await Promise.all([p1]);
     if (this[Getters.selectedLabels].length > 0) this.getData(); else this.getDataNoSelectionasync();
   },
   methods: {
+    initChart: async function() {
+      const { data } = await Service.get(Endpoint.LABELS);
+      data.labels.push("Gesamtheit")
+      data.labels.forEach(labelName => {
+        var series = {
+            name: labelName,
+            type: "bar",
+            data: [],
+            animationDelay: function(idx) {
+              return idx * 0;
+          }
+        }
+        this.chart_options.series.push(series)
+      })
+    },
     formatTimeArray: function (array) {
       return array.map(x => new Date(x).toISOString().slice(0,10))
     },
     addSeriesToChat: function (data, name) {
       data["time"] = this.formatTimeArray(data["time"])
       this.chart_options.xAxis.data = data["time"]
-      var series = {
-            name: name,
-            type: "bar",
-            data: data["data"],
-            animationDelay: function(idx) {
-              return idx * 1;
-          }
-        }
-        this.chart_options.series.push(series)
+      var seriesId = this.chart_options.series.findIndex(x => x.name == name)
+      if(name != "Gesamtheit") {
+        this.local_chart_state.push(name)
+      }
+      this.chart_options.series[seriesId].data = data.data
     },
     getDataNoSelectionasync: async function() {
-      this.chart_options.series = []
-      const { data } = await Service.get(`db/comments/timeseries_all?time_intervall=262850000`); // TODO query
+      this.removeAllLabels()
+
+      const { data } = await Service.get(`db/comments/timeseries_all?time_intervall=462850000`); // TODO query
       this.addSeriesToChat(data, "Gesamtheit")
     },
     getData: async function() {
-      this.chart_options.series = [] // TODO keep the required series
-      this[Getters.selectedLabels].forEach( async element => {
-        const { data } = await Service.get(`db/comments/timeseries_single?label=${element}&time_intervall=262850000`); // TODO query
-        this.addSeriesToChat(data, element)
-      });
+      var seriesId = this.chart_options.series.findIndex(x => x.name == 'Gesamtheit')
+      if(seriesId != -1) {
+        this.chart_options.series[seriesId].data = []
+      }
+
+      if(this[Getters.selectedLabels].length > this.local_chart_state.length) {
+          var label = this[Getters.selectedLabels][this[Getters.selectedLabels].length -1]
+          const { data } = await Service.get(`db/comments/timeseries_single?label=${label}&time_intervall=462850000`); // TODO query
+          this.addSeriesToChat(data, label)
+      }
+      this.removeDisabledLabels()
     },
+    removeAllLabels: function() {
+      this.local_chart_state = []
+      this.chart_options.series.forEach(x => x.data = [])
+    },
+    removeDisabledLabels: function() {
+      var diff = this.local_chart_state.filter(i =>  this[Getters.selectedLabels].indexOf(i) < 0)
+      while(diff.length > 0) {
+        var labelName = diff.pop()
+        var seriesId = this.chart_options.series.findIndex(x => x.name == labelName)
+        this.local_chart_state = this.local_chart_state.filter(x => x != labelName)
+        this.chart_options.series[seriesId].data = []
+      }
+    }
   },
   data() {
     return {
-       id: null,
-      time_intervall: 360000000,
+      local_chart_state: [],
+      diff : [],
+      time_intervall: 5000000000,
       chart_options: {
         title: {
           text: "柱状图动画延迟"
@@ -128,34 +148,9 @@ export default {
           }
         },
         yAxis: {},
-        series: [
-          {
-            name: "1",
-            type: "bar",
-            data: [],
-            animationDelay: function(idx) {
-              return idx * 10;
-            }
-          },
-          {
-            name: "2",
-            type: "bar",
-            data: [],
-            animationDelay: function(idx) {
-              return idx * 10;
-            }
-          },
-          {
-            name: "3",
-            type: "bar",
-            data: [],
-            animationDelay: function(idx) {
-              return idx * 10;
-            }
-          }
-        ],
+        series: [],
         animationDelayUpdate: function(idx) {
-          return idx * 5;
+          return idx * 0;
         }
       }
     };
