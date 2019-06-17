@@ -123,7 +123,6 @@ export default {
           text: "柱状图动画延迟"
         },
         legend: {
-          data: this.clocal_chart_state,
           align: "left",
           show: false,
           selected: {}
