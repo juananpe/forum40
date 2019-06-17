@@ -36,6 +36,7 @@ export default {
     ...mapGetters([
         Getters.selectedLabels, 
         Getters.labelParameters]),
+
   },
    watch: {
     selectedLabels() {
@@ -51,7 +52,9 @@ export default {
     initChart: async function() {
       const { data } = await Service.get(Endpoint.LABELS);
       data.labels.push("Gesamtheit")
+    
       data.labels.forEach(labelName => {
+        this.chart_options.legend.selected[labelName] = false
         var series = {
             name: labelName,
             type: "bar",
@@ -73,6 +76,7 @@ export default {
       if(name != "Gesamtheit") {
         this.local_chart_state.push(name)
       }
+      this.chart_options.legend.selected[name] = true
       this.chart_options.series[seriesId].data = data.data
     },
     getDataNoSelectionasync: async function() {
@@ -102,6 +106,7 @@ export default {
       var diff = this.local_chart_state.filter(i =>  this[Getters.selectedLabels].indexOf(i) < 0)
       while(diff.length > 0) {
         var labelName = diff.pop()
+        this.chart_options.legend.selected[labelName] = false
         var seriesId = this.chart_options.series.findIndex(x => x.name == labelName)
         this.local_chart_state = this.local_chart_state.filter(x => x != labelName)
         this.chart_options.series[seriesId].data = []
@@ -118,8 +123,10 @@ export default {
           text: "柱状图动画延迟"
         },
         legend: {
-          data: ["bar", "bar2"],
-          align: "left"
+          data: this.clocal_chart_state,
+          align: "left",
+          show: false,
+          selected: {}
         },
         toolbox: {
           feature: {
