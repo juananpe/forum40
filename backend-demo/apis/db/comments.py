@@ -13,6 +13,11 @@ from db.queries.comments_timeseries_multi import get as comments_as_timeseries_a
 from db.queries.comments_timeseries_single import get as comments_as_timeseries_aggregate_query_single
 from db.queries.comments_timeseries_all import get as comments_as_timeseries_aggregate_query_all
 
+import datetime as dt
+
+from datetime import timedelta, date
+from dateutil.relativedelta import relativedelta
+
 from bson import json_util, ObjectId
 
 import json
@@ -98,7 +103,8 @@ class CommentsGroupByDay(Resource):
         label = args['label']
         id = getLabelIdByName(label)
         cursor = coll.aggregate(getCommentsGroupedByDay(id))
-        return convertCursorToJSonResponse(cursor)
+        data = addMissingDays(list(cursor))
+        return convertObjectToJSonResponse(data)
 
 @ns.route('/groupByMonth')
 @api.expect(groupByModel)
@@ -109,7 +115,8 @@ class CommentsGroupByMonth(Resource):
         label = args['label']
         id = getLabelIdByName(label)
         cursor = coll.aggregate(getCommentsGroupedByMonth(id))
-        return convertCursorToJSonResponse(cursor)
+        data = addMissingMonths(list(cursor))
+        return convertObjectToJSonResponse(data)
 
 @ns.route('/groupByYear')
 @api.expect(groupByModel)
@@ -120,7 +127,44 @@ class CommentsGroupByYear(Resource):
         label = args['label']
         id = getLabelIdByName(label)
         cursor = coll.aggregate(getCommentsGroupedByYear(id))
-        return convertCursorToJSonResponse(cursor)
+        data = addMissingYears(list(cursor))
+        return convertObjectToJSonResponse(data)
+
+def addMissingDays(data):
+    el0 = data[0]
+    min_ = date(el0["_id"]['year'], el0["_id"]['month'], el0["_id"]['dayOfMonth'])
+    missing = []
+    for el in data:
+        while min_ < date(el["_id"]['year'], el["_id"]['month'], el["_id"]['dayOfMonth']):
+            missing.append({"_id": {"year": min_.year, "month": min_.month, "dayOfMonth": min_.day}, "count": 0})
+            min_ = min_ + timedelta(1)
+        min_ = min_ + + timedelta(1)
+    data = data + missing
+    return sorted(data, key=lambda x: (x["_id"]['year'], x["_id"]['month'], x["_id"]['dayOfMonth'] ))
+
+def addMissingMonths(data):
+    el0 = data[0]
+    min_ = date(el0["_id"]['year'], el0["_id"]['month'], 1)
+    missing = []
+    for el in data:
+        while min_ < date(el["_id"]['year'], el["_id"]['month'], 1):
+            missing.append({"_id": {"year": min_.year, "month": min_.month}, "count": 0})
+            min_ = min_ + relativedelta(months=1)
+        min_ = min_ + relativedelta(months=1)
+    data = data + missing
+    return sorted(data, key=lambda x: (x["_id"]['year'], x["_id"]['month'] ))
+
+def addMissingYears(data):
+    min_ = data[0]["_id"]['year']
+    missing = []
+    for el in data:
+        while min_ < el["_id"]['year']:
+            missing.append({"_id": {"year": min_}, "count": 0})
+            min_ = min_ + 1
+        min_ = min_ + 1
+    data = data + missing
+    return sorted(data, key=lambda x: (x["_id"]['year']))
+
 
 @ns.route('/timeseries_multi')
 @api.expect(timeseries_parser)
