@@ -66,11 +66,8 @@ export default {
         this.chart_options.series.push(series)
       })
     },
-    formatTimeArray: function (array) {
-      return array.map(x => new Date(x).toISOString().slice(0,10))
-    },
     addSeriesToChat: function (data, name) {
-      data["time"] = this.formatTimeArray(data["time"])
+      data["time"] = data["time"]
       this.chart_options.xAxis.data = data["time"]
       var seriesId = this.chart_options.series.findIndex(x => x.name == name)
       if(name != "Gesamtheit") {
@@ -93,7 +90,7 @@ export default {
 
       if(this[Getters.selectedLabels].length > this.local_chart_state.length) {
           var label = this[Getters.selectedLabels][this[Getters.selectedLabels].length -1]
-          const { data } = await Service.get(`db/comments/timeseries_single?label=${label}&time_intervall=462850000`); // TODO query
+          const { data } = await Service.get(`db/comments/groupByMonth?label=${label}`); // TODO query
           this.addSeriesToChat(data, label)
       }
       this.removeDisabledLabels()
