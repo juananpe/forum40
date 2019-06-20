@@ -2,18 +2,16 @@ from flask import Response
 from flask_restplus import Resource, reqparse
 
 from apis.db import api
-from models.db_models import label_time_model, comments_parser, comments_parser_sl, timeseries_parser, timeseries_parser_single, timeseries_parser_all
+from models.db_models import comments_parser, comments_parser_sl, groupByModel
 
 from db import mongo
-from db.mongo_util import aggregate
 
-from db.queries.comments_timeseries import get as comments_as_timeseries_aggregate_query
-from db.queries.comments_timeseries_multi import get as comments_as_timeseries_aggregate_query_multi
-from db.queries.comments_timeseries_single import get as comments_as_timeseries_aggregate_query_single
-from db.queries.comments_timeseries_all import get as comments_as_timeseries_aggregate_query_all
+from db.queries.comments_timeseries import getCommentsGroupedByDay, getCommentsGroupedByMonth, getCommentsGroupedByYear
+
+from datetime import timedelta, date
+from dateutil.relativedelta import relativedelta
 
 from bson import json_util, ObjectId
-
 import json
 
 ns = api.namespace('comments', description="comments api")
@@ -74,76 +72,88 @@ class CommentsCount(Resource):
         comments_count = getCursorByQuery(query).count()
         return {"count" : comments_count}
 
-@ns.route('/timeseries')
-@api.expect(label_time_model)
-class CommentsTimeseries(Resource):
 
-    @api.deprecated
-    def post(self):
-        coll = mongo.db.Comments
-        body = api.payload
-        label = body['name']
-        time_intervall = body['time_intervall']
-        id = getLabelIdByName(label)
-        cursor = coll.aggregate(comments_as_timeseries_aggregate_query(id, time_intervall))
-        return convertCursorToJSonResponse(cursor)
-
-@ns.route('/timeseries_multi')
-@api.expect(timeseries_parser)
-class CommentsTimeseriesMulti(Resource):
+@ns.route('/groupByDay')
+@api.expect(groupByModel)
+class CommentsGroupByDay(Resource):
     def get(self):
         coll = mongo.db.Comments
-        args = timeseries_parser.parse_args()
-        labels = args['label']
-        time_intervall = args['time_intervall']
-        ids = [getLabelIdByName(label) for label in labels] if labels else []
-        cursor = coll.aggregate(comments_as_timeseries_aggregate_query_multi(ids, time_intervall))
-        return convertCursorToJSonResponse(cursor)
-
-@ns.route('/timeseries_single')
-@api.expect(timeseries_parser_single)
-class CommentsTimeseriesSingle(Resource):
-    def get(self):
-        coll = mongo.db.Comments
-        args = timeseries_parser_single.parse_args()
+        args = groupByModel.parse_args()
         label = args['label']
-        time_intervall = args['time_intervall']
         id = getLabelIdByName(label)
-        cursor = coll.aggregate(comments_as_timeseries_aggregate_query_single(id, time_intervall))
-        timeseries = addMissingTimeSlots(list(cursor), time_intervall)
-        response_obj = prepareForVisualisation(timeseries)
+        cursor = coll.aggregate(getCommentsGroupedByDay(id))
+        timeseries = addMissingDays(list(cursor))
+        response_obj = prepareForVisualisation(timeseries, lambda d : "{}.{}.{}".format(d['dayOfMonth'], d['month'], d['year']))
         return convertObjectToJSonResponse(response_obj)
 
-@ns.route('/timeseries_all')
-@api.expect(timeseries_parser_all)
-class CommentsTimeseriesAll(Resource):
+@ns.route('/groupByMonth')
+@api.expect(groupByModel)
+class CommentsGroupByMonth(Resource):
     def get(self):
         coll = mongo.db.Comments
-        args = timeseries_parser_all.parse_args()
-        time_intervall = args['time_intervall']
-        cursor = coll.aggregate(comments_as_timeseries_aggregate_query_all(time_intervall))
-        timeseries = addMissingTimeSlots(list(cursor), time_intervall)
-        response_obj = prepareForVisualisation(timeseries)
+        args = groupByModel.parse_args()
+        label = args['label']
+        id = getLabelIdByName(label)
+        cursor = coll.aggregate(getCommentsGroupedByMonth(id))
+        timeseries = addMissingMonths(list(cursor))
+        response_obj = prepareForVisualisation(timeseries, lambda d : "{}.{}".format(d['month'], d['year']))
         return convertObjectToJSonResponse(response_obj)
 
-def addMissingTimeSlots(data, time_intervall):
-    min_ = data[0].get("time")
+@ns.route('/groupByYear')
+@api.expect(groupByModel)
+class CommentsGroupByYear(Resource):
+    def get(self):
+        coll = mongo.db.Comments
+        args = groupByModel.parse_args()
+        label = args['label']
+        id = getLabelIdByName(label)
+        cursor = coll.aggregate(getCommentsGroupedByYear(id))
+        timeseries = addMissingYears(list(cursor))
+        response_obj = prepareForVisualisation(timeseries, lambda d : d['year'])
+        return convertObjectToJSonResponse(response_obj)
+
+def addMissingDays(data):
+    el0 = data[0]
+    min_ = date(el0["_id"]['year'], el0["_id"]['month'], el0["_id"]['dayOfMonth'])
     missing = []
     for el in data:
-        while min_ < el.get("time"):
-            missing.append({"time": min_, "count": 0})
-            min_ = min_ + time_intervall
-        min_ = min_ + time_intervall
+        while min_ < date(el["_id"]['year'], el["_id"]['month'], el["_id"]['dayOfMonth']):
+            missing.append({"_id": {"year": min_.year, "month": min_.month, "dayOfMonth": min_.day}, "count": 0})
+            min_ = min_ + timedelta(1)
+        min_ = min_ + + timedelta(1)
     data = data + missing
-    return sorted(data, key=lambda x: x["time"])
+    return sorted(data, key=lambda x: (x["_id"]['year'], x["_id"]['month'], x["_id"]['dayOfMonth'] ))
 
-def prepareForVisualisation(data):
+def addMissingMonths(data):
+    el0 = data[0]
+    min_ = date(el0["_id"]['year'], el0["_id"]['month'], 1)
+    missing = []
+    for el in data:
+        while min_ < date(el["_id"]['year'], el["_id"]['month'], 1):
+            missing.append({"_id": {"year": min_.year, "month": min_.month}, "count": 0})
+            min_ = min_ + relativedelta(months=1)
+        min_ = min_ + relativedelta(months=1)
+    data = data + missing
+    return sorted(data, key=lambda x: (x["_id"]['year'], x["_id"]['month'] ))
+
+def addMissingYears(data):
+    min_ = data[0]["_id"]['year']
+    missing = []
+    for el in data:
+        while min_ < el["_id"]['year']:
+            missing.append({"_id": {"year": min_}, "count": 0})
+            min_ = min_ + 1
+        min_ = min_ + 1
+    data = data + missing
+    return sorted(data, key=lambda x: (x["_id"]['year']))
+
+def prepareForVisualisation(data, f):
     time_list = []
     data_list = []
     for e in data:
-        time_list.append(e["time"])
+        time_list.append(f(e["_id"]))
         data_list.append(e["count"])
-    return {"time": time_list, "data": data_list} 
+    return {"time": time_list, "data": data_list}
 
 @ns.route('/parent/<string:id>/')
 class CommentsParent(Resource):
@@ -189,4 +199,3 @@ class CommentsParentRec(Resource):
             "size" : i
         }
         return convertObjectToJSonResponse(response)
-
