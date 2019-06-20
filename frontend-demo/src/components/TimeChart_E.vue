@@ -79,7 +79,7 @@ export default {
     getDataNoSelectionasync: async function() {
       this.removeAllLabels()
 
-      const { data } = await Service.get(`db/comments/timeseries_all?time_intervall=462850000`); // TODO query
+      const { data } = await Service.get(`db/comments/groupByMonth`); // TODO query
       this.addSeriesToChat(data, "Gesamtheit")
     },
     getData: async function() {
