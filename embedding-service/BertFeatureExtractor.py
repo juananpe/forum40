@@ -68,6 +68,7 @@ class BertFeatureExtractor(object):
         logger.info("device: {} n_gpu: {}".format(self.device, self.n_gpu))
 
         self.layers = "-1,-2,-3,-4"
+        self.layer_weights = [4, 3, 2, 1]
         self.layer_indexes = [int(x) for x in self.layers.split(",")]
 
         self.bert_model = bert_model
@@ -251,8 +252,9 @@ class BertFeatureExtractor(object):
                     for (j, layer_index) in enumerate(self.layer_indexes):
                         layer_output = all_encoder_layers[int(layer_index)].detach().cpu().numpy()
                         layer_output = layer_output[b, CLS_index]
-                        all_layers.append(layer_output)
-                    sequence_embedding = np.mean(all_layers, axis=0)
+                        # weighted sum of final j layers
+                        all_layers.append(layer_output * self.layer_weights[j])
+                    sequence_embedding = np.sum(all_layers, axis=0)
                     output_json["embedding"] = [round(x.item(), 6) for x in sequence_embedding]
 
                     json_result.append(output_json)
