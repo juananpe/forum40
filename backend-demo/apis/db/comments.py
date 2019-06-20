@@ -103,8 +103,9 @@ class CommentsGroupByDay(Resource):
         label = args['label']
         id = getLabelIdByName(label)
         cursor = coll.aggregate(getCommentsGroupedByDay(id))
-        data = addMissingDays(list(cursor))
-        return convertObjectToJSonResponse(data)
+        timeseries = addMissingDays(list(cursor))
+        response_obj = prepareForVisualisation2(timeseries, lambda d : "{}.{}.{}".format(d['dayOfMonth'], d['month'], d['year']))
+        return convertObjectToJSonResponse(response_obj)
 
 @ns.route('/groupByMonth')
 @api.expect(groupByModel)
@@ -115,8 +116,9 @@ class CommentsGroupByMonth(Resource):
         label = args['label']
         id = getLabelIdByName(label)
         cursor = coll.aggregate(getCommentsGroupedByMonth(id))
-        data = addMissingMonths(list(cursor))
-        return convertObjectToJSonResponse(data)
+        timeseries = addMissingMonths(list(cursor))
+        response_obj = prepareForVisualisation2(timeseries, lambda d : "{}.{}".format(d['month'], d['year']))
+        return convertObjectToJSonResponse(response_obj)
 
 @ns.route('/groupByYear')
 @api.expect(groupByModel)
@@ -127,8 +129,9 @@ class CommentsGroupByYear(Resource):
         label = args['label']
         id = getLabelIdByName(label)
         cursor = coll.aggregate(getCommentsGroupedByYear(id))
-        data = addMissingYears(list(cursor))
-        return convertObjectToJSonResponse(data)
+        timeseries = addMissingYears(list(cursor))
+        response_obj = prepareForVisualisation2(timeseries, lambda d : d['year'])
+        return convertObjectToJSonResponse(response_obj)
 
 def addMissingDays(data):
     el0 = data[0]
@@ -165,6 +168,13 @@ def addMissingYears(data):
     data = data + missing
     return sorted(data, key=lambda x: (x["_id"]['year']))
 
+def prepareForVisualisation2(data, f):
+    time_list = []
+    data_list = []
+    for e in data:
+        time_list.append(f(e["_id"]))
+        data_list.append(e["count"])
+    return {"time": time_list, "data": data_list}
 
 @ns.route('/timeseries_multi')
 @api.expect(timeseries_parser)
