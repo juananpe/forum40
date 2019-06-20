@@ -10,6 +10,12 @@ def _stage1(id):
 			    }
 		    }
 
+_stage3 = {
+            "$sort": {
+                    "_id" : 1
+                }
+            }
+
 def getCommentsGroupedByDay(id):
     return [
 		_stage1(id),
@@ -23,6 +29,7 @@ def getCommentsGroupedByDay(id):
 			    "count":{"$sum":1}
 			 }
 		},
+        _stage3
 	]
 
 def getCommentsGroupedByMonth(id):
@@ -37,6 +44,7 @@ def getCommentsGroupedByMonth(id):
 			    "count":{"$sum":1}
 			 }
 		},
+        _stage3
 	]
 
 def getCommentsGroupedByYear(id):
@@ -50,6 +58,7 @@ def getCommentsGroupedByYear(id):
 			    "count":{"$sum":1}
 			 }
 		},
+        _stage3
 	]
 
 
