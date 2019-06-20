@@ -40,6 +40,7 @@ export default {
   },
    watch: {
     selectedLabels() {
+      console.log(this[Getters.selectedLabels])
       if (this[Getters.selectedLabels].length > 0) this.getData(); else this.getDataNoSelectionasync()
     }
   },
@@ -86,6 +87,7 @@ export default {
       var seriesId = this.chart_options.series.findIndex(x => x.name == 'Gesamtheit')
       if(seriesId != -1) {
         this.chart_options.series[seriesId].data = []
+        this.chart_options.legend.selected['Gesamtheit'] = false
       }
 
       if(this[Getters.selectedLabels].length > this.local_chart_state.length) {
@@ -98,6 +100,13 @@ export default {
     removeAllLabels: function() {
       this.local_chart_state = []
       this.chart_options.series.forEach(x => x.data = [])
+      for (var key in this.chart_options.legend.selected) {
+        this.chart_options.legend.selected[key] = false // TODO O(1)
+      }
+
+      this[Getters.selectedLabels].forEach(function (label) {
+        this.chart_options.legend.selected['label'] = false
+      });
     },
     removeDisabledLabels: function() {
       var diff = this.local_chart_state.filter(i =>  this[Getters.selectedLabels].indexOf(i) < 0)
@@ -114,14 +123,10 @@ export default {
     return {
       local_chart_state: [],
       diff : [],
-      time_intervall: 5000000000,
       chart_options: {
-        title: {
-          text: "柱状图动画延迟"
-        },
         legend: {
           align: "left",
-          show: false,
+          show: true,
           selected: {}
         },
         toolbox: {
