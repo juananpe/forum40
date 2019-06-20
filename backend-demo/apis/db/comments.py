@@ -153,7 +153,8 @@ def prepareForVisualisation(data, f):
     for e in data:
         time_list.append(f(e["_id"]))
         data_list.append(e["count"])
-    return {"time": time_list, "data": data_list}
+    start_time = data[0]["_id"]
+    return {"start_time": start_time, "time": time_list, "data": data_list}
 
 @ns.route('/parent/<string:id>/')
 class CommentsParent(Resource):
