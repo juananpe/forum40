@@ -1,3 +1,58 @@
+def _stage1(id):
+    return  {
+			"$match": {
+			    "labels" : {
+			        "$elemMatch" : {
+			                "labelId": id,
+			                "manualLabels.label" : 1
+			            }
+			        }
+			    }
+		    }
+
+def getCommentsGroupedByDay(id):
+    return [
+		_stage1(id),
+		{
+			"$group": {
+			    "_id":{
+			      "year":{"$year":{"date":"$timestamp","timezone":"Europe/Berlin"}},
+			      "month":{"$month":{"date":"$timestamp","timezone":"Europe/Berlin"}},
+			      "dayOfMonth":{"$dayOfMonth":{"date":"$timestamp","timezone":"Europe/Berlin"}}
+			    },
+			    "count":{"$sum":1}
+			 }
+		},
+	]
+
+def getCommentsGroupedByMonth(id):
+    return [
+		_stage1(id),
+		{
+			"$group": {
+			    "_id":{
+			      "year":{"$year":{"date":"$timestamp","timezone":"Europe/Berlin"}},
+			      "month":{"$month":{"date":"$timestamp","timezone":"Europe/Berlin"}},
+			    },
+			    "count":{"$sum":1}
+			 }
+		},
+	]
+
+def getCommentsGroupedByYear(id):
+    return [
+        _stage1(id),
+		{
+			"$group": {
+			    "_id":{
+			      "year":{"$year":{"date":"$timestamp","timezone":"Europe/Berlin"}},
+			    },
+			    "count":{"$sum":1}
+			 }
+		},
+	]
+
+
 def get(id, intervall):
     return [
                 # Stage 1

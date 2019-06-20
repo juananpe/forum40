@@ -2,12 +2,13 @@ from flask import Response
 from flask_restplus import Resource, reqparse
 
 from apis.db import api
-from models.db_models import label_time_model, comments_parser, comments_parser_sl, timeseries_parser, timeseries_parser_single, timeseries_parser_all
+from models.db_models import label_time_model, comments_parser, comments_parser_sl, timeseries_parser, timeseries_parser_single, timeseries_parser_all, groupByModel
 
 from db import mongo
 from db.mongo_util import aggregate
 
 from db.queries.comments_timeseries import get as comments_as_timeseries_aggregate_query
+from db.queries.comments_timeseries import getCommentsGroupedByDay, getCommentsGroupedByMonth, getCommentsGroupedByYear
 from db.queries.comments_timeseries_multi import get as comments_as_timeseries_aggregate_query_multi
 from db.queries.comments_timeseries_single import get as comments_as_timeseries_aggregate_query_single
 from db.queries.comments_timeseries_all import get as comments_as_timeseries_aggregate_query_all
@@ -86,6 +87,17 @@ class CommentsTimeseries(Resource):
         time_intervall = body['time_intervall']
         id = getLabelIdByName(label)
         cursor = coll.aggregate(comments_as_timeseries_aggregate_query(id, time_intervall))
+        return convertCursorToJSonResponse(cursor)
+
+@ns.route('/groupByDay')
+@api.expect(groupByModel)
+class CommentsGroupByDay(Resource):
+    def get(self):
+        coll = mongo.db.Comments
+        args = groupByModel.parse_args()
+        label = args['label']
+        id = getLabelIdByName(label)
+        cursor = coll.aggregate(getCommentsGroupedByDay(id))
         return convertCursorToJSonResponse(cursor)
 
 @ns.route('/timeseries_multi')
