@@ -1,9 +1,20 @@
 def _stage1(id):
-    return  {
-			"$match": {
+    if id:
+        return  {
+    		"$match": {
 			    "labels" : {
 			        "$elemMatch" : {
 			                "labelId": id,
+			                "manualLabels.label" : 1
+			            }
+			        }
+			    }
+		    }
+    else:
+        return  {
+			"$match": {
+			    "labels" : {
+			        "$elemMatch" : {
 			                "manualLabels.label" : 1
 			            }
 			        }

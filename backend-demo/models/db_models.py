@@ -15,7 +15,7 @@ label_time_model = api.model('Q', {
 })
 
 groupByModel = reqparse.RequestParser()
-groupByModel.add_argument('label', required=True)
+groupByModel.add_argument('label')
 
 timeseries_parser_all = reqparse.RequestParser()
 timeseries_parser_all.add_argument('time_intervall', type=int, default=36000000, required=True)
