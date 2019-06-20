@@ -100,6 +100,17 @@ class CommentsGroupByDay(Resource):
         cursor = coll.aggregate(getCommentsGroupedByDay(id))
         return convertCursorToJSonResponse(cursor)
 
+@ns.route('/groupByMonth')
+@api.expect(groupByModel)
+class CommentsGroupByMonth(Resource):
+    def get(self):
+        coll = mongo.db.Comments
+        args = groupByModel.parse_args()
+        label = args['label']
+        id = getLabelIdByName(label)
+        cursor = coll.aggregate(getCommentsGroupedByMonth(id))
+        return convertCursorToJSonResponse(cursor)
+
 @ns.route('/timeseries_multi')
 @api.expect(timeseries_parser)
 class CommentsTimeseriesMulti(Resource):
