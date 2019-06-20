@@ -40,7 +40,6 @@ export default {
   },
    watch: {
     selectedLabels() {
-      console.log(this[Getters.selectedLabels])
       if (this[Getters.selectedLabels].length > 0) this.getData(); else this.getDataNoSelectionasync()
     }
   },
@@ -126,7 +125,7 @@ export default {
       chart_options: {
         legend: {
           align: "left",
-          show: true,
+          show: false,
           selected: {}
         },
         toolbox: {
