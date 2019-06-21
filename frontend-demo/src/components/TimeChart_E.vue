@@ -35,7 +35,7 @@ export default {
     computed: {
     ...mapGetters([
         Getters.selectedLabels, 
-        Getters.labelParameters,
+        Getters.keywordfilter,
         Getters.timeFrequency]),
 
   },
@@ -45,6 +45,9 @@ export default {
     },
     selectedLabels() {
       if (this[Getters.selectedLabels].length > 0) this.updateChart_OnLabelChange(); else this.resetChartToOrigin()
+    },
+    keywordfilter(filter) {
+      this.updateChart()
     }
   },
   mounted: async function() {
@@ -94,16 +97,16 @@ export default {
     resetChartToOrigin: async function() {
       this.removeAllLabels()
 
-      const { data } = await Service.get(this.selectEndpoint());
+      const { data } = await Service.get(`${this.selectEndpoint()}${this.textFilterArg('?')}`);
       this.addSeriesToChat(data, "Gesamtheit")
     },
-    updateChart : async function() {
-
+    updateChart : async function(filter) {
       var chart_options = this.chart_options
       var selectEndpoint = this.selectEndpoint
+      var textFilterArg = this.textFilterArg
       chart_options.series.forEach(async function(x) {
         if(chart_options.legend.selected[x.name]) {
-          const { data } = await Service.get(`${selectEndpoint()}?label=${x.name}`);
+          const { data } = await Service.get(`${selectEndpoint()}?label=${x.name}${textFilterArg('&')}`);
           chart_options.xAxis.data = data["time"]
           x.data = data.data
         }
@@ -118,10 +121,17 @@ export default {
 
       if(this[Getters.selectedLabels].length > this.local_chart_state.length) {
           var label = this[Getters.selectedLabels][this[Getters.selectedLabels].length -1]
-          const { data } = await Service.get(`${this.selectEndpoint()}?label=${label}`);
+          const { data } = await Service.get(`${this.selectEndpoint()}?label=${label}${this.textFilterArg('&')}`);
           this.addSeriesToChat(data, label)
       }
       this.removeDisabledLabels()
+    },
+    textFilterArg: function(prefix) {
+      if(this[Getters.keywordfilter]) {
+        return `${prefix}keyword=${this[Getters.keywordfilter]}`
+      } else {
+        return ""
+      }
     },
     selectEndpoint: function() {
       var endpoint = ''
