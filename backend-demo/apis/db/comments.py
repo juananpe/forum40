@@ -128,6 +128,9 @@ def addMissingDays(data):
     return sorted(data, key=lambda x: (x["_id"]['year'], x["_id"]['month'], x["_id"]['dayOfMonth'] ))
 
 def addMissingMonths(data):
+    if len(data) == 0:
+        return data
+
     el0 = data[0]
     min_ = date(el0["_id"]['year'], el0["_id"]['month'], 1)
     missing = []
@@ -140,6 +143,9 @@ def addMissingMonths(data):
     return sorted(data, key=lambda x: (x["_id"]['year'], x["_id"]['month'] ))
 
 def addMissingYears(data):
+    if len(data) == 0:
+        return data
+
     min_ = data[0]["_id"]['year']
     missing = []
     for el in data:
@@ -151,6 +157,9 @@ def addMissingYears(data):
     return sorted(data, key=lambda x: (x["_id"]['year']))
 
 def prepareForVisualisation(data, f):
+    if len(data) == 0:
+        return data
+
     time_list = []
     data_list = []
     for e in data:
