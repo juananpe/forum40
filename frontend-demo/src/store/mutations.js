@@ -5,5 +5,6 @@ export default {
     [Mutations.updateTime]: (state) => (state[State.now] = new Date()),
     [Mutations.setSelectedComment]: (state, comment) => (state[State.selectedComment] = comment),
     [Mutations.setSelectedLabels]: (state, selection) => (state[State.selectedFilters][State.selectedLabels] = selection),
-    [Mutations.setKeywordfilter]: (state, keyword) => (state[State.selectedFilters][State.keywordfilter] = keyword)
+    [Mutations.setKeywordfilter]: (state, keyword) => (state[State.selectedFilters][State.keywordfilter] = keyword),
+    [Mutations.setTimeFrequency]: (state, mode) => (state[State.selectedViewAggregations][State.timeFrequency] = mode),
 }

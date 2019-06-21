@@ -15,6 +15,9 @@ const state = {
         [State.selectedLabels]: [],
         [State.keywordfilter]: ''
     },
+    [State.selectedViewAggregations]: {
+        [State.timeFrequency] : 'm'
+    },
     [State.selectedComment]: {},
     [State.currentJWT]: '',
     [State.now]: new Date(),

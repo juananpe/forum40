@@ -10,5 +10,6 @@ export default {
     [Getters.selectedCommentId]: (state) => Object.entries(state.selectedComment).length !== 0 ? state.selectedComment._id.$oid : null,
     [Getters.selectedLabels]: (state) => state[State.selectedFilters][State.selectedLabels],
     [Getters.keywordfilter]: (state) => state[State.selectedFilters][State.keywordfilter],
-    [Getters.activeFilters]: (state) => Object.keys(state[State.selectedFilters]).filter(e => state[State.selectedFilters][e] && state[State.selectedFilters][e].length > 0)
+    [Getters.activeFilters]: (state) => Object.keys(state[State.selectedFilters]).filter(e => state[State.selectedFilters][e] && state[State.selectedFilters][e].length > 0),
+    [Getters.timeFrequency]: (state) => state[State.selectedViewAggregations][State.timeFrequency],
 }

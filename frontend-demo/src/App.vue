@@ -9,6 +9,7 @@
           </v-flex>
           <v-flex xs12>
           <!--  <TimeChart/> -->
+            <TimefrequenzRadioGroup/>
             <TimeChart_E/>
           </v-flex>
           <v-flex xs12>
@@ -27,6 +28,7 @@
 import TopToolbar from "./components/TopToolbar";
 //import TimeChart from "./components/TimeChart";
 import TimeChart_E from "./components/TimeChart_E";
+import TimefrequenzRadioGroup from "./components/TimefrequenzRadioGroup"
 import UserCommentList from "./components/UserCommentList";
 import UserCommentFilter from "./components/UserCommentFilter";
 import UserCommentThread from "./components/UserCommentThread";
@@ -38,6 +40,7 @@ export default {
     TopToolbar,
 //    TimeChart,
     TimeChart_E,
+    TimefrequenzRadioGroup,
     UserCommentList,
     UserCommentFilter,
     UserCommentThread
