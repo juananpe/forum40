@@ -18,7 +18,7 @@ def _stage1(id, keywords):
 		}
 
     if keywords:
-        searchwords = " ".join("\"{}\"".format(x) for x in keywords)
+        searchwords = " ".join(x for x in keywords)
         textFilter_query = { 
             "$search" : searchwords,
             "$caseSensitive": False

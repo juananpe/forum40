@@ -32,7 +32,7 @@ def createCommentsQueryFromArgs(args):
             } 
         }
     if 'keyword' in args and args['keyword']:
-        searchwords = " ".join("\"{}\"".format(x) for x in args['keyword'])
+        searchwords = " ".join(x for x in args['keyword'])
         query["$text"] = {
             "$search" : searchwords,
             "$caseSensitive": False
