@@ -1,12 +1,10 @@
 <template>
   <div>
-    <v-container fluid>
-    <v-radio-group v-model="radios" :mandatory="false">
+    <v-radio-group v-model="radios" :mandatory="false" row>
       <v-radio label="Tag" value="d"></v-radio>
       <v-radio label="Monat" value="m"></v-radio>
       <v-radio label="Jahr" value="y"></v-radio>
     </v-radio-group>
-  </v-container>
   </div>
 </template>
 

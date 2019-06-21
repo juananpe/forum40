@@ -1,8 +1,5 @@
 <template>
   <div>
-    <v-container fluid>
-  </v-container>
-
     <v-chart :options="chart_options" :autoresize="true"/>
   </div>
 </template>
