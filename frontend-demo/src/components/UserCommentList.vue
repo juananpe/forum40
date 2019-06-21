@@ -136,6 +136,7 @@ export default {
     keyword: {
       set(state) {
         this[Mutations.setKeywordfilter](state);
+        this.loadTable();
       },
       get() {
         return this[Getters.keywordfilter];
@@ -205,7 +206,7 @@ export default {
       }
     },
     keywordChanged() {
-      this.loadTable();
+      //this.loadTable();
     }
   }
 };
