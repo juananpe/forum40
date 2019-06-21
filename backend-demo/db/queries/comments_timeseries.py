@@ -1,6 +1,7 @@
-def _stage1(id):
+def _stage1(id, keywords):
+    query = {}
     if id:
-        return  {
+        query = {
     		"$match": {
 			    "labels" : {
 			        "$elemMatch" : {
@@ -11,9 +12,19 @@ def _stage1(id):
 			    }
 		    }
     else:
-        return  {
-			"$match": { }
+        query = {
+			"$match": { 
+            }
 		}
+
+    if keywords:
+        searchwords = " ".join("\"{}\"".format(x) for x in keywords)
+        textFilter_query = { 
+            "$search" : searchwords,
+            "$caseSensitive": False
+        }
+        query["$match"]["$text"] = textFilter_query
+    return query
 
 _stage3 = {
             "$sort": {
@@ -21,9 +32,9 @@ _stage3 = {
                 }
             }
 
-def getCommentsGroupedByDay(id):
+def getCommentsGroupedByDay(id, keywords):
     return [
-		_stage1(id),
+		_stage1(id, keywords),
 		{
 			"$group": {
 			    "_id":{
@@ -37,9 +48,9 @@ def getCommentsGroupedByDay(id):
         _stage3
 	]
 
-def getCommentsGroupedByMonth(id):
+def getCommentsGroupedByMonth(id, keywords):
     return [
-		_stage1(id),
+		_stage1(id, keywords),
 		{
 			"$group": {
 			    "_id":{
@@ -52,9 +63,9 @@ def getCommentsGroupedByMonth(id):
         _stage3
 	]
 
-def getCommentsGroupedByYear(id):
+def getCommentsGroupedByYear(id, keywords):
     return [
-        _stage1(id),
+        _stage1(id, keywords),
 		{
 			"$group": {
 			    "_id":{

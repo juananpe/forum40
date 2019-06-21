@@ -80,8 +80,9 @@ class CommentsGroupByDay(Resource):
         coll = mongo.db.Comments
         args = groupByModel.parse_args()
         label = args['label']
+        keywords = args['keyword']
         id = getLabelIdByName(label)
-        cursor = coll.aggregate(getCommentsGroupedByDay(id))
+        cursor = coll.aggregate(getCommentsGroupedByDay(id, keywords))
         timeseries = addMissingDays(list(cursor))
         response_obj = prepareForVisualisation(timeseries, lambda d : "{}.{}.{}".format(d['dayOfMonth'], d['month'], d['year']))
         return convertObjectToJSonResponse(response_obj)
@@ -93,8 +94,9 @@ class CommentsGroupByMonth(Resource):
         coll = mongo.db.Comments
         args = groupByModel.parse_args()
         label = args['label']
+        keywords = args['keyword']
         id = getLabelIdByName(label)
-        cursor = coll.aggregate(getCommentsGroupedByMonth(id))
+        cursor = coll.aggregate(getCommentsGroupedByMonth(id, keywords))
         timeseries = addMissingMonths(list(cursor))
         response_obj = prepareForVisualisation(timeseries, lambda d : "{}.{}".format(d['month'], d['year']))
         return convertObjectToJSonResponse(response_obj)
@@ -106,8 +108,9 @@ class CommentsGroupByYear(Resource):
         coll = mongo.db.Comments
         args = groupByModel.parse_args()
         label = args['label']
+        keywords = args['keyword']
         id = getLabelIdByName(label)
-        cursor = coll.aggregate(getCommentsGroupedByYear(id))
+        cursor = coll.aggregate(getCommentsGroupedByYear(id, keywords))
         timeseries = addMissingYears(list(cursor))
         response_obj = prepareForVisualisation(timeseries, lambda d : d['year'])
         return convertObjectToJSonResponse(response_obj)
