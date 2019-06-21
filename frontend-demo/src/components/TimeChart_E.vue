@@ -1,5 +1,8 @@
 <template>
   <div>
+    <v-container fluid>
+  </v-container>
+
     <v-chart :options="chart_options" :autoresize="true"/>
   </div>
 </template>
@@ -19,7 +22,7 @@
 <script>
 import Service, { Endpoint } from "../api/db";
 
-import { Getters } from "../store/const";
+import { State, Getters } from "../store/const";
 import { mapGetters } from "vuex";
 
 import ECharts from "vue-echarts";
@@ -35,18 +38,22 @@ export default {
     computed: {
     ...mapGetters([
         Getters.selectedLabels, 
-        Getters.labelParameters]),
+        Getters.labelParameters,
+        Getters.timeFrequency]),
 
   },
    watch: {
+    timeFrequency() {
+      this.updateChart()
+    },
     selectedLabels() {
-      if (this[Getters.selectedLabels].length > 0) this.getData(); else this.getDataNoSelectionasync()
+      if (this[Getters.selectedLabels].length > 0) this.updateChart_OnLabelChange(); else this.resetChartToOrigin()
     }
   },
   mounted: async function() {
     var p1 = this.initChart()
     await Promise.all([p1]);
-    if (this[Getters.selectedLabels].length > 0) this.getData(); else this.getDataNoSelectionasync();
+    if (this[Getters.selectedLabels].length > 0) this.updateChart_OnLabelChange(); else this.resetChartToOrigin();
   },
   methods: {
     initChart: async function() {
@@ -67,7 +74,6 @@ export default {
       })
     },
     addSeriesToChat: function (data, name) {
-      data["time"] = data["time"]
       var seriesId = this.chart_options.series.findIndex(x => x.name == name)
       if(name != "Gesamtheit") {
         this.local_chart_state.push(name)
@@ -76,7 +82,7 @@ export default {
           this.min_time = data["start_time"]
         } else {
           if(this.min_time.year !== data["start_time"].year && this.min_time.month !== data["start_time"].month) {
-            console.log('Warning: different starting times') // TODO
+            console.log('Warning: different starting times')
           }
         }
 
@@ -86,13 +92,25 @@ export default {
       this.chart_options.legend.selected[name] = true
       this.chart_options.series[seriesId].data = data.data
     },
-    getDataNoSelectionasync: async function() {
+    resetChartToOrigin: async function() {
       this.removeAllLabels()
 
-      const { data } = await Service.get(`db/comments/groupByMonth`); // TODO query
+      const { data } = await Service.get(this.selectEndpoint());
       this.addSeriesToChat(data, "Gesamtheit")
     },
-    getData: async function() {
+    updateChart : async function() {
+
+      var chart_options = this.chart_options
+      var selectEndpoint = this.selectEndpoint
+      chart_options.series.forEach(async function(x) {
+        if(chart_options.legend.selected[x.name]) {
+          const { data } = await Service.get(`${selectEndpoint()}?label=${x.name}`);
+          chart_options.xAxis.data = data["time"]
+          x.data = data.data
+        }
+      })
+    },
+    updateChart_OnLabelChange: async function() {
       var seriesId = this.chart_options.series.findIndex(x => x.name == 'Gesamtheit')
       if(seriesId != -1) {
         this.chart_options.series[seriesId].data = []
@@ -101,10 +119,27 @@ export default {
 
       if(this[Getters.selectedLabels].length > this.local_chart_state.length) {
           var label = this[Getters.selectedLabels][this[Getters.selectedLabels].length -1]
-          const { data } = await Service.get(`db/comments/groupByMonth?label=${label}`); // TODO query
+          const { data } = await Service.get(`${this.selectEndpoint()}?label=${label}`);
           this.addSeriesToChat(data, label)
       }
       this.removeDisabledLabels()
+    },
+    selectEndpoint: function() {
+      var endpoint = ''
+      switch(this[Getters.timeFrequency]) {
+        case 'd':
+          endpoint = `db/comments/groupByDay`
+          break;
+        case 'm':
+          endpoint = `db/comments/groupByMonth`
+          break;
+        case 'y':
+          endpoint = `db/comments/groupByYear`
+          break;
+        default:
+          // code block
+      }
+      return endpoint
     },
     removeAllLabels: function() {
       this.local_chart_state = []
@@ -130,6 +165,7 @@ export default {
   },
   data() {
     return {
+      radios: 'm',
       local_chart_state: [],
       min_time : null,
       chart_options: {

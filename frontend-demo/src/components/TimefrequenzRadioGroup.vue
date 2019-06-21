@@ -1,7 +1,6 @@
 <template>
   <div>
     <v-container fluid>
-    <p>{{ radios || 'null' }}</p>
     <v-radio-group v-model="radios" :mandatory="false">
       <v-radio label="Tag" value="d"></v-radio>
       <v-radio label="Monat" value="m"></v-radio>
