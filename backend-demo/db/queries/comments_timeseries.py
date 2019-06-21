@@ -12,14 +12,8 @@ def _stage1(id):
 		    }
     else:
         return  {
-			"$match": {
-			    "labels" : {
-			        "$elemMatch" : {
-			                "manualLabels.label" : 1
-			            }
-			        }
-			    }
-		    }
+			"$match": { }
+		}
 
 _stage3 = {
             "$sort": {
