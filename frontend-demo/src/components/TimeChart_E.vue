@@ -65,6 +65,8 @@ export default {
         var series = {
             name: labelName,
             type: "bar",
+            barGap: "0%",
+            barCategoryGap: "10%",
             data: [],
             animationDelay: function(idx) {
               return idx * 0;
@@ -185,11 +187,11 @@ export default {
             }
           }
         },
-            dataZoom: [{
-        type: 'inside'
-    }, {
-        type: 'slider'
-    }],
+        dataZoom: [{
+            type: 'inside'
+        }, {
+            type: 'slider'
+        }],
         tooltip: {
           trigger: "axis"
         },
