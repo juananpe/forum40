@@ -28,7 +28,7 @@ def createCommentsQueryFromArgs(args):
         query["labels"] = {
             "$elemMatch" : {
                 "labelId": { "$in": labelIds },
-                "manualLabels.label" : 1
+                "$or" : [ { "manualLabels.label" : 1}, {"classified" : 1}]
             } 
         }
     if 'keyword' in args and args['keyword']:

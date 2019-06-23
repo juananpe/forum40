@@ -6,7 +6,7 @@ def _stage1(id, keywords):
 			    "labels" : {
 			        "$elemMatch" : {
 			                "labelId": id,
-			                "manualLabels.label" : 1
+			                "$or" : [ { "manualLabels.label" : 1}, {"classified" : 1}]
 			            }
 			        }
 			    }
