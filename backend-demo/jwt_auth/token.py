@@ -6,8 +6,6 @@ from db import mongo
 
 import sys
 
-data = []
-
 def returnErrorMsg(msg):
     return {'message' : msg}, 401
 
@@ -18,10 +16,9 @@ def checkIfTokenIsValidAndGetData(token):
     secrets_coll = mongo.cx["admin"].Secrets
     secret_mongo = secrets_coll.find_one().get('globalSecret')
     try:
-        data = jwt.decode(token, secret_mongo)
+        return True, jwt.decode(token, secret_mongo)
     except: 
         return False, None
-    return True, data
 
 def checkIfUserIsAuthorised(token, data):
     users_coll = mongo.cx["admin"].Users
