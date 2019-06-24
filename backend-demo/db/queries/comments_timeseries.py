@@ -6,11 +6,15 @@ def _stage1(id, keywords):
 			    "labels" : {
 			        "$elemMatch" : {
 			                "labelId": id,
-			                "$or" : [ { "manualLabels.label" : 1}, {"classified" : 1}]
-			            }
-			        }
-			    }
-		    }
+								"$or" : [ 
+									{ "manualLabels.label" : 1}, 
+									{ "$and" : 
+										[{"classified" : 0}, {"confidence" : {"$ne" : []}}]}
+									]
+								}
+							}
+						}
+					}
     else:
         query = {
 			"$match": { 
