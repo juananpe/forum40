@@ -88,7 +88,7 @@ class AuthRefresh(Resource):
 
 @ns.route('/initDB/')
 class AuthInitDB(Resource):
-    def get(self):
+    def put(self):
         db = mongo.cx["admin"]
         if not "Users" in  db.collection_names():
             users_coll = db.Users
