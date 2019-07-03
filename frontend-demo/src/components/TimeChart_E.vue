@@ -19,7 +19,7 @@
 <script>
 import Service, { Endpoint } from "../api/db";
 
-import { State, Getters } from "../store/const";
+import { Getters } from "../store/const";
 import { mapGetters } from "vuex";
 
 import ECharts from "vue-echarts";
@@ -46,7 +46,7 @@ export default {
     selectedLabels() {
       if (this[Getters.selectedLabels].length > 0) this.updateChart_OnLabelChange(); else this.resetChartToOrigin()
     },
-    keywordfilter(filter) {
+    keywordfilter() {
       this.updateChart()
     }
   },
@@ -84,7 +84,7 @@ export default {
           this.min_time = data["start_time"]
         } else {
           if(this.min_time.year !== data["start_time"].year && this.min_time.month !== data["start_time"].month) {
-            console.log('Warning: different starting times')
+            // console.log('Warning: different starting times')
           }
         }
 
@@ -100,7 +100,7 @@ export default {
       const { data } = await Service.get(`${this.selectEndpoint()}${this.textFilterArg('?')}`);
       this.addSeriesToChat(data, "Gesamtheit")
     },
-    updateChart : async function(filter) {
+    updateChart : async function() {
       var chart_options = this.chart_options
       var selectEndpoint = this.selectEndpoint
       var textFilterArg = this.textFilterArg
@@ -157,7 +157,7 @@ export default {
         this.chart_options.legend.selected[key] = false // TODO O(1)
       }
 
-      this[Getters.selectedLabels].forEach(function (label) {
+      this[Getters.selectedLabels].forEach(function () {
         this.chart_options.legend.selected['label'] = false
       });
     },
