@@ -1,8 +1,11 @@
+from datetime import datetime
+
 def _stage1(id, keywords):
     query = {}
     if id:
         query = {
     		"$match": {
+				"timestamp" : { "$gt" : datetime.strptime('2015-05-31-22','%Y-%m-%d-%H'), "$lt" : datetime.strptime('2016-05-31-22','%Y-%m-%d-%H') },
 			    "labels" : {
 			        "$elemMatch" : {
 			                "labelId": id,
@@ -18,6 +21,7 @@ def _stage1(id, keywords):
     else:
         query = {
 			"$match": { 
+				"timestamp" : { "$gt" : datetime.strptime('2015-05-31-22','%Y-%m-%d-%H'), "$lt" : datetime.strptime('2016-05-31-22','%Y-%m-%d-%H') },
             }
 		}
 

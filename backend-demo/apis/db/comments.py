@@ -8,7 +8,7 @@ from db import mongo
 
 from db.queries.comments_timeseries import getCommentsGroupedByDay, getCommentsGroupedByMonth, getCommentsGroupedByYear
 
-from datetime import timedelta, date
+from datetime import timedelta, date, datetime
 from dateutil.relativedelta import relativedelta
 
 from bson import json_util, ObjectId
@@ -23,6 +23,7 @@ def getLabelIdByName(name):
 
 def createCommentsQueryFromArgs(args):
     query = {}
+    query["timestamp"] = { "$gt" : datetime.strptime('2015-05-31-22','%Y-%m-%d-%H'), "$lt" : datetime.strptime('2016-05-31-22','%Y-%m-%d-%H') }
     if 'label' in args and args['label']:
         labelIds = [getLabelIdByName(i) for i in args['label']]
         query["labels"] = {
@@ -122,9 +123,11 @@ class CommentsGroupByYear(Resource):
         response_obj = prepareForVisualisation(timeseries, lambda d : d['year'])
         return convertObjectToJSonResponse(response_obj)
 
+min_date = date(2015, 6, 1)
+
 def addMissingDays(data):
     el0 = data[0]
-    min_ = date(el0["_id"]['year'], el0["_id"]['month'], el0["_id"]['dayOfMonth'])
+    min_ = min_date #date(el0["_id"]['year'], el0["_id"]['month'], el0["_id"]['dayOfMonth'])
     missing = []
     for el in data:
         while min_ < date(el["_id"]['year'], el["_id"]['month'], el["_id"]['dayOfMonth']):
@@ -139,7 +142,7 @@ def addMissingMonths(data):
         return data
 
     el0 = data[0]
-    min_ = date(el0["_id"]['year'], el0["_id"]['month'], 1)
+    min_ = min_date #date(el0["_id"]['year'], el0["_id"]['month'], 1)
     missing = []
     for el in data:
         while min_ < date(el["_id"]['year'], el["_id"]['month'], 1):
@@ -153,7 +156,7 @@ def addMissingYears(data):
     if len(data) == 0:
         return data
 
-    min_ = data[0]["_id"]['year']
+    min_ = min_date.year # data[0]["_id"]['year']
     missing = []
     for el in data:
         while min_ < el["_id"]['year']:
