@@ -79,15 +79,6 @@ export default {
       var seriesId = this.chart_options.series.findIndex(x => x.name == name)
       if(name != "Gesamtheit") {
         this.local_chart_state.push(name)
-        if(this.min_time == null) {
-          this.chart_options.xAxis.data = data["time"]
-          this.min_time = data["start_time"]
-        } else {
-          if(this.min_time.year !== data["start_time"].year && this.min_time.month !== data["start_time"].month) {
-            // console.log('Warning: different starting times')
-          }
-        }
-
       } else {
         this.chart_options.xAxis.data = data["time"]
       }
@@ -176,7 +167,6 @@ export default {
     return {
       radios: 'm',
       local_chart_state: [],
-      min_time : null,
       chart_options: {
         legend: {
           align: "left",
@@ -202,12 +192,18 @@ export default {
         tooltip: {
           trigger: "axis"
         },
-        xAxis: {
+        _xAxis: {
           data: [],
           silent: false,
           splitLine: {
             show: false
           }
+        },
+        get xAxis() {
+          return this._xAxis;
+        },
+        set xAxis(value) {
+          this._xAxis=value;
         },
         yAxis: {},
         series: [],
