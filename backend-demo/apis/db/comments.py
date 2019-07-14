@@ -5,6 +5,7 @@ from apis.db import api
 from models.db_models import comments_parser, comments_parser_sl, groupByModel
 
 from db import mongo
+from db.util import getCommentsByQuery, getCommentById, getLabelIdByName
 
 from db.queries.comments_timeseries import getCommentsGroupedByDay, getCommentsGroupedByMonth, getCommentsGroupedByYear
 
@@ -17,11 +18,6 @@ import json
 from jwt_auth.token import token_required
 
 ns = api.namespace('comments', description="comments api")
-
-def getLabelIdByName(name):
-    coll = mongo.db.Labels
-    label = coll.find_one({"description" : name}, {"_id": 1})
-    return label["_id"] if label else None
 
 def createCommentsQueryFromArgs(args):
     query = {}
@@ -49,10 +45,6 @@ def createCommentsQueryFromArgs(args):
         }
     return query
 
-def getCursorByQuery(query):
-    coll = mongo.db.Comments
-    return coll.find(query)
-
 def convertObjectToJSonResponse(obj):
     return Response(json.dumps(obj, default=json_util.default), mimetype='application/json')
 
@@ -68,7 +60,7 @@ class CommentsGet(Resource):
         limit = args["limit"]
 
         query = createCommentsQueryFromArgs(args)
-        cursor = getCursorByQuery(query).skip(skip).limit(limit)
+        cursor = getCommentsByQuery(query).skip(skip).limit(limit)
         response = convertCursorToJSonResponse(cursor)
         return response
 
@@ -79,7 +71,7 @@ class CommentsCount(Resource):
         args = comments_parser.parse_args()
 
         query = createCommentsQueryFromArgs(args)
-        comments_count = getCursorByQuery(query).count()
+        comments_count = getCommentsByQuery(query).count()
         return {"count" : comments_count}
 
 
@@ -183,15 +175,10 @@ def prepareForVisualisation(data, f):
 @ns.route('/parent/<string:id>/')
 class CommentsParent(Resource):
     def get(self, id):
-        coll = mongo.db.Comments
-        try:
-            base_comment = coll.find_one({"_id" : ObjectId(id)})
-        except:
-            return {"msg": "{} is not a valid ObjectId".format(id)}, 400
-            
+        base_comment = getCommentById(ObjectId(id))
         if "parentCommentId" in base_comment:
             parent_id = base_comment["parentCommentId"]
-            parent_comment = coll.find_one({"_id" : parent_id})
+            parent_comment = getCommentById(parent_id)
             return convertObjectToJSonResponse(parent_comment)
         else:
             return convertObjectToJSonResponse({})
@@ -199,22 +186,16 @@ class CommentsParent(Resource):
 @ns.route('/parent_recursive/<string:id>/')
 class CommentsParentRec(Resource):
     def get(self, id):
-        coll = mongo.db.Comments
-        try:
-            base_comment = coll.find_one({"_id" : ObjectId(id)})
-        except:
-            return {"msg": "{} is not a valid ObjectId".format(id)}, 400
-
+        base_comment = getCommentById(ObjectId(id))
         if not base_comment:
             return convertObjectToJSonResponse([])
         
         i = 1
         c_list = [base_comment]
-
         parent = base_comment
         while "parentCommentId" in parent:
             next_parentId = parent["parentCommentId"]
-            next_parent = coll.find_one({"_id" : next_parentId})
+            next_parent = getCommentById(next_parentId)
             c_list.insert(0, next_parent)
             i += 1
             parent = next_parent
@@ -225,70 +206,50 @@ class CommentsParentRec(Resource):
         }
         return convertObjectToJSonResponse(response)
 
-import sys
 
 @ns.route('/label/<string:comment_id>/<string:label_name>/<int:label>')
 class LabelComment(Resource):
     @token_required
     @api.doc(security='apikey')
     def put(self, data, comment_id ,label_name, label):
-        
-        print(data, file=sys.stderr)
-
-        # check comments_id
         coll_c = mongo.db.Comments
-        try:
-            comment = coll_c.find_one({"_id" : ObjectId(comment_id)})
-        except:
-            return {"msg": "{} is not a valid ObjectId".format(comment_id)}, 400
+        comment = getCommentById(ObjectId(comment_id))
+        label_id = getLabelIdByName(label_name)
 
         if not comment:
             return {"msg": "No comment with ObjectId: {}".format(comment_id)}, 400
-        
-        # check label_name
-        coll_l = mongo.db.Labels
-        c = coll_l.find_one({"description" : label_name})
-        if not c: 
-            return {"msg": "Label '{}' do not exist".format(label_name)}, 400
-
-        # check label
         if not (label == 1 or label == 0): 
             return {"msg": "Label is not 1 or 0"}, 400
-
         if not 'labels' in comment:
             comment['labels'] = []
         
         current_manuel_label = next(
-            (x for x in comment['labels'] if x['labelId'] == c["_id"]),
+            (x for x in comment['labels'] if x['labelId'] == label_id),
             None
         )
-
         new_manuel_label = {
             "annotatorId": self["user"],
             "label": label,
             "timestamp": datetime.now()
         }
-
         if current_manuel_label:
             coll_c.update(
-                {"_id": comment["_id"], "labels.labelId" : c["_id"]}, 
+                {"_id": comment["_id"], "labels.labelId" : label_id}, 
                 {"$push": {
                     "labels.$.manualLabels": new_manuel_label
                 }
             })
         else:
             default_labels = {
-                "labelId": c['_id'],
+                "labelId": label_id,
                 "classified": 0,
                 "confidence": [],
                 "manualLabels": [new_manuel_label]
             }
-
             coll_c.update(
                 {"_id": comment["_id"]}, 
                 {"$push": {
                     "labels": default_labels
                 }
             })
-
         return "ok", 200
