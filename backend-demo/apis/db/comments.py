@@ -126,7 +126,7 @@ class CommentsGroupByYear(Resource):
 min_date = date(2015, 6, 1)
 
 def addMissingDays(data):
-    el0 = data[0]
+    #el0 = data[0]
     min_ = min_date #date(el0["_id"]['year'], el0["_id"]['month'], el0["_id"]['dayOfMonth'])
     missing = []
     for el in data:
@@ -141,7 +141,7 @@ def addMissingMonths(data):
     if len(data) == 0:
         return data
 
-    el0 = data[0]
+    #el0 = data[0]
     min_ = min_date #date(el0["_id"]['year'], el0["_id"]['month'], 1)
     missing = []
     for el in data:
@@ -222,3 +222,65 @@ class CommentsParentRec(Resource):
             "size" : i
         }
         return convertObjectToJSonResponse(response)
+
+@ns.route('/label/<string:comment_id>/<string:label_name>/<int:label>')
+class LabelComment(Resource):
+    def put(self, comment_id,label_name, label):
+        
+        # check comments_id
+        coll_c = mongo.db.Comments
+        try:
+            comment = coll_c.find_one({"_id" : ObjectId(comment_id)})
+        except:
+            return {"msg": "{} is not a valid ObjectId".format(comment_id)}, 400
+
+        if not comment:
+            return {"msg": "No comment with ObjectId: {}".format(comment_id)}, 400
+        
+        # check label_name
+        coll_l = mongo.db.Labels
+        c = coll_l.find_one({"description" : label_name})
+        if not c: 
+            return {"msg": "Label '{}' do not exist".format(label_name)}, 400
+
+        # check label
+        if not (label == 1 or label == 0): 
+            return {"msg": "Label is not 1 or 0"}, 400
+
+        if not 'labels' in comment:
+            comment['labels'] = []
+        
+        current_manuel_label = next(
+            (x for x in comment['labels'] if x['labelId'] == c["_id"]),
+            None
+        )
+
+        new_manuel_label = {
+            "annotatorId": "hugo",
+            "label": label,
+            "timestamp": datetime.now()
+        }
+
+        if current_manuel_label:
+            coll_c.update(
+                {"_id": comment["_id"], "labels.labelId" : c["_id"]}, 
+                {"$push": {
+                    "labels.$.manualLabels": new_manuel_label
+                }
+            })
+        else:
+            default_labels = {
+                "labelId": c['_id'],
+                "classified": 0,
+                "confidence": [],
+                "manualLabels": [new_manuel_label]
+            }
+
+            coll_c.update(
+                {"_id": comment["_id"]}, 
+                {"$push": {
+                    "labels": default_labels
+                }
+            })
+
+        return "ok", 200
