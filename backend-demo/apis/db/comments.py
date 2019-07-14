@@ -74,49 +74,49 @@ class CommentsCount(Resource):
         comments_count = getCommentsByQuery(query).count()
         return {"count" : comments_count}
 
+def getLabelsByTime(args, commensByTimeintervall, addMissingIntervalls, formatter):
+    coll = mongo.db.Comments
+    label = args['label']
+    keywords = args['keyword']
+    id = getLabelIdByName(label)
+    cursor = coll.aggregate(commensByTimeintervall(id, keywords))
+    timeseries = addMissingIntervalls(list(cursor))
+    response_obj = prepareForVisualisation(timeseries, formatter)
+    return convertObjectToJSonResponse(response_obj)
 
 @ns.route('/groupByDay')
 @api.expect(groupByModel)
 class CommentsGroupByDay(Resource):
     def get(self):
-        coll = mongo.db.Comments
         args = groupByModel.parse_args()
-        label = args['label']
-        keywords = args['keyword']
-        id = getLabelIdByName(label)
-        cursor = coll.aggregate(getCommentsGroupedByDay(id, keywords))
-        timeseries = addMissingDays(list(cursor))
-        response_obj = prepareForVisualisation(timeseries, lambda d : "{}.{}.{}".format(d['dayOfMonth'], d['month'], d['year']))
-        return convertObjectToJSonResponse(response_obj)
+        return getLabelsByTime(
+            args, 
+            getCommentsGroupedByDay, 
+            addMissingDays, 
+            lambda d : "{}.{}.{}".format(d['dayOfMonth'], d['month'], d['year']))
 
 @ns.route('/groupByMonth')
 @api.expect(groupByModel)
 class CommentsGroupByMonth(Resource):
     def get(self):
-        coll = mongo.db.Comments
         args = groupByModel.parse_args()
-        label = args['label']
-        keywords = args['keyword']
-        id = getLabelIdByName(label)
-        cursor = coll.aggregate(getCommentsGroupedByMonth(id, keywords))
-        timeseries = addMissingMonths(list(cursor))
-        response_obj = prepareForVisualisation(timeseries, lambda d : "{}.{}".format(d['month'], d['year']))
-        return convertObjectToJSonResponse(response_obj)
+        return getLabelsByTime(
+            args, 
+            getCommentsGroupedByMonth, 
+            addMissingMonths, 
+            lambda d : "{}.{}".format(d['month'], d['year']))
 
 @ns.route('/groupByYear')
 @api.expect(groupByModel)
 class CommentsGroupByYear(Resource):
     def get(self):
-        coll = mongo.db.Comments
         args = groupByModel.parse_args()
-        label = args['label']
-        keywords = args['keyword']
-        id = getLabelIdByName(label)
-        cursor = coll.aggregate(getCommentsGroupedByYear(id, keywords))
-        timeseries = addMissingYears(list(cursor))
-        response_obj = prepareForVisualisation(timeseries, lambda d : d['year'])
-        return convertObjectToJSonResponse(response_obj)
-
+        return getLabelsByTime(
+            args, 
+            getCommentsGroupedByYear, 
+            addMissingYears, 
+            lambda d : d['year'])
+            
 min_date = date(2015, 6, 1)
 
 def addMissingDays(data):
