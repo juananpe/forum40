@@ -6,7 +6,6 @@ import settings
 
 from db import mongo
 from core.proxy_wrapper import ReverseProxied
-from core.encoder import JSONMongoEncoder
 
 from apis.db import blueprint as db_blueprint
 from apis.service import blueprint as service_blueprint
@@ -39,7 +38,6 @@ app.register_blueprint(service_blueprint, url_prefix='/service')
 app.wsgi_app = ReverseProxied(app.wsgi_app)
 CORS(app)
 mongo.init_app(app)
-app.json_encoder = JSONMongoEncoder
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5050, debug=True)
