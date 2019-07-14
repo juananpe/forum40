@@ -128,13 +128,13 @@ export default {
       var endpoint = ''
       switch(this[Getters.timeFrequency]) {
         case 'd':
-          endpoint = `db/comments/groupByDay`
+          endpoint = Endpoint.COMMENTS_GROUP_BY_DAY
           break;
         case 'm':
-          endpoint = `db/comments/groupByMonth`
+          endpoint = Endpoint.COMMENTS_GROUP_BY_MONTH
           break;
         case 'y':
-          endpoint = `db/comments/groupByYear`
+          endpoint = Endpoint.COMMENTS_GROUP_BY_YEAR
           break;
         default:
           // code block
