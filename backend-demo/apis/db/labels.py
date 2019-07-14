@@ -34,19 +34,19 @@ class LabelsId(Resource):
             id = str(c["_id"])
         return {"id" : id }, 200
 
-@ns.route('/binary/<string:description>')
+@ns.route('/binary/<string:label_name>')
 class AddLabel(Resource):
     @token_required
     @api.doc(security='apikey')
-    def put(self, data, description):
+    def put(self, data, label_name):
         coll = mongo.db.Labels
-        c = coll.find_one({"description" : description})
+        c = coll.find_one({"description" : label_name})
         if c: 
             return 'Label already exists.', 400
 
         coll.insert({  
             "type" : "binary", 
-            "description" : description, 
+            "description" : label_name, 
             "scale" : "ordinal",
             "annotatorId": self["user"],
         })
