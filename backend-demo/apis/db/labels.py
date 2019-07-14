@@ -31,3 +31,20 @@ class LabelsId(Resource):
         if c: 
             id = str(c["_id"])
         return {"id" : id }, 200
+
+@ns.route('/binary/<string:name>')
+class AddLabel(Resource):
+    def put(self, name):
+        coll = mongo.db.Labels
+        c = coll.find_one({"description" : name})
+        if c: 
+            return {'already exists': 123} # TODO text
+
+        coll.insert({  
+            "type" : "binary", 
+            "description" : name, 
+            "scale" : "ordinal", 
+        })
+
+        return "ok"
+                
