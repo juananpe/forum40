@@ -38,7 +38,7 @@ class AddLabel(Resource):
         coll = mongo.db.Labels
         c = coll.find_one({"description" : name})
         if c: 
-            return {'already exists': 123} # TODO text
+            return 'Label already exists.', 400
 
         coll.insert({  
             "type" : "binary", 
@@ -46,5 +46,5 @@ class AddLabel(Resource):
             "scale" : "ordinal", 
         })
 
-        return "ok"
+        return "ok", 200
                 
