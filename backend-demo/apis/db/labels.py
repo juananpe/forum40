@@ -6,6 +6,8 @@ from db import mongo
 
 from bson import json_util
 
+from jwt_auth.token import token_required
+
 ns = api.namespace('labels', description="labels api")
 
 @ns.route('/')
@@ -32,18 +34,21 @@ class LabelsId(Resource):
             id = str(c["_id"])
         return {"id" : id }, 200
 
-@ns.route('/binary/<string:name>')
+@ns.route('/binary/<string:description>')
 class AddLabel(Resource):
-    def put(self, name):
+    @token_required
+    @api.doc(security='apikey')
+    def put(self, data, description):
         coll = mongo.db.Labels
-        c = coll.find_one({"description" : name})
+        c = coll.find_one({"description" : description})
         if c: 
             return 'Label already exists.', 400
 
         coll.insert({  
             "type" : "binary", 
-            "description" : name, 
-            "scale" : "ordinal", 
+            "description" : description, 
+            "scale" : "ordinal",
+            "annotatorId": self["user"],
         })
 
         return "ok", 200

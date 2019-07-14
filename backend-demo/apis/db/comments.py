@@ -14,6 +14,8 @@ from dateutil.relativedelta import relativedelta
 from bson import json_util, ObjectId
 import json
 
+from jwt_auth.token import token_required
+
 ns = api.namespace('comments', description="comments api")
 
 def getLabelIdByName(name):
@@ -223,10 +225,16 @@ class CommentsParentRec(Resource):
         }
         return convertObjectToJSonResponse(response)
 
+import sys
+
 @ns.route('/label/<string:comment_id>/<string:label_name>/<int:label>')
 class LabelComment(Resource):
-    def put(self, comment_id,label_name, label):
+    @token_required
+    @api.doc(security='apikey')
+    def put(self, data, comment_id ,label_name, label):
         
+        print(data, file=sys.stderr)
+
         # check comments_id
         coll_c = mongo.db.Comments
         try:
@@ -256,7 +264,7 @@ class LabelComment(Resource):
         )
 
         new_manuel_label = {
-            "annotatorId": "hugo",
+            "annotatorId": self["user"],
             "label": label,
             "timestamp": datetime.now()
         }
