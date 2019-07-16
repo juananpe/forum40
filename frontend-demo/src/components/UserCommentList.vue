@@ -32,7 +32,6 @@
 
             <b v-else>
               <span v-html="highlight(commentText(props), keyword)"></span>
-              {{(props.item.title||'') + ' ' + props.item.text}}
             </b>
           </td>
           <td class="text-xs-left">{{ props.item.timestamp['$date'] | moment}}</td>
