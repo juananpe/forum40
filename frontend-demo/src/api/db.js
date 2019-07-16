@@ -36,6 +36,13 @@ class Service {
             return await axios.post(`${API_URL}${path}`, payload);
     }
 
+    static async put(path, payload, jwt) {
+        if (jwt)
+            return await axios.put(`${API_URL}${path}`, payload, { headers: { "x-access-token": `${jwt}` } });
+        else
+            return await axios.put(`${API_URL}${path}`, payload);
+    }
+
 }
 
 export default Service;
