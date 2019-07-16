@@ -1,13 +1,13 @@
 <template>
   <v-layout row>
     <v-flex :xs10="loggedIn" :xs12="!loggedIn">
-      <v-combobox v-model="selection" :items="items" label="Label-Filter" chips clearable multiple>
+      <v-select v-model="selection" :items="items" label="Label-Filter" chips clearable multiple>
         <template v-slot:selection="data">
           <v-chip :selected="data.selected" close @input="remove(data.item)">
             <strong>{{ data.item }}</strong>
           </v-chip>
         </template>
-      </v-combobox>
+      </v-select>
     </v-flex>
     <v-flex xs2 v-if="loggedIn">
       <v-dialog v-model="dialog" width="300" @keydown.enter.prevent="addLabel">
