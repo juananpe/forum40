@@ -1,10 +1,11 @@
-from flask import request
+from flask import request, Response
 from flask_restplus import Resource, reqparse
 
 from apis.db import api
 from db import mongo
 
 from bson import json_util
+import json
 
 from jwt_auth.token import token_required
 
@@ -14,9 +15,16 @@ ns = api.namespace('labels', description="labels api")
 class LabelsGetAll(Resource):
     def get(self):
         coll = mongo.db.Labels
-        descriptions = coll.find({}, {"description" : 1, "_id": 0})
-        d_list = [d["description"] for d in  descriptions]
-        return {'labels': d_list}, 200
+        labels = coll.find({}, {"description" : 1, "_id": 1})
+        i_list = []
+        d_list = []
+        for l in labels:
+            i_list.append(str(l["_id"]))
+            d_list.append(l["description"])
+        return { 
+            "labels" : d_list,
+            "ids" : i_list
+        }
 
 @ns.route('/count')
 class LabelsCount(Resource):
