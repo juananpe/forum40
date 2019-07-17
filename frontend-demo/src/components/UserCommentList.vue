@@ -70,11 +70,11 @@ export default {
       selected: [],
       expand: false,
       totalItems: 0,
-      rowsPerPage: [5, 10],
-      teaserTextLength: 80,
+      rowsPerPage: [15, 30],
+      teaserTextLength: 250,
       pagination: {
         page: 1,
-        rowsPerPage: 5,
+        rowsPerPage: 15,
         descending: true,
         sortBy: "likes"
       },
