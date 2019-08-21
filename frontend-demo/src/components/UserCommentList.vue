@@ -32,11 +32,10 @@
 
             <b v-else>
               <span v-html="highlight(commentText(props), keyword)"></span>
-              {{(props.item.title||'') + ' ' + props.item.text}}
             </b>
           </td>
           <td class="text-xs-left">{{ props.item.timestamp['$date'] | moment}}</td>
-          <td>
+          <td v-for="(label, i) in selectedLabels" :key="i">
             <v-layout row>
               <v-flex pr-1>
                 <v-btn small outline color="success" class="action-left">
@@ -71,15 +70,15 @@ export default {
       selected: [],
       expand: false,
       totalItems: 0,
-      rowsPerPage: [5, 10],
-      teaserTextLength: 80,
+      rowsPerPage: [15, 30],
+      teaserTextLength: 250,
       pagination: {
         page: 1,
-        rowsPerPage: 5,
+        rowsPerPage: 15,
         descending: true,
         sortBy: "likes"
       },
-      commentsTableHeader: [
+      basicCommentsTableHeader: [
         {
           text: "Kommentartext",
           align: "left",
@@ -93,13 +92,6 @@ export default {
           sortable: false,
           value: "timestamp",
           width: "10%"
-        },
-        {
-          text: "Annotation",
-          align: "left",
-          sortable: false,
-          value: "annotation",
-          width: "5%"
         }
       ]
     };
@@ -117,6 +109,17 @@ export default {
       Getters.selectedLabels,
       Getters.labelParameters
     ]),
+    commentsTableHeader() {
+      const labelTableHeaders = this[Getters.selectedLabels].map(e => ({
+        text: e,
+        align: "center",
+        sortable: false,
+        value: "text",
+        width: "15%"
+      }));
+
+      return this.basicCommentsTableHeader.concat(labelTableHeaders);
+    },
     countQueryString() {
       const getParams = [`${this[Getters.labelParameters]}`];
       if (this.keyword) getParams.push(`keyword=${this.keyword}`);
@@ -177,7 +180,8 @@ export default {
     highlight: function(words, query) {
       if (query) {
         const regEx = new RegExp("(" + query + ")", "ig");
-        const highlightedText = words.replace(regEx,
+        const highlightedText = words.replace(
+          regEx,
           '<span class="highlight">' + "$1" + "</span>"
         );
         return highlightedText;

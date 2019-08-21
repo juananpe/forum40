@@ -16,10 +16,32 @@ For local development environment use:
 
 `docker-compose -f docker-compose.yml -f docker-compose.local.yml up --build`
 
+Initital steps for the database:
 
-Run the database migration project:
+1. OMP Database migration
+- Run the database migration project:
 
 https://gitlab.informatik.haw-hamburg.de/forum40/databasemigration
+
+2. Meta-comment classifciation
+- Call the endpoint `/classification/unlabeled` to classify meta-comments.
+
+3. Offensive-language classification
+- Run offensive-language container locally
+- bind the database port locally with `ssh -L 27017:localhost:27017 <username>@mast-se.informatik.uni-hamburg.de`
+- Trigger classification
+
+4. Embedding Service
+- Run offensive-language container on GPU Cluster
+- bind the database port locally with `ssh -L 27017:localhost:27017 <username>@mast-se.informatik.uni-hamburg.de`
+- Trigger comment embedding
+
+5. Embedding Index
+- run embedding container locally
+- create embedding index
+
+
+
 
 
 The project is live on:

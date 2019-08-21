@@ -75,6 +75,7 @@
 <script>
 import { mapGetters, mapActions, mapState } from "vuex";
 import Service, { Endpoint } from "../api/db";
+import { Getters } from "../store/const";
 export default {
   data() {
     return {
@@ -87,8 +88,7 @@ export default {
     };
   },
   computed: {
-    ...mapGetters(["jwt", "jwtUser", "jwtLoggedIn", "jwtExpiration"]),
-    ...mapState(["now"])
+    ...mapGetters([Getters.jwt, Getters.jwtUser, Getters.jwtLoggedIn])
   },
   methods: {
     ...mapActions(["login", "logout"]),
@@ -103,8 +103,8 @@ export default {
       if (!success) this.error = true;
     },
     async checkLogin() {
-      const { data } = await Service.get(Endpoint.TEST_LOGIN, this.jwt);
-      if (data.ok === this.jwtUser) {
+      const { data } = await Service.get(Endpoint.TEST_LOGIN, this[Getters.jwt]);
+      if (data.ok === this[Getters.jwtUser]) {
         this.testalert = true;
       }
     }

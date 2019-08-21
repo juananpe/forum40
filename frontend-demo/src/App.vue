@@ -8,9 +8,8 @@
             <UserCommentFilter/>
           </v-flex>
           <v-flex xs12>
-          <!--  <TimeChart/> -->
             <TimefrequenzRadioGroup/>
-            <TimeChart_E/>
+            <TimeChart/>
           </v-flex>
           <v-flex xs12>
             <UserCommentList/>
@@ -26,8 +25,7 @@
 
 <script>
 import TopToolbar from "./components/TopToolbar";
-//import TimeChart from "./components/TimeChart";
-import TimeChart_E from "./components/TimeChart_E";
+import TimeChart from "./components/TimeChart";
 import TimefrequenzRadioGroup from "./components/TimefrequenzRadioGroup"
 import UserCommentList from "./components/UserCommentList";
 import UserCommentFilter from "./components/UserCommentFilter";
@@ -38,8 +36,7 @@ export default {
   name: "app",
   components: {
     TopToolbar,
-//    TimeChart,
-    TimeChart_E,
+    TimeChart,
     TimefrequenzRadioGroup,
     UserCommentList,
     UserCommentFilter,
