@@ -60,7 +60,7 @@ class InputFeatures(object):
 
 class BertFeatureExtractor(object):
 
-    def __init__(self, bert_model = "bert-base-multilingual-cased", do_lower_case="False", max_seq_length=256,
+    def __init__(self, bert_model = "bert-base-german-cased", do_lower_case="False", max_seq_length=256,
                  batch_size=32):
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
