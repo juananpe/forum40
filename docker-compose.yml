@@ -5,6 +5,12 @@ services:
         build: 
             context: ./reverseproxy
             dockerfile: Dockerfile
+        depends_on:
+            - vue
+            - flask
+            - meta
+            - offlang
+            - embedding
         ports:
             - 443:8081
             - 80:8080
@@ -14,16 +20,12 @@ services:
         build: 
             context: ./frontend-demo
             dockerfile: Dockerfile
-        depends_on:
-            - reverseproxy
     flask:
         build:
             context: ./backend-demo
             dockerfile: Dockerfile
         volumes:
             - ./backend-demo:/usr/src/app
-        depends_on:
-            - reverseproxy
         links:      
            - mongo
     meta:
@@ -32,8 +34,6 @@ services:
             dockerfile: Dockerfile
         volumes:
             - ./metacomment-service:/app
-        depends_on:
-            - reverseproxy
         links:      
            - mongo
     mongo:
@@ -42,16 +42,14 @@ services:
             - mongodb:/data/db
         ports:
             - 27017:27017
-#    offlang:
-#        build:
-#            context: ./offlang-service
-#            dockerfile: Dockerfile
-#        volumes:
-#            - ./offlang-service:/app
-#        depends_on:
-#            - reverseproxy
-#        links:
-#            - mongo
+    offlang:
+        build:
+            context: ./offlang-service
+            dockerfile: Dockerfile
+        volumes:
+            - ./offlang-service:/app
+        links:
+            - mongo
     embedding:
         build:
             context: ./embedding-service
@@ -59,8 +57,6 @@ services:
         volumes:
             - ./embedding-service:/app
             - ./embedding-service/model:/app/model
-        depends_on:
-            - reverseproxy
         links:
             - mongo
 volumes:
