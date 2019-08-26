@@ -42,6 +42,7 @@ services:
             - mongodb:/data/db
         ports:
             - 27017:27017
+<<<<<<< HEAD
     offlang:
         build:
             context: ./offlang-service
@@ -50,6 +51,18 @@ services:
             - ./offlang-service:/app
         links:
             - mongo
+=======
+#    offlang:
+#        build:
+#            context: ./offlang-service
+#            dockerfile: Dockerfile
+#        volumes:
+#            - ./offlang-service:/app
+#        depends_on:
+#            - reverseproxy
+#        links:
+#            - mongo
+>>>>>>> 098787026c22672ba32fa4db2baba1bdb814c5e4
     embedding:
         build:
             context: ./embedding-service

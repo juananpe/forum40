@@ -4,4 +4,5 @@ torch==1.1.0
 torchvision==0.3.0
 pytorch-pretrained-bert==0.6.2
 gunicorn==19.9.0
+pybind11==2.3.0
 nmslib==1.8
