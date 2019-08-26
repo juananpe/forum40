@@ -29,14 +29,16 @@ parser.add_argument('port', type=int, default=27017, nargs='?',
                     help='MongoDB port')
 parser.add_argument('--embed-all', dest='all', type=bool, default=False, nargs=1,
                     help='(Re-)embed all data (default False)')
+parser.add_argument('--device', type=str, default='cpu', nargs=1,
+                    help='Pytorch device for tensor operations (default: cpu, other values e.g. cuda:1)')
 args = parser.parse_args()
 
-
+# Connect to DB
 client = pymongo.MongoClient(args.host, args.port)
 db = client.omp
 
 print("Loading BERT model")
-be = BertFeatureExtractor(batch_size=256)
+be = BertFeatureExtractor(batch_size=256, device=args.device)
 
 comments = db.Comments
 
