@@ -29,8 +29,8 @@ parser.add_argument('port', type=int, default=27017, nargs='?',
                     help='MongoDB port')
 parser.add_argument('--embed-all', dest='all', type=bool, default=False, nargs=1,
                     help='(Re-)embed all data (default False)')
-parser.add_argument('--device', type=str, default='cpu', nargs=1,
-                    help='Pytorch device for tensor operations (default: cpu, other values e.g. cuda:1)')
+parser.add_argument('--device', type=str, default='cpu', nargs='?',
+                    help='Pytorch device for tensor operations (default: cpu, else cuda)')
 args = parser.parse_args()
 
 # Connect to DB

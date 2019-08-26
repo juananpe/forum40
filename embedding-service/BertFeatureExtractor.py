@@ -64,7 +64,7 @@ class BertFeatureExtractor(object):
                  batch_size=32, device = None):
 
         if device:
-            self.device = device
+            self.device = torch.device(device)
         else:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.n_gpu = torch.cuda.device_count()
