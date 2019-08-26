@@ -4,6 +4,7 @@ from flask_restplus import Api, Resource, fields
 from core.proxy_wrapper import ReverseProxied
 
 from BertFeatureExtractor import BertFeatureExtractor
+from utils import concat
 
 dictConfig({
     'version': 1,
@@ -19,17 +20,6 @@ dictConfig({
         'handlers': ['wsgi']
     }
 })
-
-def concat(title: str, text: str) -> str:
-    """
-    Concatenates comment's title and text
-    :param title: comment title
-    :param text: comment text
-    :return: concatenated comment text
-    """
-    title = title if title else ''
-    text = text if text else ''
-    return (title + ' ' + text).strip()
 
 # define app
 app = Flask(__name__)
@@ -55,16 +45,21 @@ comments_model = api.model('comments', {
 
 
 @api.route('/comments')
-class OfflangCommentsClassifier(Resource):
+class CommentsEmbedding(Resource):
     @api.expect(comments_model)
     def post(self):
         comments = api.payload.get('comments', [])
         comment_texts = [
-            concat(c.get('title', ''), c.get('text', ''))for c in comments
+            concat(c.get('title', ''), c.get('text', '')) for c in comments
         ]
         results = be.extract_features(comment_texts)
         return results, 200
 
+# todo api
+# [ ] get embedding given comment id
+# [X] get embedding given text
+# [ ] get nearest neighbors given comment id
+# [ ] get nearest neighbors given text
 
 # run app manually
 if __name__ == "__main__":

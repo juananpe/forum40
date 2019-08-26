@@ -1,15 +1,5 @@
-import pymongo, math
+import pymongo, math, argparse
 from BertFeatureExtractor import BertFeatureExtractor
-
-# todo:
-# use weighted 4 top layers!
-# use BERT large?!
-# indexing process
-# api
-# - get embedding given comment id
-# - get embedding given text
-# - get nearest neighbors given comment id
-# - get nearest neighbors given text
 
 from app import concat
 
@@ -31,14 +21,26 @@ def process_batch(comment_ids):
         # update mongo db
         comments.update_one({"_id": comment_id}, {"$set": {'embedding':comment_embedding}}, upsert=False)
 
+# CLI parser
+parser = argparse.ArgumentParser(description='Embed comments in MongoDB.')
+parser.add_argument('host', type=str, default='localhost', nargs='?',
+                    help='MongoDB host')
+parser.add_argument('port', type=int, default=27017, nargs='?',
+                    help='MongoDB port')
+parser.add_argument('--embed-all', dest='all', type=bool, default=False, nargs=1,
+                    help='(Re-)embed all data (default False)')
+args = parser.parse_args()
 
-client = pymongo.MongoClient("localhost", 27017)
+
+client = pymongo.MongoClient(args.host, args.port)
 db = client.omp
 
 print("Loading BERT model")
 be = BertFeatureExtractor(batch_size=256)
 
 comments = db.Comments
+
+embed_all = args.all
 
 comment_batch = []
 batch_size = 32
@@ -48,13 +50,19 @@ n_comments = comments.count()
 n_batches = math.ceil(n_comments / batch_size)
 
 # get all ids
-all_unembedded_ids = []
-for comment in comments.find({"embedding" : {"$exists" : False}}):
-    all_unembedded_ids.append(comment["_id"])
+ids_to_embed = []
+if not embed_all:
+    # only embed comments where no embedding is present
+    for comment in comments.find({"embedding" : {"$exists" : False}}):
+        ids_to_embed.append(comment["_id"])
+else:
+    # run embedding for all comments
+    for comment in comments.find():
+        ids_to_embed.append(comment["_id"])
 
-print("Non-embedded comments:" + str(len(all_unembedded_ids)))
+print("Non-embedded comments:" + str(len(ids_to_embed)))
 
-for comment_id in all_unembedded_ids:
+for comment_id in ids_to_embed:
     comment_batch.append(comment_id)
     i += 1
     if i % batch_size == 0:

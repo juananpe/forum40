@@ -2,7 +2,8 @@ Flask==1.0.2
 flask-restplus==0.12.1
 torch==1.1.0
 torchvision==0.3.0
-pytorch-pretrained-bert==0.6.2
+pytorch-transformers==1.1.0
 gunicorn==19.9.0
 pybind11==2.3.0
-nmslib==1.8
+nmslib==1.8.1
+scikit-learn=0.21.3
