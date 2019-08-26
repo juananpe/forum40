@@ -1,10 +1,16 @@
 FROM python:3.6
 
-COPY . /app
-WORKDIR /app
+# system packages
 RUN apt-get update
 RUN apt-get install -y python-pybind11
+
+# python packages
+COPY requirements.txt /app/
+WORKDIR /app
 RUN pip install -r requirements.txt
+
+# python app
+COPY . /app
 EXPOSE 5060
 ENV FLASK_APP app.py
 ENV FLASK_DEBUG 0

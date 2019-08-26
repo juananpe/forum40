@@ -32,15 +32,13 @@ https://gitlab.informatik.haw-hamburg.de/forum40/databasemigration
 - Trigger classification
 
 4. Embedding Service
-- Run offensive-language container on GPU Cluster
+- Run embedding container on GPU Cluster
 - bind the database port locally with `ssh -L 27017:localhost:27017 <username>@mast-se.informatik.uni-hamburg.de`
 - Trigger comment embedding
 
 5. Embedding Index
 - run embedding container locally
 - create embedding index
-
-
 
 
 

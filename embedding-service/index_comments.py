@@ -1,8 +1,11 @@
 import pymongo, math
 import nmslib, pickle
-from app import concat
+from utils import concat
 
 client = pymongo.MongoClient("localhost", 27017)
+
+print(client)
+
 db = client.omp
 
 index = nmslib.init(method='hnsw', space="angulardist", data_type=nmslib.DataType.DENSE_VECTOR)
@@ -13,7 +16,7 @@ comments_query = {"embedding" : {"$exists" : True}}
 # comments_query = {}
 
 comment_batch = []
-batch_size = 1024
+batch_size = 30
 batch_i = 0
 i = 0
 n_comments = comments.find(comments_query).count()
@@ -21,25 +24,25 @@ n_batches = math.ceil(n_comments / batch_size)
 
 # get all ids
 comment_id_mapping = {}
+comment_id_running = 0
 batch_embeddings = []
-
-# from collections import defaultdict
-# all_texts = defaultdict(int)
+batch_ids = []
 
 for comment_i, comment in enumerate(comments.find(comments_query)):
-#    comment_text = concat(comment["title"], comment["text"])
-#    all_texts[comment_text] += 1
-#    if all_texts[comment_text] > 1:
-#        print(str(comment["_id"]) + "   " + str(comment_i) + "    " + comment_text + "\n")
-    comment_id_mapping[comment["_id"]] = comment_i
+    batch_ids.append(comment_id_running)
+    comment_id_mapping[comment["_id"]] = comment_id_running
+    comment_id_running += 1
     batch_embeddings.append(comment["embedding"])
-    if comment_i % batch_size == 0:
+    if comment_i > 0 and comment_i % batch_size == 0:
         print("Adding comment %d of %d" % (comment_i, n_comments))
-        # index.addDataPointBatch(batch_embeddings)
-        # batch_embeddings = []
+        #import pdb
+        #pdb.set_trace()
+        index.addDataPointBatch(data = batch_embeddings, ids = batch_ids)
+        batch_embeddings = []
+        batch_ids = []
 
 if batch_embeddings:
-    index.addDataPointBatch(batch_embeddings)
+    index.addDataPointBatch(data = batch_embeddings, ids = batch_ids)
 
 # create index
 index.createIndex({'post': 2}, print_progress=True)

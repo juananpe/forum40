@@ -30,8 +30,8 @@ import torch
 from torch.utils.data import TensorDataset, DataLoader, SequentialSampler
 from torch.utils.data.distributed import DistributedSampler
 
-from pytorch_pretrained_bert.tokenization import BertTokenizer
-from pytorch_pretrained_bert.modeling import BertModel
+from pytorch_transformers import BertTokenizer
+from pytorch_transformers import BertModel
 
 logging.basicConfig(format = '%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
                     datefmt = '%m/%d/%Y %H:%M:%S',
@@ -61,9 +61,12 @@ class InputFeatures(object):
 class BertFeatureExtractor(object):
 
     def __init__(self, bert_model = "bert-base-german-cased", do_lower_case="False", max_seq_length=256,
-                 batch_size=32):
+                 batch_size=32, device = None):
 
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if device:
+            self.device = device
+        else:
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.n_gpu = torch.cuda.device_count()
         logger.info("device: {} n_gpu: {}".format(self.device, self.n_gpu))
 
@@ -79,7 +82,7 @@ class BertFeatureExtractor(object):
         self.tokenizer = BertTokenizer.from_pretrained(self.bert_model, do_lower_case=self.do_lower_case,
                                                        cache_dir="./model")
 
-        self.model = BertModel.from_pretrained(self.bert_model, cache_dir="./model")
+        self.model = BertModel.from_pretrained(self.bert_model, cache_dir="./model", output_hidden_states=True)
         self.model.to(self.device)
         self.model.eval()
 
@@ -238,12 +241,12 @@ class BertFeatureExtractor(object):
                 input_ids = input_ids.to(self.device)
                 input_mask = input_mask.to(self.device)
 
-                all_encoder_layers, _ = self.model(input_ids, token_type_ids=None, attention_mask=input_mask)
+                model_output = self.model(input_ids, token_type_ids=None, attention_mask=input_mask)
+                all_encoder_layers = model_output[2] # layer outputs
 
                 for b, example_index in enumerate(example_indices):
                     feature = features[example_index.item()]
                     unique_id = int(feature.unique_id)
-                    # feature = unique_id_to_feature[unique_id]
                     output_json = collections.OrderedDict()
                     output_json["sequence_index"] = unique_id
 

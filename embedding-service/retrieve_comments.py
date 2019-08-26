@@ -1,7 +1,7 @@
 import pymongo, math
 import nmslib, pickle
 import sys
-from app import concat
+from utils import concat
 import sklearn.metrics as sm
 import numpy as np
 
@@ -14,7 +14,6 @@ index.loadIndex("model/comment_vectors.index", load_data=True)
 comment_id_mapping = pickle.load(open("model/comment_vectors.mapping", "rb"))
 id_comment_mapping = {v: k for k, v in comment_id_mapping.items()}
 print("Index loaded. \nWaiting for input of an id:")
-
 
 comments = db.Comments
 print("-----------")
