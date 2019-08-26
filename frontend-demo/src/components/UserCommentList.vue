@@ -36,18 +36,7 @@
           </td>
           <td class="text-xs-left">{{ props.item.timestamp['$date'] | moment}}</td>
           <td v-for="(label, i) in selectedLabels" :key="i">
-            <v-layout row>
-              <v-flex pr-1>
-                <v-btn small outline color="success" class="action-left">
-                  <v-icon>done</v-icon>
-                </v-btn>
-              </v-flex>
-              <v-flex pl-1>
-                <v-btn small outline color="error" class="action-right">
-                  <v-icon>clear</v-icon>
-                </v-btn>
-              </v-flex>
-            </v-layout>
+            <v-layout row>{{showAnnotations(props.item, label)}}</v-layout>
           </td>
         </tr>
       </template>
@@ -59,6 +48,7 @@
 import Service, { Endpoint } from "../api/db";
 import { Getters, Mutations } from "../store/const";
 import { mapGetters, mapMutations } from "vuex";
+import { getLabels } from "../CommentsUtil";
 import moment from "moment";
 
 export default {
@@ -72,6 +62,7 @@ export default {
       totalItems: 0,
       rowsPerPage: [15, 30],
       teaserTextLength: 250,
+      labels: {},
       pagination: {
         page: 1,
         rowsPerPage: 15,
@@ -146,8 +137,10 @@ export default {
       }
     }
   },
-  mounted() {
+  async mounted() {
     this.loadTable();
+    const { data } = await Service.get(Endpoint.LABELS);
+    this.labels = data;
   },
   watch: {
     [Getters.selectedLabels]: function() {
@@ -170,6 +163,18 @@ export default {
       const p2 = this.fetchComments();
       await Promise.all([p1, p2]);
       this.loading = false;
+    },
+    idForLabel(label) {
+      const index = this.labels.labels.indexOf(label);
+      return this.labels.ids[index];
+    },
+    labelForId(id) {
+      const index = this.labels.ids.indexOf(id);
+      return this.labels.labels[index];
+    },
+    showAnnotations(comment, label) {      
+      const labelId = this.idForLabel(label);
+      return getLabels(comment, labelId);
     },
     commentText(props) {
       return (props.item.title || "") + " " + props.item.text;
