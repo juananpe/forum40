@@ -49,26 +49,12 @@ db = client.omp
 
 labels = db.Labels
 
-offlang_label = {
-    "type" : "binary",
-    "classname" : [
-        "other",
-        "offensive"
-    ],
-    "description" : "offensive language",
-    "scale" : "ordinal",
-    "staffId" : ""
-}
+# db.getCollection("Labels").find({"classname" : "offtopic"})
+# db.getCollection("Comments").find({"labels.labelId" : ObjectId("5cadf564694377c8a2f450d5")})
+
 
 label_id = labels.insert_one(offlang_label).inserted_id
 
-
-OFFLANG_CLASSES = ["other", "offensive"]
-print("Loading fasttext model")
-ft = fastText.load_model("model/wiki.de.bin")
-print("Loading keras model")
-model: keras.Model = keras.models.load_model("model/classification_model_tl_twitterclasses7m_1000_suf_bu.h5")
-model._make_predict_function()
 
 comments = db.Comments
 
