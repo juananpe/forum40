@@ -251,7 +251,10 @@ class BertFeatureExtractor(object):
                     output_json = collections.OrderedDict()
                     output_json["sequence_index"] = unique_id
 
-                    # todo: pool all tokens instead of CLS
+                    # todo:
+                    # - pool all tokens instead of CLS
+                    # - fine tune on mongodb dataset (NSP + MLM)
+                    # - eval on downstream task (CV on OMP categories)
                     CLS_index = 0
                     all_layers = []
                     for (j, layer_index) in enumerate(self.layer_indexes):
