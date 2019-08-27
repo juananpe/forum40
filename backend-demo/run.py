@@ -28,6 +28,7 @@ def hello():
            '<a href="{0}api/service/">Service-API</a> </br> ' \
            '<a href="{0}api/meta/">Meta-Comment-API</a> </br> ' \
            '<a href="{0}api/offlang">Offensive-Language-API</a> </br>' \
+           '<a href="{0}api/classification">Classification-API</a> </br>' \
            '<a href="{0}api/embedding">Embedding-API</a> </br>'.format(url)
 
 # add blueprints

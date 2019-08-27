@@ -9,8 +9,8 @@ services:
             - vue
             - flask
             - meta
-            - offlang
             - embedding
+            - classification
         ports:
             - 443:8081
             - 80:8080
@@ -42,14 +42,23 @@ services:
             - mongodb:/data/db
         ports:
             - 27017:27017
-    offlang:
+#    offlang:
+#        build:
+#            context: ./offlang-service
+#            dockerfile: Dockerfile
+#        volumes:
+#            - ./offlang-service:/app
+#        links:
+#            - mongo
+    classification:
         build:
-            context: ./offlang-service
+            context: ./classification-service
             dockerfile: Dockerfile
         volumes:
-            - ./offlang-service:/app
+        - ./classification-service:/app
+        - ./classification-service/models:/app/models
         links:
-            - mongo
+        - mongo
     embedding:
         build:
             context: ./embedding-service
