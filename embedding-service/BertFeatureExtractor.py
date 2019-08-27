@@ -64,6 +64,7 @@ class BertFeatureExtractor(object):
                  batch_size=32, device = None):
 
         if device:
+            print("selected device: " + device)
             self.device = torch.device(device)
         else:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -250,6 +251,7 @@ class BertFeatureExtractor(object):
                     output_json = collections.OrderedDict()
                     output_json["sequence_index"] = unique_id
 
+                    # todo: pool all tokens instead of CLS
                     CLS_index = 0
                     all_layers = []
                     for (j, layer_index) in enumerate(self.layer_indexes):
