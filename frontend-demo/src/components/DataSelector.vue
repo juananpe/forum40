@@ -12,11 +12,11 @@
     <v-flex xs2 v-if="loggedIn">
       <v-dialog v-model="dialog" width="300" @keydown.enter.prevent="addLabel">
         <template v-slot:activator="{ on }">
-          <v-btn small outline color="success" v-on="on">Label hinzufügen</v-btn>
+          <v-btn small outline color="success" v-on="on">Label erstellen</v-btn>
         </template>
 
         <v-card>
-          <v-card-title class="headline grey lighten-2" primary-title>Label hinzufügen</v-card-title>
+          <v-card-title class="headline grey lighten-2" primary-title>Label erstellen</v-card-title>
 
           <v-form>
             <v-container fluid>
