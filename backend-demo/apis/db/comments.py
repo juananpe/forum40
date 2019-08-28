@@ -14,6 +14,7 @@ from dateutil.relativedelta import relativedelta
 
 from bson import json_util, ObjectId
 import json
+import sys
 
 from jwt_auth.token import token_required
 
@@ -232,7 +233,25 @@ class LabelComment(Resource):
             "label": label,
             "timestamp": datetime.now()
         }
+
+        print(current_manuel_label, file=sys.stderr)
+        isAlreadyLabeldByUser = False
+        for manual_label in current_manuel_label['manualLabels']:
+            if manual_label['annotatorId'] == self["user"]:
+                isAlreadyLabeldByUser = True
+                break
+
+        print(isAlreadyLabeldByUser, file=sys.stderr)
+
         if current_manuel_label:
+            if isAlreadyLabeldByUser:
+                coll_c.update(
+                    {"_id": comment["_id"], "labels.labelId" : label_id}, 
+                    {"$pull": {
+                        "labels.$.manualLabels": {"annotatorId" : self["user"]}
+                    }
+                })
+            
             coll_c.update(
                 {"_id": comment["_id"], "labels.labelId" : label_id}, 
                 {"$push": {
