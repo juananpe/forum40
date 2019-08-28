@@ -1,6 +1,5 @@
 import math, re
 import numpy as np
-import keras
 
 def concat(title: str, text: str) -> str:
     """
