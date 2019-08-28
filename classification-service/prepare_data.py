@@ -3,6 +3,7 @@ from collections import Counter
 import numpy as np
 from update_training import *
 from timeit import default_timer as timer
+from pymongo import UpdateOne
 
 
 # create logger
@@ -30,7 +31,7 @@ parser.add_argument('--labelname', type=str, nargs='?', default='offtopic',
 args = parser.parse_args()
 
 # db connection
-client = pymongo.MongoClient("localhost", 27017)
+client = pymongo.MongoClient("localhost", 27017,w=0)
 db = client.omp
 labels = db.Labels
 comments = db.Comments
@@ -40,18 +41,26 @@ label_id = label["_id"]
 
 logger.info("Labelname: " + args.labelname + " (" + str(label_id) + ")")
 
+
 try:
-    labeled_comments = comments.find({"labels.labelId" : label_id})
+    labeled_comments = comments.find({"labels" : {"$elemMatch" :
+                                    {"manualLabels" : {"$ne" : None}, "labelId" :label_id}}})
 except:
     logging.error("No comments for label " + args.labelname)
     exit(1)
 
+logger.info("No of comments "+str(labeled_comments.count()))
 
-#start = timer()
+import pdb
+start = timer()
 # training data compilation
 annotation_dataset = []
 annotation_counts = Counter()
 for labeled_comment in labeled_comments:
+    #pdb.set_trace()
+    if not "embedding" in labeled_comment:
+        continue
+                
     for current_label in labeled_comment["labels"]:
         if current_label["labelId"] == label["_id"]:
             if "manualLabels" in current_label:
@@ -59,12 +68,12 @@ for labeled_comment in labeled_comments:
                 annotation_counts[manual_label] += 1
                 labeled_instance = (labeled_comment["embedding"],manual_label)
                 annotation_dataset.append(labeled_instance)
-#end = timer()
+end = timer()
 
 
 
 logger.info("Manual annotations found: " + str(annotation_counts))
-#logger.info("Each comment take "+str((start-end)/annotations_counts)+" seconds of collection time")
+logger.info("Each comment take "+str((end-start)/len(annotation_dataset))+" seconds of collection time")
 logger.info("Length of datset: " + str(len(annotation_dataset)))
 
 new_model=TrainPredict()
@@ -76,11 +85,11 @@ start=timer()
 new_model.train(annotation_dataset,args.labelname)
 end=timer()
 
-logger.info("Each comment take "+str((start-end)/annotations_counts)+" seconds of training time")
+logger.info("Each comment take "+str((end-start)/len(annotation_dataset))+" seconds of training time")
 
 
 # db update
-batch_size=10000
+batch_size=20000
 
 def process_batch(comment_batch):
 
@@ -88,11 +97,11 @@ def process_batch(comment_batch):
     start=timer()
     comment_labels = new_model.predict(embeddings,args.labelname)
     end =timer()
-    logger.info("Each comment take "+str((start-end)/batch_size)+" seconds of prediction time")
+    logger.info("Each batch take "+str((end-start))+" seconds of prediction time")
 
     #comment_labels = [[0.1, 0.9]] * len(embeddings)
     start=timer()
-        
+    batch_updates = []
     for i, comment in enumerate(comments_object):
 
         comment_id = comment["_id"]
@@ -122,9 +131,15 @@ def process_batch(comment_batch):
         target_label_object["confidence"] = confidence
 
         # update mongo db
-        comments.update_one({"_id": comment_id}, {"$set": labels_object}, upsert=False)
+        batch_updates.append(
+            UpdateOne({"_id": comment_id}, {"$set": labels_object}, upsert=False))
+    bulk_results=comments.bulk_write(batch_updates)
+    
+    pprint.pprint(bulk_results)
+    
     end=timer()
-    logger.info("Each comment take "+str((start-end)/batch_size)+" seconds of writing time")
+    
+    logger.info("Each batch take "+str((end-start))+" seconds of writing time")
 
 
 
@@ -136,9 +151,11 @@ def process_batch(comment_batch):
 
 
 # batch update db
+
+
 comment_batch = []
 i = 0
-for comment in comments.find():
+for comment in comments.find({}, {'_id':1,'embedding':1,'labels':1},cursor_type=pymongo.CursorType.EXHAUST,snapshot=True):
 
     if not "embedding" in comment:
         continue
