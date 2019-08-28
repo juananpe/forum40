@@ -1,7 +1,7 @@
 import pymongo, argparse, pprint, logging
 from collections import Counter
 import numpy as np
-
+from update_training import *
 # create logger
 logger = logging.getLogger('Classifier logger')
 logger.setLevel(logging.DEBUG)
@@ -44,6 +44,7 @@ except:
     exit(1)
 
 
+
 # training data compilation
 annotation_dataset = []
 annotation_counts = Counter()
@@ -53,26 +54,31 @@ for labeled_comment in labeled_comments:
             if "manualLabels" in current_label:
                 manual_label = current_label["manualLabels"][0]['label']
                 annotation_counts[manual_label] += 1
-                labeled_instance = (labeled_comment["_id"], manual_label, labeled_comment["embedding"])
+                labeled_instance = (labeled_comment["embedding"],manual_label)
                 annotation_dataset.append(labeled_instance)
 
 logger.info("Manual annotations found: " + str(annotation_counts))
 logger.info("Length of datset: " + str(len(annotation_dataset)))
 
+new_model=TrainPredict()
+
+new_model.train(annotation_dataset,args.labelname)
+
+
 
 # db update
-batch_size=1000
+batch_size=10000
 
 def process_batch(comment_batch):
 
-    comments, embeddings = zip(*comment_batch)
-    # comment_labels = trainer.predict(embeddings)
-    comment_labels = [[0.1, 0.9]] * len(embeddings)
+    comments_object, embeddings = zip(*comment_batch)
+    comment_labels = new_model.predict(embeddings,args.labelname)
+    #comment_labels = [[0.1, 0.9]] * len(embeddings)
 
-    for i, comment in enumerate(comments):
+    for i, comment in enumerate(comments_object):
 
         comment_id = comment["_id"]
-        confidence = comment_labels[i]
+        confidence = comment_labels[i].tolist()
 
         # initialize labels field for comment
         if "labels" in comment:
@@ -98,13 +104,13 @@ def process_batch(comment_batch):
         target_label_object["confidence"] = confidence
 
         # update mongo db
-        # comments.update_one({"_id": comment_id}, {"$set": labels_object}, upsert=False)
+        comments.update_one({"_id": comment_id}, {"$set": labels_object}, upsert=False)
 
         # print output for debug
-        if "labels" in comment:
-            # pprint.pprint(comment["labels"])
-            pprint.pprint({"$set": labels_object})
-            print("----------------")
+        # if "labels" in comment:
+        #     # pprint.pprint(comment["labels"])
+        #     pprint.pprint({"$set": labels_object})
+        #     print("----------------")
 
 
 # batch update db
@@ -117,10 +123,12 @@ for comment in comments.find():
 
     comment_batch.append((comment, comment["embedding"]))
     i += 1
+
     if i % batch_size == 0:
         process_batch(comment_batch)
         comment_batch = []
-        break
+        print("comments_processed "+str(i))
+        #break
 
 # last batch
 if comment_batch:
