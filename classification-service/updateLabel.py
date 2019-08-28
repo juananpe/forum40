@@ -24,9 +24,9 @@ logger.addHandler(ch)
 
 class LabelUpdater:
     """Functions for collection of training data and prediction on entire MngoDB"""
-    def __init__(self, labelname):
+    def __init__(self, labelname, host = "mongo", port = 27017):
         # db connection
-        self.client = pymongo.MongoClient("localhost", 27017, w=0)
+        self.client = pymongo.MongoClient(host, port, w=0)
         self.db = self.client.omp
         self.labels = self.db.Labels
         self.comments = self.db.Comments
@@ -178,9 +178,13 @@ if __name__== "__main__":
     parser = argparse.ArgumentParser(description='Update category labels.')
     parser.add_argument('--labelname', type=str, nargs='?', default='offtopic',
                         help='name of the category to update')
+    parser.add_argument('host', type=str, default='localhost', nargs='?',
+                        help='MongoDB host')
+    parser.add_argument('port', type=int, default=27017, nargs='?',
+                        help='MongoDB port')
     args = parser.parse_args()
     labelname = args.labelname
 
-    labelUpdater = LabelUpdater(labelname)
+    labelUpdater = LabelUpdater(labelname, host=args.host, port=args.port)
     labelUpdater.updateLabels()
 
