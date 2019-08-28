@@ -2,8 +2,7 @@ from flask import Flask
 from logging.config import dictConfig
 from flask_restplus import Api, Resource, fields
 from core.proxy_wrapper import ReverseProxied
-
-from utils import concat
+from updateLabel import *
 
 dictConfig({
     'version': 1,
@@ -26,36 +25,27 @@ app = Flask(__name__)
 app.wsgi_app = ReverseProxied(app.wsgi_app)
 
 
-
 # define API
-api = Api(app, version='0.1', title='Offensive-Language-Classification-API',
+api = Api(app, version='0.1', title='Classification-API',
           description="An API for classifying user comments")
 
-comment_model = api.model(
-    'comment', {
-        'title': fields.String('Title of the comment.'),
-        'text': fields.String('Text of the comment.')})
-
-comments_model = api.model('comments', {
-    'comments': fields.List(fields.Nested(comment_model))
+update_model = api.model('update', {
+    'labelname': fields.String('Labelname to update model and machine classification.')
 })
 
 
-
-@api.route('/comments')
+@api.route('/update')
 class ClassifierService(Resource):
-    @api.expect(comments_model)
+    @api.expect(update_model)
     def post(self):
-        comments = api.payload.get('comments', [])
-        comment_texts = [
-            concat(c.get('title', ''), c.get('text', ''))for c in comments
-        ]
-
-
-        # do stuff here ...
-        results = [{'tmp':comment_texts}]
-
-        return results, 200
+        labelname = api.payload.get('labelname', None)
+        if labelname:
+            labelUpdater = LabelUpdater(labelname)
+            labelUpdater.updateLabels()
+            results = {'info' : 'Started update of label ' + labelname}
+            return results, 200
+        else:
+            return {'error' : 'Something went wrong.'}, 500
 
 
 # run app manually

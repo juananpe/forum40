@@ -2,9 +2,7 @@ import numpy as np
 from sklearn.linear_model import LogisticRegression
 import pickle     
 
-
-
-class TrainPredict:
+class EmbedClassifier:
     """contains the modules for training and predicting functions"""
     def __init__(self):
         pass
@@ -27,7 +25,7 @@ class TrainPredict:
                             solver='saga',
                             penalty= 'elasticnet',
                             tol=0.001,
-                            max_iter=100,
+                            max_iter=200,
                             C=1.0,
                             l1_ratio=0.1
                             
