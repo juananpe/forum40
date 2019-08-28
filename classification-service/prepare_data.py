@@ -2,6 +2,9 @@ import pymongo, argparse, pprint, logging
 from collections import Counter
 import numpy as np
 from update_training import *
+from timeit import default_timer as timer
+
+
 # create logger
 logger = logging.getLogger('Classifier logger')
 logger.setLevel(logging.DEBUG)
@@ -44,7 +47,7 @@ except:
     exit(1)
 
 
-
+#start = timer()
 # training data compilation
 annotation_dataset = []
 annotation_counts = Counter()
@@ -56,14 +59,24 @@ for labeled_comment in labeled_comments:
                 annotation_counts[manual_label] += 1
                 labeled_instance = (labeled_comment["embedding"],manual_label)
                 annotation_dataset.append(labeled_instance)
+#end = timer()
+
+
 
 logger.info("Manual annotations found: " + str(annotation_counts))
+#logger.info("Each comment take "+str((start-end)/annotations_counts)+" seconds of collection time")
 logger.info("Length of datset: " + str(len(annotation_dataset)))
 
 new_model=TrainPredict()
 
-new_model.train(annotation_dataset,args.labelname)
 
+logger.info("Training started")
+
+start=timer()
+new_model.train(annotation_dataset,args.labelname)
+end=timer()
+
+logger.info("Each comment take "+str((start-end)/annotations_counts)+" seconds of training time")
 
 
 # db update
@@ -72,9 +85,14 @@ batch_size=10000
 def process_batch(comment_batch):
 
     comments_object, embeddings = zip(*comment_batch)
+    start=timer()
     comment_labels = new_model.predict(embeddings,args.labelname)
-    #comment_labels = [[0.1, 0.9]] * len(embeddings)
+    end =timer()
+    logger.info("Each comment take "+str((start-end)/batch_size)+" seconds of prediction time")
 
+    #comment_labels = [[0.1, 0.9]] * len(embeddings)
+    start=timer()
+        
     for i, comment in enumerate(comments_object):
 
         comment_id = comment["_id"]
@@ -105,6 +123,10 @@ def process_batch(comment_batch):
 
         # update mongo db
         comments.update_one({"_id": comment_id}, {"$set": labels_object}, upsert=False)
+    end=timer()
+    logger.info("Each comment take "+str((start-end)/batch_size)+" seconds of writing time")
+
+
 
         # print output for debug
         # if "labels" in comment:
