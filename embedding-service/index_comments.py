@@ -1,6 +1,5 @@
 import pymongo, math
 import nmslib, pickle
-from utils import concat
 
 client = pymongo.MongoClient("localhost", 27017)
 
@@ -13,7 +12,6 @@ index = nmslib.init(method='hnsw', space="angulardist", data_type=nmslib.DataTyp
 comments = db.Comments
 
 comments_query = {"embedding" : {"$exists" : True}}
-# comments_query = {}
 
 comment_batch = []
 batch_size = 30
@@ -35,8 +33,8 @@ for comment_i, comment in enumerate(comments.find(comments_query)):
     batch_embeddings.append(comment["embedding"])
     if comment_i > 0 and comment_i % batch_size == 0:
         print("Adding comment %d of %d" % (comment_i, n_comments))
-        #import pdb
-        #pdb.set_trace()
+        # import pdb
+        # pdb.set_trace()
         index.addDataPointBatch(data = batch_embeddings, ids = batch_ids)
         batch_embeddings = []
         batch_ids = []

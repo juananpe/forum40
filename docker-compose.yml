@@ -35,7 +35,7 @@ services:
         volumes:
             - ./metacomment-service:/app
         links:      
-           - mongo
+            - mongo
     mongo:
         image: mongo
         volumes:
@@ -55,10 +55,10 @@ services:
             context: ./classification-service
             dockerfile: Dockerfile
         volumes:
-        - ./classification-service:/app
-        - ./classification-service/models:/app/models
+            - ./classification-service:/app
+            - ./classification-service/models:/app/models
         links:
-        - mongo
+            - mongo
     embedding:
         build:
             context: ./embedding-service
