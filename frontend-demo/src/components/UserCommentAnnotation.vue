@@ -24,7 +24,7 @@
         </v-flex>
       </v-layout>
     </div>
-    <div v-else>Keine Annotation</div>
+    <div v-else>Keine Klassifizierung</div>
   </div>
 </template>
 
