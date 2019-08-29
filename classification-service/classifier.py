@@ -28,7 +28,6 @@ class EmbedClassifier:
                             max_iter=200,
                             C=1.0,
                             l1_ratio=0.1
-                            
                         )
         ## fit procedure
         classifier.fit(train_X,train_Y)
