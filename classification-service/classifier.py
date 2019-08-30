@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import cross_val_score
 import pickle     
 
 class EmbedClassifier:
@@ -38,6 +39,22 @@ class EmbedClassifier:
         with open(pkl_filename, 'wb') as file:
             pickle.dump(classifier, file)
 
+    def cross_validation(self,embedlabellist,label_name,model):
+        train_X=[]
+        train_Y=[]
+        for ele in embedlabellist:
+            train_X.append(ele[0])
+            train_Y.append(ele[1])
+        train_X=np.array(train_X)
+        train_Y=np.array(train_Y)
+        
+        # model definition
+        classifier = model
+        ## fit procedure
+        scores = cross_val_score(classifier, train_X, train_Y, cv=10, scoring='f1_macro')
+        return scores.mean() 
+        # Save to file in the current working directory
+        
     ###will take around 1 minute and 40 seconds on 1 million data
     def predict(self,embedlist,label_name):
         # # Load from file
