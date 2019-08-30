@@ -68,42 +68,42 @@ class CommentsEmbedding(Resource):
 
 """edited part"""
 #load_indexes
-get_comment=RetrieveComment('mongo',27017)
+# get_comment=RetrieveComment('mongo',27017)
 
-commentid_model = api.model(
-    'comment_id', {
-        'id': fields.String('5cadf570694377c8a2f450d8')})
+# commentid_model = api.model(
+#     'comment_id', {
+#         'id': fields.String('5cadf570694377c8a2f450d8')})
         
-commentsid_model = api.model('comments_id', {
-    'ids': fields.List(fields.Nested(commentid_model))
-})
+# commentsid_model = api.model('comments_id', {
+#     'ids': fields.List(fields.Nested(commentid_model))
+# })
 
 
 
-@api.route('/commentid')
-class Idembeddings(Resource):
-    @api.expect(commentsid_model)
-    def post(self):
-        comments_id = api.payload.get('ids', [])
-        all_ids= [c.get('id', '') for c in comments_id]
-        results = []
-        for _id in all_ids:
-            embedding=get_comment.get_embeddings(_id)
-            results.append(embedding)
-        return results, 200
+# @api.route('/commentid')
+# class Idembeddings(Resource):
+#     @api.expect(commentsid_model)
+#     def post(self):
+#         comments_id = api.payload.get('ids', [])
+#         all_ids= [c.get('id', '') for c in comments_id]
+#         results = []
+#         for _id in all_ids:
+#             embedding=get_comment.get_embeddings(_id)
+#             results.append(embedding)
+#         return results, 200
 
 
-@api.route('/similarids')
-class similarIds(Resource):
-    @api.expect(commentsid_model)
-    def post(self):
-        comments_id = api.payload.get('ids', [])
-        all_ids= [c.get('id', '') for c in comments_id]
-        results =[]
-        for _id in all_ids:
-            ids=get_comment.get_nearest_ids(_id)
-            results.append(ids)
-        return results, 200
+# @api.route('/similarids')
+# class similarIds(Resource):
+#     @api.expect(commentsid_model)
+#     def post(self):
+#         comments_id = api.payload.get('ids', [])
+#         all_ids= [c.get('id', '') for c in comments_id]
+#         results =[]
+#         for _id in all_ids:
+#             ids=get_comment.get_nearest_ids(_id)
+#             results.append(ids)
+#         return results, 200
 
 
 
