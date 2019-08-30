@@ -52,14 +52,10 @@ class EmbedClassifier:
         # model definition
         classifier = model
         ## fit procedure
-        classifier.fit(train_X,train_Y)
-
+        scores = cross_val_score(classifier, train_X, train_Y, cv=10, scoring='f1_macro')
+        return scores.mean() 
         # Save to file in the current working directory
-        path_to_folder= "model"
-        pkl_filename = path_to_folder +"/"+"model_"+label_name+".pkl"
-        with open(pkl_filename, 'wb') as file:
-            pickle.dump(classifier, file)
-
+        
     ###will take around 1 minute and 40 seconds on 1 million data
     def predict(self,embedlist,label_name):
         # # Load from file
