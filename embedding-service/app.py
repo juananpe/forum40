@@ -67,7 +67,7 @@ class CommentsEmbedding(Resource):
 #load_indexes
 
 # #### edited part
-get_comment=RetrieveComment('localhost',27017)
+# get_comment=RetrieveComment('localhost',27017)
 
 # commentid_model = api.model(
 #     'comment_id', {
@@ -110,9 +110,9 @@ get_comment=RetrieveComment('localhost',27017)
 
 
 # todo api
-# [] get embedding given comment id
+# [ ] get embedding given comment id
 # [X] get embedding given text
-# [] get nearest neighbors given comment id
+# [ ] get nearest neighbors given comment id
 # [ ] get nearest neighbors given text
 
 # run app manually
