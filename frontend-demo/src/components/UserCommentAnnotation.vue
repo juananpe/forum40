@@ -1,7 +1,8 @@
 <template>
-  <div>
-    <div v-if="showCheckbox">
+  <v-layout row wrap justify-center>
+    <v-flex v-if="showCheckbox" class="text-xs-center" row>
       <v-checkbox
+        class="align-center justify-center"
         :input-value="checkbox"
         :color="checkBoxColor"
         :label="label.confidence[0] | toPercentage"
@@ -9,23 +10,19 @@
         @change="checkboxClicked"
         hide-details
       ></v-checkbox>
-    </div>
+    </v-flex>
     <div v-else-if="loggedIn">
-      <v-layout row>
+      <v-layout class="text-xs-center" row>
         <v-flex pr-1>
-          <v-btn small outline color="success" class="action-left" @click="annotate(true)">
-            <v-icon>done</v-icon>
-          </v-btn>
+          <v-icon outline color="success" class="action-left" @click="annotate(true)">check</v-icon>
         </v-flex>
         <v-flex pl-1>
-          <v-btn small outline color="error" class="action-right" @click="annotate(false)">
-            <v-icon>clear</v-icon>
-          </v-btn>
+          <v-icon outline color="error" class="action-right" @click="annotate(false)">clear</v-icon>
         </v-flex>
       </v-layout>
     </div>
     <div v-else>Keine Klassifizierung</div>
-  </div>
+  </v-layout>
 </template>
 
 <script>
@@ -121,4 +118,8 @@ export default {
 </script>
 
 <style>
+.v-input__slot {
+  align-items: center;
+  justify-content: center;
+}
 </style>

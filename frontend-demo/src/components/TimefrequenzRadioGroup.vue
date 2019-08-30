@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-radio-group v-model="radios" :mandatory="false" row>
+    <v-radio-group v-model="radios" :mandatory="false" row class="align-center justify-center">
       <v-radio label="Tag" value="d"></v-radio>
       <v-radio label="Monat" value="m"></v-radio>
       <v-radio label="Jahr" value="y"></v-radio>
@@ -15,9 +15,9 @@ import Service, { Endpoint } from "../api/db";
 
 export default {
   methods: {
-    ...mapMutations([Mutations.setTimeFrequency]),
+    ...mapMutations([Mutations.setTimeFrequency])
   },
-   computed: {
+  computed: {
     ...mapGetters([Getters.timeFrequency]),
     radios: {
       set(state) {
