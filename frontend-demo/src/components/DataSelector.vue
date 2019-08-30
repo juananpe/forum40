@@ -1,7 +1,7 @@
 <template>
   <v-layout row>
     <v-flex :xs10="loggedIn" :xs12="!loggedIn">
-      <v-select v-model="selection" :items="items" label="Label-Filter" chips clearable multiple>
+      <v-select v-model="selection" :items="items" chips clearable multiple>
         <template v-slot:selection="data">
           <v-chip :selected="data.selected" close @input="remove(data.item)">
             <strong>{{ data.item }}</strong>
@@ -16,7 +16,7 @@
         </template>
 
         <v-card>
-          <v-card-title class="headline grey lighten-2" primary-title>Label erstellen</v-card-title>
+          <v-card-title class="headline primary white--text" primary-title>Label erstellen</v-card-title>
 
           <v-form>
             <v-container fluid>
@@ -26,7 +26,7 @@
                     v-if="dialog"
                     autofocus
                     v-model="newLabel"
-                    label="Neues Label"
+                    label="Neue Label Beschreibung"
                     clearable
                   ></v-text-field>
                 </v-flex>
@@ -36,7 +36,7 @@
           <v-divider></v-divider>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="primary" flat @click="addLabel">Hinzufügen</v-btn>
+            <v-btn color="primary" flat @click="addLabel">Erstellen</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>

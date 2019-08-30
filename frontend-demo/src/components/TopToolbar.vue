@@ -1,6 +1,6 @@
 <template>
   <v-toolbar color="indigo" dark>
-    <v-toolbar-title>Nutzerkommentare</v-toolbar-title>
+    <v-toolbar-title>Analyse von Online-Nutzerkommentaren</v-toolbar-title>
     <v-spacer></v-spacer>
     <UserLogin/>
   </v-toolbar>
