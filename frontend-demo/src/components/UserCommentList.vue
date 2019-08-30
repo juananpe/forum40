@@ -35,7 +35,7 @@
               <span v-html="highlight(commentText(props), keyword)"></span>
             </b>
           </td>
-          <td class="text-xs-left">{{ props.item.timestamp['$date'] | moment}}</td>
+          <td class="text-xs-right">{{ props.item.timestamp['$date'] | moment}}</td>
           <td v-for="(label, i) in selectedLabels" :key="i">
             <UserCommentAnnotation
               :commentId="props.item._id.$oid"
@@ -81,14 +81,14 @@ export default {
           align: "left",
           sortable: false,
           value: "text",
-          width: "85%"
+          width: "80%"
         },
         {
           text: "Datum",
-          align: "left",
+          align: "right",
           sortable: false,
           value: "timestamp",
-          width: "10%"
+          width: "15%"
         }
       ]
     };
@@ -97,7 +97,7 @@ export default {
     moment: function(date) {
       return moment(date)
         .locale("de")
-        .format("MMMM Do YY");
+        .format("DD. MMM YY");
     }
   },
   computed: {

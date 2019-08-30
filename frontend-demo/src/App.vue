@@ -7,11 +7,15 @@
           <v-flex xs12>
             <UserCommentFilter />
           </v-flex>
-          <v-flex xs12>
-            <TimefrequenzRadioGroup />
+          <v-flex xs12 class="pb-4"></v-flex>
+          <h3>Kommentarliste</h3>
+          <v-flex class="text-xs-center" xs12>
+              <TimefrequenzRadioGroup />
+            </v-flex>
+            <v-flex xs12>
             <TimeChart />
           </v-flex>
-          <v-flex xs12 class='pb-4'></v-flex>
+          <v-flex xs12 class="pb-4"></v-flex>
           <v-flex xs12>
             <UserCommentList />
           </v-flex>
