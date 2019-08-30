@@ -5,7 +5,7 @@ from core.proxy_wrapper import ReverseProxied
 import nmslib, pickle
 from BertFeatureExtractor import BertFeatureExtractor
 from utils import concat
-from retrieve_comments_ps import *
+from retrieve_comments_ps import RetrieveComment
 
 
 dictConfig({
@@ -32,7 +32,6 @@ app.logger.debug('Loading BERT model')
 be = BertFeatureExtractor()
 app.logger.debug('BERT model loaded')
 
-#load_indexes
 
 
 
@@ -65,9 +64,10 @@ class CommentsEmbedding(Resource):
 
  
        
+#load_indexes
 
 # #### edited part
-# get_comment=RetrieveComment('localhost',27017)
+get_comment=RetrieveComment('localhost',27017)
 
 # commentid_model = api.model(
 #     'comment_id', {
@@ -117,4 +117,4 @@ class CommentsEmbedding(Resource):
 
 # run app manually
 if __name__ == "__main__":
-    app.run(debug=True,use_reloader=False,threaded = True)
+    app.run(threaded = True)

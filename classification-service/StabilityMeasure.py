@@ -37,7 +37,7 @@ class StabilityMeasure:
         self.classification_model = None
         self.batch_size = 20000
 
-        
+
     def collect_trainingdata(self):
 
         label = self.labels.find_one({"classname" : self.labelname})
@@ -94,12 +94,12 @@ class StabilityMeasure:
         end=timer()
         logger.info("Cross validation took "+str(end-start)+" seconds.")
 
-        model_name = type(model).__name__
+        model_name = type(classifier).__name__
         current_timestamp = time.time()
 
         if(os.path.isfile('models/history.csv')):
             df=pd.read_csv('models/history.csv')
-            df = df.append({'model_name' :model_name,'model_parameters':model, 
+            df = df.append({'model_name' :model_name,'model_parameters':classifier, 
                                         'time_stamp' :current_timestamp,'label_name':self.labelname,'cross_val_score':mean_f1 } , ignore_index=True)
             df.to_csv('models/history.csv')
 
