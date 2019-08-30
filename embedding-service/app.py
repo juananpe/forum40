@@ -28,9 +28,9 @@ app = Flask(__name__)
 app.wsgi_app = ReverseProxied(app.wsgi_app)
 
 # load BERT model
-# app.logger.debug('Loading BERT model')
-# be = BertFeatureExtractor()
-# app.logger.debug('BERT model loaded')
+app.logger.debug('Loading BERT model')
+be = BertFeatureExtractor()
+app.logger.debug('BERT model loaded')
 
 #load_indexes
 get_comment=RetrieveComment('localhost',27017)
@@ -60,12 +60,11 @@ class CommentsEmbedding(Resource):
         comment_texts = [
             concat(c.get('title', ''), c.get('text', '')) for c in comments
         ]
-        #results = be.extract_features(comment_texts)
-        results=comment_texts
+        results = be.extract_features(comment_texts)
+        #results=comment_texts
         return results, 200
 
 
-app.logger.debug("Hello")
         
 
 #### edited part
@@ -110,9 +109,9 @@ class similarIds(Resource):
 
 
 # todo api
-# [ ] get embedding given comment id
+# [X] get embedding given comment id
 # [X] get embedding given text
-# [ ] get nearest neighbors given comment id
+# [X] get nearest neighbors given comment id
 # [ ] get nearest neighbors given text
 
 # run app manually
