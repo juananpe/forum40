@@ -1,21 +1,22 @@
 <template>
   <div id="app">
     <v-app>
-      <TopToolbar/>
+      <TopToolbar />
       <v-container>
         <v-layout row wrap>
           <v-flex xs12>
-            <UserCommentFilter/>
+            <UserCommentFilter />
           </v-flex>
           <v-flex xs12>
-            <TimefrequenzRadioGroup/>
-            <TimeChart/>
+            <TimefrequenzRadioGroup />
+            <TimeChart />
+          </v-flex>
+          <v-flex xs12 class='pb-4'></v-flex>
+          <v-flex xs12>
+            <UserCommentList />
           </v-flex>
           <v-flex xs12>
-            <UserCommentList/>
-          </v-flex>
-          <v-flex xs12>
-            <UserCommentThread/>
+            <UserCommentThread />
           </v-flex>
         </v-layout>
       </v-container>
@@ -26,7 +27,7 @@
 <script>
 import TopToolbar from "./components/TopToolbar";
 import TimeChart from "./components/TimeChart";
-import TimefrequenzRadioGroup from "./components/TimefrequenzRadioGroup"
+import TimefrequenzRadioGroup from "./components/TimefrequenzRadioGroup";
 import UserCommentList from "./components/UserCommentList";
 import UserCommentFilter from "./components/UserCommentFilter";
 import UserCommentThread from "./components/UserCommentThread";

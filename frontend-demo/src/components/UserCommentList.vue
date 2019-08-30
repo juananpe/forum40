@@ -3,11 +3,12 @@
     <h3>Kommentarliste</h3>
 
     <v-layout row>
-      <v-flex xs2>
+      <v-flex xs12>
         <v-text-field
           v-model="keyword"
-          label="Kommentartextsuche"
+          label="Textsuche"
           @change="keywordChanged"
+          append-icon="search"
           clearable
         ></v-text-field>
       </v-flex>

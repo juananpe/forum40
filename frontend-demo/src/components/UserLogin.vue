@@ -25,7 +25,7 @@
     <div v-else>
       <v-dialog v-model="dialog" width="500" @keydown.enter.prevent="loginUser">
         <template v-slot:activator="{ on }">
-          <v-btn color="primary" v-on="on">Login</v-btn>
+          <v-btn color="primary" v-on="on">Einloggen</v-btn>
         </template>
 
         <v-card>
@@ -39,7 +39,7 @@
                     v-if="dialog"
                     autofocus
                     v-model="username"
-                    label="Username"
+                    label="Nutzername"
                     clearable
                   ></v-text-field>
                 </v-flex>
@@ -50,7 +50,7 @@
                     :append-icon="show ? 'visibility' : 'visibility_off'"
                     :type="show ? 'text' : 'password'"
                     name="password"
-                    label="Password"
+                    label="Passwort"
                     @click:append="show = !show"
                   ></v-text-field>
                 </v-flex>
@@ -62,12 +62,12 @@
 
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="primary" flat @click="loginUser">Login</v-btn>
+            <v-btn color="primary" flat @click="loginUser">Einloggen</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
 
-      <v-alert v-model="error" type="error" dismissible class="center">Login fehlgeschlagen!</v-alert>
+      <v-alert v-model="error" type="error" dismissible class="center">Einloggen fehlgeschlagen!</v-alert>
     </div>
   </div>
 </template>
@@ -82,8 +82,8 @@ export default {
       dialog: false,
       error: false,
       testalert: false,
-      username: "",
-      password: "",
+      username: "user1",
+      password: "22880",
       show: false
     };
   },

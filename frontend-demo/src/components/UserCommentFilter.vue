@@ -1,12 +1,13 @@
 <template>
   <div>
-    <h3>Aktive Filter</h3>
+    <!-- <h3>Aktive Filter</h3>
     <v-layout row wrap>
       <v-flex xs12>
         <v-chip v-for="filter in _activeFilters" v-bind:key="filter">{{filter}}</v-chip>
       </v-flex>
-    </v-layout>
+    </v-layout> -->
     
+    <h3>Ausgewählte Labels</h3>
     <v-layout row wrap>
       <v-flex xs12>
         <DataSelector/>
