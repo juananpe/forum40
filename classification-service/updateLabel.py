@@ -81,7 +81,7 @@ class LabelUpdater:
 
         comments_object, embeddings = zip(*comment_batch)
         start=timer()
-        comment_labels = self.classification_model.predict(embeddings, labelname)
+        comment_labels = self.classification_model.predict(embeddings, self.labelname)
         end =timer()
         logger.info("Batch took "+str((end-start))+" seconds of prediction time")
 

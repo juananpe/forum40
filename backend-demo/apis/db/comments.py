@@ -234,16 +234,14 @@ class LabelComment(Resource):
             "timestamp": datetime.now()
         }
 
-        print(current_manuel_label, file=sys.stderr)
-        isAlreadyLabeldByUser = False
-        for manual_label in current_manuel_label['manualLabels']:
-            if manual_label['annotatorId'] == self["user"]:
-                isAlreadyLabeldByUser = True
-                break
-
-        print(isAlreadyLabeldByUser, file=sys.stderr)
-
         if current_manuel_label:
+
+            isAlreadyLabeldByUser = False
+            for manual_label in current_manuel_label['manualLabels']:
+                if manual_label['annotatorId'] == self["user"]:
+                    isAlreadyLabeldByUser = True
+                    break
+
             if isAlreadyLabeldByUser:
                 coll_c.update(
                     {"_id": comment["_id"], "labels.labelId" : label_id}, 

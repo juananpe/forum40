@@ -36,7 +36,11 @@
           </td>
           <td class="text-xs-left">{{ props.item.timestamp['$date'] | moment}}</td>
           <td v-for="(label, i) in selectedLabels" :key="i">
-            <v-layout row>{{showAnnotations(props.item, label)}}</v-layout>
+            <UserCommentAnnotation
+              :commentId="props.item._id.$oid"
+              :initialLabel="getAnnotations(props.item, label)"
+              :labelName="label"
+            />
           </td>
         </tr>
       </template>
@@ -50,6 +54,7 @@ import { Getters, Mutations } from "../store/const";
 import { mapGetters, mapMutations } from "vuex";
 import { getLabels } from "../CommentsUtil";
 import moment from "moment";
+import UserCommentAnnotation from "./UserCommentAnnotation";
 
 export default {
   name: "UserCommentList",
@@ -98,7 +103,8 @@ export default {
     ...mapGetters([
       Getters.keywordfilter,
       Getters.selectedLabels,
-      Getters.labelParameters
+      Getters.labelParameters,
+      Getters.jwtUser
     ]),
     commentsTableHeader() {
       const labelTableHeaders = this[Getters.selectedLabels].map(e => ({
@@ -172,9 +178,10 @@ export default {
       const index = this.labels.ids.indexOf(id);
       return this.labels.labels[index];
     },
-    showAnnotations(comment, label) {      
+    getAnnotations(comment, label) {
       const labelId = this.idForLabel(label);
-      return getLabels(comment, labelId);
+      const username = this[Getters.jwtUser];
+      return getLabels(comment, labelId, username);
     },
     commentText(props) {
       return (props.item.title || "") + " " + props.item.text;
@@ -217,6 +224,9 @@ export default {
     keywordChanged() {
       //this.loadTable();
     }
+  },
+  components: {
+    UserCommentAnnotation
   }
 };
 </script>

@@ -89,7 +89,9 @@ export default {
       this.removeAllLabels()
 
       const { data } = await Service.get(`${this.selectEndpoint()}${this.textFilterArg('?')}`);
-      this.addSeriesToChat(data, "Gesamtheit")
+      if (this.local_chart_state.length == 0) {
+        this.addSeriesToChat(data, "Gesamtheit")
+      }
     },
     updateChart : async function() {
       var chart_options = this.chart_options
