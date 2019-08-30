@@ -1,5 +1,5 @@
 #!/bin/sh
-for i in sentimentpositive sentimentneutral inappropriate discriminating possiblyfeedback personalstories argumentsused meta-comment
+for i in metacomment
 do
   python updateLabel.py --labelname $i
 done
