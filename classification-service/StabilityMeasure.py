@@ -6,6 +6,7 @@ from pymongo import UpdateOne
 from classifier import *
 import pandas as pd
 import time
+import os
 # create logger
 logger = logging.getLogger('Measuring stability logger')
 logger.setLevel(logging.DEBUG)
@@ -97,8 +98,8 @@ class StabilityMeasure:
         model_name = type(classifier).__name__
         current_timestamp = time.time()
 
-        if(os.path.isfile('models/history.csv')):
-            df=pd.read_csv('models/history.csv')
+        if(os.path.isfile('history.csv')):
+            df=pd.read_csv('history.csv')
             df = df.append({'model_name' :model_name,'model_parameters':classifier, 
                                         'time_stamp' :current_timestamp,'label_name':self.labelname,'cross_val_score':mean_f1 } , ignore_index=True)
             df.to_csv('models/history.csv')
@@ -106,9 +107,9 @@ class StabilityMeasure:
         else:
             df = pd.DataFrame(columns=['model_name', 'model_parameters', 
                                                         'time_stamp','label_name','cross_val_score'])
-            df = df.append({'model_name' :model_name,'model_parameters':model, 
+            df = df.append({'model_name' :model_name,'model_parameters':classifier, 
                                         'time_stamp' :current_timestamp,'label_name':self.labelname,'cross_val_score':mean_f1 } , ignore_index=True)
-            df.to_csv('models/history.csv')
+            df.to_csv('history.csv')
 
 
 
