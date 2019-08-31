@@ -1,8 +1,7 @@
 <template>
-  <v-layout row wrap justify-center>
-    <v-flex v-if="showCheckbox" class="text-xs-center" row>
+  <v-layout justify-center>
+    <v-flex v-if="showCheckbox">
       <v-checkbox
-        class="align-center justify-center"
         :input-value="checkbox"
         :color="checkBoxColor"
         :label="label.confidence[0] | toPercentage"
@@ -12,7 +11,7 @@
       ></v-checkbox>
     </v-flex>
     <div v-else-if="loggedIn">
-      <v-layout class="text-xs-center" row>
+      <v-layout>
         <v-flex pr-1>
           <v-icon outline color="success" class="action-left" @click="annotate(true)">check</v-icon>
         </v-flex>

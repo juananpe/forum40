@@ -7,12 +7,12 @@
         </template>
 
         <v-list>
-          <v-list-tile @click="checkLogin">
-            <v-list-tile-title>Check login</v-list-tile-title>
-          </v-list-tile>
-          <v-list-tile @click="logout">
-            <v-list-tile-title>Logout</v-list-tile-title>
-          </v-list-tile>
+          <v-list-item @click="checkLogin">
+            <v-list-item-title>Check login</v-list-item-title>
+          </v-list-item>
+          <v-list-item @click="logout">
+            <v-list-item-title>Logout</v-list-item-title>
+          </v-list-item>
         </v-list>
       </v-menu>
       <v-alert
@@ -32,8 +32,8 @@
           <v-card-title class="headline grey lighten-2" primary-title>Login</v-card-title>
 
           <v-form>
-            <v-container fluid>
-              <v-layout row wrap>
+            <v-container>
+              <v-layout>
                 <v-flex xs12 sm6>
                   <v-text-field
                     v-if="dialog"
@@ -62,7 +62,7 @@
 
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="primary" flat @click="loginUser">Einloggen</v-btn>
+            <v-btn color="primary" text @click="loginUser">Einloggen</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>

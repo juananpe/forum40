@@ -2,7 +2,7 @@
   <div>
     <h3>Kommentarliste</h3>
 
-    <v-layout row>
+    <v-layout>
       <v-flex xs12>
         <v-text-field
           v-model="keyword"
@@ -17,16 +17,16 @@
     <v-data-table
       :headers="commentsTableHeader"
       :items="comments"
-      :expand="expand"
       :loading="loading"
-      :rows-per-page-items="rowsPerPage"
-      :pagination.sync="pagination"
-      :total-items="totalItems"
+      :footer-props="footerprops"
+      :items-per-page="rowsPerPage"
+      :page.sync="page"
+      :server-items-length="totalItems"
       item-key="_id.$oid"
     >
-      <template v-slot:items="props">
+      <template v-slot:item="props">
         <tr>
-          <td @click="commentClicked(props)" class="text-xs-left commenttext">
+          <td @click="commentClicked(props)" class="text-left commenttext">
             <div v-if="!props.expanded">
               <span v-html="highlight(shortText(commentText(props)), keyword)"></span>
             </div>
@@ -35,8 +35,8 @@
               <span v-html="highlight(commentText(props), keyword)"></span>
             </b>
           </td>
-          <td class="text-xs-right">{{ props.item.timestamp['$date'] | moment}}</td>
-          <td v-for="(label, i) in selectedLabels" :key="i">
+          <td class="text-right">{{ props.item.timestamp['$date'] | moment}}</td>
+          <td v-for="(label, i) in selectedLabels" :key="props.item._id.$oid+i">
             <UserCommentAnnotation
               :commentId="props.item._id.$oid"
               :initialLabel="getAnnotations(props.item, label)"
@@ -66,21 +66,20 @@ export default {
       selected: [],
       expand: false,
       totalItems: 0,
-      rowsPerPage: [15, 30],
+      footerprops: {
+        "items-per-page-options": [15, 30]
+      },
       teaserTextLength: 250,
       labels: {},
-      pagination: {
-        page: 1,
-        rowsPerPage: 15,
-        descending: true,
-        sortBy: "likes"
-      },
+      page: 1,
+      rowsPerPage: 15,
       basicCommentsTableHeader: [
         {
           text: "Kommentartext",
           align: "left",
           sortable: false,
           value: "text",
+          class: "tableheader",
           width: "80%"
         },
         {
@@ -126,10 +125,8 @@ export default {
     },
     pageQueryString() {
       const limit =
-        this.pagination.rowsPerPage === -1
-          ? this.totalItems
-          : this.pagination.rowsPerPage;
-      const skip = (this.pagination.page - 1) * limit;
+        this.rowsPerPage === -1 ? this.totalItems : this.rowsPerPage;
+      const skip = (this.page - 1) * limit;
       const pageQueryString =
         this.countQueryString + `&skip=${skip}&limit=${limit}`;
       return pageQueryString;
@@ -154,7 +151,7 @@ export default {
       this.setSelectedComment({});
       this.loadTable();
     },
-    async pagination() {
+    async page() {
       this.setSelectedComment({});
       this.loading = true;
       await this.fetchComments();
@@ -165,7 +162,7 @@ export default {
     ...mapMutations([Mutations.setSelectedComment, Mutations.setKeywordfilter]),
     async loadTable() {
       this.loading = true;
-      this.pagination.page = 1;
+      this.page = 1;
       const p1 = this.setToalCommentNumber();
       const p2 = this.fetchComments();
       await Promise.all([p1, p2]);
@@ -240,5 +237,9 @@ export default {
 }
 .commenttext >>> .highlight {
   background-color: yellow;
+}
+.tableheader {
+  font-size: 24pt;
+  color: aqua;
 }
 </style>

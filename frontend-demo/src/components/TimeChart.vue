@@ -1,7 +1,5 @@
 <template>
-  <div>
-    <v-chart :options="chart_options" :autoresize="true"/>
-  </div>
+  <v-chart :options="chart_options" :autoresize="true" />
 </template>
 
 <style>
@@ -32,142 +30,162 @@ export default {
   components: {
     "v-chart": ECharts
   },
-    computed: {
+  computed: {
     ...mapGetters([
-        Getters.selectedLabels, 
-        Getters.keywordfilter,
-        Getters.timeFrequency]),
-
+      Getters.selectedLabels,
+      Getters.keywordfilter,
+      Getters.timeFrequency
+    ])
   },
-   watch: {
+  watch: {
     timeFrequency() {
-      this.updateChart()
+      this.updateChart();
     },
     selectedLabels() {
-      if (this[Getters.selectedLabels].length > 0) this.updateChart_OnLabelChange(); else this.resetChartToOrigin()
+      if (this[Getters.selectedLabels].length > 0)
+        this.updateChart_OnLabelChange();
+      else this.resetChartToOrigin();
     },
     keywordfilter() {
-      this.updateChart()
+      this.updateChart();
     }
   },
   mounted: async function() {
-    var p1 = this.initChart()
+    var p1 = this.initChart();
     await Promise.all([p1]);
-    if (this[Getters.selectedLabels].length > 0) this.updateChart_OnLabelChange(); else this.resetChartToOrigin();
+    if (this[Getters.selectedLabels].length > 0)
+      this.updateChart_OnLabelChange();
+    else this.resetChartToOrigin();
   },
   methods: {
     initChart: async function() {
       const { data } = await Service.get(Endpoint.LABELS);
-      data.labels.push("Gesamtheit")
-    
+      data.labels.push("Gesamtheit");
+
       data.labels.forEach(labelName => {
-        this.chart_options.legend.selected[labelName] = false
+        this.chart_options.legend.selected[labelName] = false;
         var series = {
-            name: labelName,
-            type: "bar",
-            barGap: "0%",
-            barCategoryGap: "10%",
-            data: [],
-            animationDelay: function(idx) {
-              return idx * 0;
+          name: labelName,
+          type: "bar",
+          barGap: "0%",
+          barCategoryGap: "10%",
+          data: [],
+          animationDelay: function(idx) {
+            return idx * 0;
           }
-        }
-        this.chart_options.series.push(series)
-      })
+        };
+        this.chart_options.series.push(series);
+      });
     },
-    addSeriesToChat: function (data, name) {
-      var seriesId = this.chart_options.series.findIndex(x => x.name == name)
-      if(name != "Gesamtheit") {
-        this.local_chart_state.push(name)
+    addSeriesToChat: function(data, name) {
+      var seriesId = this.chart_options.series.findIndex(x => x.name == name);
+      if (name != "Gesamtheit") {
+        this.local_chart_state.push(name);
       } else {
-        this.chart_options.xAxis.data = data["time"]
+        this.chart_options.xAxis.data = data["time"];
       }
-      this.chart_options.legend.selected[name] = true
-      this.chart_options.series[seriesId].data = data.data
+      this.chart_options.legend.selected[name] = true;
+      this.chart_options.series[seriesId].data = data.data;
     },
     resetChartToOrigin: async function() {
-      this.removeAllLabels()
+      this.removeAllLabels();
 
-      const { data } = await Service.get(`${this.selectEndpoint()}${this.textFilterArg('?')}`);
+      const { data } = await Service.get(
+        `${this.selectEndpoint()}${this.textFilterArg("?")}`
+      );
       if (this.local_chart_state.length == 0) {
-        this.addSeriesToChat(data, "Gesamtheit")
+        this.addSeriesToChat(data, "Gesamtheit");
       }
     },
-    updateChart : async function() {
-      var chart_options = this.chart_options
-      var selectEndpoint = this.selectEndpoint
-      var textFilterArg = this.textFilterArg
+    updateChart: async function() {
+      var chart_options = this.chart_options;
+      var selectEndpoint = this.selectEndpoint;
+      var textFilterArg = this.textFilterArg;
       chart_options.series.forEach(async function(x) {
-        if(chart_options.legend.selected[x.name]) {
-          const { data } = await Service.get(`${selectEndpoint()}?label=${x.name}${textFilterArg('&')}`);
-          chart_options.xAxis.data = data["time"]
-          x.data = data.data
+        if (chart_options.legend.selected[x.name]) {
+          const { data } = await Service.get(
+            `${selectEndpoint()}?label=${x.name}${textFilterArg("&")}`
+          );
+          chart_options.xAxis.data = data["time"];
+          x.data = data.data;
         }
-      })
+      });
     },
     updateChart_OnLabelChange: async function() {
-      var seriesId = this.chart_options.series.findIndex(x => x.name == 'Gesamtheit')
-      if(seriesId != -1) {
-        this.chart_options.series[seriesId].data = []
-        this.chart_options.legend.selected['Gesamtheit'] = false
+      var seriesId = this.chart_options.series.findIndex(
+        x => x.name == "Gesamtheit"
+      );
+      if (seriesId != -1) {
+        this.chart_options.series[seriesId].data = [];
+        this.chart_options.legend.selected["Gesamtheit"] = false;
       }
 
-      if(this[Getters.selectedLabels].length > this.local_chart_state.length) {
-          var label = this[Getters.selectedLabels][this[Getters.selectedLabels].length -1]
-          const { data } = await Service.get(`${this.selectEndpoint()}?label=${label}${this.textFilterArg('&')}`);
-          this.addSeriesToChat(data, label)
+      if (this[Getters.selectedLabels].length > this.local_chart_state.length) {
+        var label = this[Getters.selectedLabels][
+          this[Getters.selectedLabels].length - 1
+        ];
+        const { data } = await Service.get(
+          `${this.selectEndpoint()}?label=${label}${this.textFilterArg("&")}`
+        );
+        this.addSeriesToChat(data, label);
       }
-      this.removeDisabledLabels()
+      this.removeDisabledLabels();
     },
     textFilterArg: function(prefix) {
-      if(this[Getters.keywordfilter]) {
-        return `${prefix}keyword=${this[Getters.keywordfilter]}`
+      if (this[Getters.keywordfilter]) {
+        return `${prefix}keyword=${this[Getters.keywordfilter]}`;
       } else {
-        return ""
+        return "";
       }
     },
     selectEndpoint: function() {
-      var endpoint = ''
-      switch(this[Getters.timeFrequency]) {
-        case 'd':
-          endpoint = Endpoint.COMMENTS_GROUP_BY_DAY
+      var endpoint = "";
+      switch (this[Getters.timeFrequency]) {
+        case "d":
+          endpoint = Endpoint.COMMENTS_GROUP_BY_DAY;
           break;
-        case 'm':
-          endpoint = Endpoint.COMMENTS_GROUP_BY_MONTH
+        case "m":
+          endpoint = Endpoint.COMMENTS_GROUP_BY_MONTH;
           break;
-        case 'y':
-          endpoint = Endpoint.COMMENTS_GROUP_BY_YEAR
+        case "y":
+          endpoint = Endpoint.COMMENTS_GROUP_BY_YEAR;
           break;
         default:
-          // code block
+        // code block
       }
-      return endpoint
+      return endpoint;
     },
     removeAllLabels: function() {
-      this.local_chart_state = []
-      this.chart_options.series.forEach(x => x.data = [])
+      this.local_chart_state = [];
+      this.chart_options.series.forEach(x => (x.data = []));
       for (var key in this.chart_options.legend.selected) {
-        this.chart_options.legend.selected[key] = false // TODO O(1)
+        this.chart_options.legend.selected[key] = false; // TODO O(1)
       }
 
-      this[Getters.selectedLabels].forEach(function () {
-        this.chart_options.legend.selected['label'] = false
+      this[Getters.selectedLabels].forEach(function() {
+        this.chart_options.legend.selected["label"] = false;
       });
     },
     removeDisabledLabels: function() {
-      var diff = this.local_chart_state.filter(i =>  this[Getters.selectedLabels].indexOf(i) < 0)
-      while(diff.length > 0) {
-        var labelName = diff.pop()
-        this.chart_options.legend.selected[labelName] = false
-        var seriesId = this.chart_options.series.findIndex(x => x.name == labelName)
-        this.local_chart_state = this.local_chart_state.filter(x => x != labelName)
-        this.chart_options.series[seriesId].data = []
+      var diff = this.local_chart_state.filter(
+        i => this[Getters.selectedLabels].indexOf(i) < 0
+      );
+      while (diff.length > 0) {
+        var labelName = diff.pop();
+        this.chart_options.legend.selected[labelName] = false;
+        var seriesId = this.chart_options.series.findIndex(
+          x => x.name == labelName
+        );
+        this.local_chart_state = this.local_chart_state.filter(
+          x => x != labelName
+        );
+        this.chart_options.series[seriesId].data = [];
       }
     }
   },
   data() {
     return {
-      radios: 'm',
+      radios: "m",
       local_chart_state: [],
       chart_options: {
         legend: {
@@ -186,11 +204,14 @@ export default {
             }
           }
         },
-        dataZoom: [{
-            type: 'inside'
-        }, {
-            type: 'slider'
-        }],
+        dataZoom: [
+          {
+            type: "inside"
+          },
+          {
+            type: "slider"
+          }
+        ],
         tooltip: {
           trigger: "axis"
         },
@@ -205,7 +226,7 @@ export default {
           return this._xAxis;
         },
         set xAxis(value) {
-          this._xAxis=value;
+          this._xAxis = value;
         },
         yAxis: {},
         series: [],

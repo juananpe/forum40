@@ -1,5 +1,4 @@
 <template>
-  <div id="app">
     <v-app>
       <TopToolbar />
       <v-container>
@@ -8,7 +7,7 @@
             <UserCommentFilter />
           </v-flex>
           <v-flex xs12 class="pb-4"></v-flex>
-          <h3>Kommentarliste</h3>
+          <h3>Anzahl der Kommentare über Zeit</h3>
           <v-flex class="text-xs-center" xs12>
               <TimefrequenzRadioGroup />
             </v-flex>
@@ -25,7 +24,6 @@
         </v-layout>
       </v-container>
     </v-app>
-  </div>
 </template>
 
 <script>
@@ -38,7 +36,7 @@ import UserCommentThread from "./components/UserCommentThread";
 import { mapActions } from "vuex";
 
 export default {
-  name: "app",
+  name: "App",
   components: {
     TopToolbar,
     TimeChart,

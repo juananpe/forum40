@@ -3,7 +3,7 @@
     <v-flex :xs10="loggedIn" :xs12="!loggedIn">
       <v-select v-model="selection" :items="items" chips clearable multiple>
         <template v-slot:selection="data">
-          <v-chip :selected="data.selected" close @input="remove(data.item)">
+          <v-chip :input-value="data.selected" close @click:close="remove(data.item)">
             <strong>{{ data.item }}</strong>
           </v-chip>
         </template>
@@ -12,7 +12,7 @@
     <v-flex xs2 v-if="loggedIn">
       <v-dialog v-model="dialog" width="300" @keydown.enter.prevent="addLabel">
         <template v-slot:activator="{ on }">
-          <v-btn small outline color="success" v-on="on">Label erstellen</v-btn>
+          <v-btn small outlined color="success" v-on="on">Label erstellen</v-btn>
         </template>
 
         <v-card>
