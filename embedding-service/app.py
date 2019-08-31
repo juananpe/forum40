@@ -64,10 +64,11 @@ class CommentsEmbedding(Resource):
 
  
        
-#load_indexes
 
-# #### edited part
-# get_comment=RetrieveComment('localhost',27017)
+
+"""edited part"""
+#load_indexes
+# get_comment=RetrieveComment('mongo',27017)
 
 # commentid_model = api.model(
 #     'comment_id', {

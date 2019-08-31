@@ -34,7 +34,7 @@ class LabelUpdater:
         self.labelname = labelname
         self.label_id = None
         self.classification_model = None
-        self.batch_size = 20000
+        self.batch_size =20000
 
     def collect_trainingdata(self):
 
