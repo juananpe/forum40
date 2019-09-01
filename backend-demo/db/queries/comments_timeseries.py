@@ -1,5 +1,11 @@
 from datetime import datetime
 
+_stage0 = {
+	"$match" : {
+		"labels": {"$exists": 1}
+	}
+}
+
 def _stage1(id, keywords):
     query = {}
     if id:
@@ -42,6 +48,7 @@ _stage3 = {
 
 def getCommentsGroupedByDay(id, keywords):
     return [
+		_stage0,
 		_stage1(id, keywords),
 		{
 			"$group": {
@@ -58,6 +65,7 @@ def getCommentsGroupedByDay(id, keywords):
 
 def getCommentsGroupedByMonth(id, keywords):
     return [
+		_stage0,
 		_stage1(id, keywords),
 		{
 			"$group": {
@@ -73,6 +81,7 @@ def getCommentsGroupedByMonth(id, keywords):
 
 def getCommentsGroupedByYear(id, keywords):
     return [
+		_stage0,
         _stage1(id, keywords),
 		{
 			"$group": {

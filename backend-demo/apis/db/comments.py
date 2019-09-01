@@ -38,6 +38,8 @@ def createCommentsQueryFromArgs(args):
                         ]
                     } 
                 }
+    else :
+        query["labels"] = {"$exists": 1}
     if 'keyword' in args and args['keyword']:
         searchwords = " ".join(x for x in args['keyword'])
         query["$text"] = {
