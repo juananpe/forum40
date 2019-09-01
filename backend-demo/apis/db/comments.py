@@ -96,6 +96,22 @@ class CommentsGroupByDay(Resource):
             addMissingDays, 
             lambda d : "{}.{}.{}".format(d['dayOfMonth'], d['month'], d['year']))
 
+# TODO 
+months =	{
+  "1": "Jan.",
+  "2": "Feb.",
+  "3": "Mär.",
+  "4": "Apr.",
+  "5": "Mai",
+  "6": "Juni",
+  "7": "Juli",
+  "8": "Aug.",
+  "9": "Sep.",
+  "10": "Okt.",
+  "11": "Nov.",
+  "12": "Dez.",
+}
+
 @ns.route('/groupByMonth')
 @api.expect(groupByModel)
 class CommentsGroupByMonth(Resource):
@@ -105,7 +121,7 @@ class CommentsGroupByMonth(Resource):
             args, 
             getCommentsGroupedByMonth, 
             addMissingMonths, 
-            lambda d : "{}.{}".format(d['month'], d['year']))
+            lambda d : "{} {}".format(months[str(d['month'])], d['year']))
 
 @ns.route('/groupByYear')
 @api.expect(groupByModel)
