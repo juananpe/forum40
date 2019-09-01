@@ -51,7 +51,7 @@ export default {
     }
   },
   mounted: async function() {
-    var p1 = this.initChart();
+    this.initChart();
     this.resetChartToOrigin();
   },
   methods: {
@@ -81,6 +81,11 @@ export default {
       } else {
         this.chart_options.xAxis.data = data["time"];
       }
+      // quick fix bug
+      if (this.chart_options.xAxis.data.length == 0) {
+        this.chart_options.xAxis.data = data["time"];
+      }
+
       this.chart_options.legend.selected[name] = true;
       this.chart_options.series[seriesId].data = data.data;
     },
