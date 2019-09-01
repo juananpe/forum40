@@ -52,10 +52,7 @@ export default {
   },
   mounted: async function() {
     var p1 = this.initChart();
-    await Promise.all([p1]);
-    if (this[Getters.selectedLabels].length > 0)
-      this.updateChart_OnLabelChange();
-    else this.resetChartToOrigin();
+    this.resetChartToOrigin();
   },
   methods: {
     initChart: async function() {
@@ -93,7 +90,7 @@ export default {
       const { data } = await Service.get(
         `${this.selectEndpoint()}${this.textFilterArg("?")}`
       );
-      if (this.local_chart_state.length == 0) {
+      if (this[Getters.selectedLabels].length == 0) {
         this.addSeriesToChat(data, "Gesamtheit");
       }
     },
