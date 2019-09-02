@@ -3,7 +3,7 @@
     <h3>Kommentar-Thread</h3>
     <p></p>
     <div v-for="(comment, i) in comments" v-bind:key="comment._id.$oid">
-      <v-layout row>
+      <v-layout>
         <v-flex :[dynamicFlex(i)]="true" mb-1>
           <div :class="dynamicClasses(i)">
             #{{i+1}}

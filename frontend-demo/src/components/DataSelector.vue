@@ -1,5 +1,5 @@
 <template>
-  <v-layout row>
+  <v-layout>
     <v-flex :xs10="loggedIn" :xs12="!loggedIn">
       <v-select v-model="selection" :items="items" chips clearable multiple>
         <template v-slot:selection="data">
@@ -20,7 +20,7 @@
 
           <v-form>
             <v-container fluid>
-              <v-layout row wrap>
+              <v-layout wrap>
                 <v-flex xs12>
                   <v-text-field
                     v-if="dialog"

@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- <h3>Aktive Filter</h3>
-    <v-layout row wrap>
+    <v-layout wrap>
       <v-flex xs12>
         <v-chip v-for="filter in _activeFilters" v-bind:key="filter">{{filter}}</v-chip>
       </v-flex>

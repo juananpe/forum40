@@ -2,7 +2,7 @@
     <v-app>
       <TopToolbar />
       <v-container>
-        <v-layout row wrap>
+        <v-layout wrap>
           <v-flex xs12>
             <UserCommentFilter />
           </v-flex>

@@ -1,5 +1,5 @@
 <template>
-  <v-app-bar color="indigo" max-height="60" dark>
+  <v-app-bar flat color="indigo" max-height="60" dark>
     <v-toolbar-title>Analyse von Online-Nutzerkommentaren</v-toolbar-title>
     <v-spacer></v-spacer>
     <UserLogin />

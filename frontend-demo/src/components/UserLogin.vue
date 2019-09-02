@@ -29,12 +29,12 @@
         </template>
 
         <v-card>
-          <v-card-title class="headline grey lighten-2" primary-title>Login</v-card-title>
+          <v-card-title class="headline primary white--text" primary-title>Login</v-card-title>
 
           <v-form>
             <v-container>
               <v-layout>
-                <v-flex xs12 sm6>
+                <v-flex xs12 sm6 pr-3>
                   <v-text-field
                     v-if="dialog"
                     autofocus
@@ -44,7 +44,7 @@
                   ></v-text-field>
                 </v-flex>
 
-                <v-flex xs12 sm6>
+                <v-flex xs12 sm6 pl-3>
                   <v-text-field
                     v-model="password"
                     :append-icon="show ? 'visibility' : 'visibility_off'"
