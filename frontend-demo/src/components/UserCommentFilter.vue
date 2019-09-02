@@ -8,7 +8,7 @@
     </v-layout> -->
     
     <h3>Ausgewählte Labels</h3>
-    <v-layout row wrap>
+    <v-layout>
       <v-flex xs12>
         <DataSelector/>
       </v-flex>
