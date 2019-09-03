@@ -16,6 +16,7 @@ id_comment_mapping = {v: k for k, v in comment_id_mapping.items()}
 print("Index loaded. \nWaiting for input of an id:")
 
 comments = db.Comments
+embeddings = db.Embeddings
 print("-----------")
 
 for sample_id in sys.stdin:
@@ -25,13 +26,15 @@ for sample_id in sys.stdin:
     comment_text = concat(query_comment["title"], query_comment["text"])
     print("\n\n" + comment_text)
     print("-------------------")
-    ids, distances = index.knnQuery(query_comment["embedding"], k=10)
+    query_embedding = embeddings.find_one({"_id": query_id})
+    ids, distances = index.knnQuery(query_embedding["embedding"], k=10)
     for i, id in enumerate(ids):
 
         print(str(id) + " " + str(distances[i]))
         sim_comment = comments.find_one({"_id": id_comment_mapping[id]})
+        sim_embedding = embeddings.find_one({"_id": id_comment_mapping[id]})
         print(sim_comment["_id"])
         print(concat(sim_comment["title"], sim_comment["text"]))
-        cos = sm.pairwise.cosine_similarity(np.array([query_comment["embedding"], sim_comment["embedding"]]))
+        cos = sm.pairwise.cosine_similarity(np.array([query_embedding["embedding"], sim_embedding["embedding"]]))
         print("sklearn-cos:")
         print(cos)

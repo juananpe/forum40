@@ -9,17 +9,16 @@ def process_batch(comment_ids):
         comment_batch.append(comments.find_one({"_id": comment_id}))
 
     comment_texts = [concat(c["title"], c["text"]) for c in comment_batch]
-    embeddings = be.extract_features(comment_texts)
-    for i, comment in enumerate(embeddings):
+    comment_embeddings = be.extract_features(comment_texts)
+    for i, comment_embedding in enumerate(comment_embeddings):
 
         # get comment object id
         comment_id = comment_batch[i]["_id"]
 
-        # get embedding
-        comment_embedding = comment["embedding"]
-
         # update mongo db
-        comments.update_one({"_id": comment_id}, {"$set": {'embedding':comment_embedding}}, upsert=False)
+        comments.update_one({"_id": comment_id}, {"$set": {
+            'embedding' : comment_embedding["embedding"]
+        }}, upsert=False)
 
 # CLI parser
 parser = argparse.ArgumentParser(description='Embed comments in MongoDB.')
@@ -41,6 +40,7 @@ print("Loading BERT model")
 be = BertFeatureExtractor(batch_size=256, device=args.device)
 
 comments = db.Comments
+embeddings = db.Embeddings
 
 embed_all = args.all
 
@@ -55,8 +55,9 @@ n_batches = math.ceil(n_comments / batch_size)
 ids_to_embed = []
 if not embed_all:
     # only embed comments where no embedding is present
-    for comment in comments.find({"embedding" : {"$exists" : False}}):
-        ids_to_embed.append(comment["_id"])
+    for comment in comments.find():
+        if not embeddings.find_one({"_id" : comment["_id"]}):
+            ids_to_embed.append(comment["_id"])
 else:
     # run embedding for all comments
     for comment in comments.find():
