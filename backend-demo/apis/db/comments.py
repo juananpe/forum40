@@ -25,19 +25,25 @@ def createCommentsQueryFromArgs(args):
     query["timestamp"] = { "$gt" : datetime.strptime('2015-05-31-22','%Y-%m-%d-%H'), "$lt" : datetime.strptime('2016-05-31-22','%Y-%m-%d-%H') }
     if 'label' in args and args['label']:
         labelIds = [getLabelIdByName(i) for i in args['label']]
+        # query["labels"] = {
+        #     "$elemMatch" : {
+        #         "labelId": { "$in": labelIds },
+        #         	"$or" : [
+        #                     { "manualLabels.label" : 1},
+        #                     { "$and" :
+        #                         [
+        #                             {"classified" : 0}, {"confidence" : {"$ne" : []}}
+        #                         ]
+        #                     }
+        #                 ]
+        #             }
+        #         }
         query["labels"] = {
-            "$elemMatch" : {
-                "labelId": { "$in": labelIds },
-                	"$or" : [ 
-                            { "manualLabels.label" : 1}, 
-                            { "$and" : 
-                                [
-                                    {"classified" : 0}, {"confidence" : {"$ne" : []}}
-                                ]
-                            }
-                        ]
-                    } 
-                }
+            "$elemMatch": {
+                "labelId": {"$in": labelIds},
+                "classified": 1
+            }
+        }
     else :
         query["labels"] = {"$exists": 1}
     if 'keyword' in args and args['keyword']:
