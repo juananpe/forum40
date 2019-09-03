@@ -1,6 +1,6 @@
 <template>
-  <v-layout>
-    <v-flex :xs10="loggedIn" :xs12="!loggedIn">
+  <v-layout align-center>
+    <v-flex :xs10="loggedIn" :xs12="!loggedIn" pr-2>
       <v-select v-model="selection" :items="items" chips clearable multiple>
         <template v-slot:selection="data">
           <v-chip :input-value="data.selected" close @click:close="remove(data.item)">
