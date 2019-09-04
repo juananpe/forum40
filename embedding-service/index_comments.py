@@ -7,13 +7,13 @@ print(client)
 
 db = client.omp
 
-index = nmslib.init(method='hnsw', space="angulardist", data_type=nmslib.DataType.DENSE_VECTOR)
+index = nmslib.init(method='hnsw', space="cosinesimil", data_type=nmslib.DataType.DENSE_VECTOR)
 
 comments = db.Comments
 embeddings = db.Embeddings
 
 comment_batch = []
-batch_size = 32
+batch_size = 256
 batch_i = 0
 i = 0
 n_comments = embeddings.find({}).count()
@@ -25,6 +25,8 @@ comment_id_running = 0
 batch_embeddings = []
 batch_ids = []
 
+debug = False
+max_comment_i = 20000
 # index batches
 for comment_i, comment in enumerate(embeddings.find({})):
     batch_ids.append(comment_id_running)
@@ -39,12 +41,17 @@ for comment_i, comment in enumerate(embeddings.find({})):
         batch_embeddings = []
         batch_ids = []
 
+    if debug and comment_i == max_comment_i:
+        break
+
 # ensure indexing of last batch
 if batch_embeddings:
     index.addDataPointBatch(data = batch_embeddings, ids = batch_ids)
 
 # create index
 index.createIndex({'post': 2}, print_progress=True)
+
+print("\nIndex saved to ./model")
 
 # save index
 index.saveIndex("model/comment_vectors.index", save_data=True)

@@ -19,16 +19,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import argparse
 import collections
 import logging
-import json
 import re
 import numpy as np
 
 import torch
 from torch.utils.data import TensorDataset, DataLoader, SequentialSampler
-from torch.utils.data.distributed import DistributedSampler
 
 from pytorch_transformers import BertTokenizer
 from pytorch_transformers import BertModel
