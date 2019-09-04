@@ -56,7 +56,14 @@ class RetrieveComment:
         comment_db_id = []
         for _id_ in ids:
             if (self.id_comment_mapping[_id_] != _id):
-                comment_db_id.append(str(self.id_comment_mapping[_id_]))
+                comment_db_id.append(self.id_comment_mapping[_id_])
+        return comment_db_id
+
+    def get_nearest_embedding(self, embedding):
+        ids, distances = self.index.knnQuery(embedding, k=(self.nearest_neighbours + 1))
+        comment_db_id = []
+        for _id_ in ids:
+            comment_db_id.append(self.id_comment_mapping[_id_])
         return comment_db_id
 
     def get_comment_text(self, _id):

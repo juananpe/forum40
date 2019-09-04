@@ -60,9 +60,9 @@ print("Loading BERT model")
 be = BertFeatureExtractor(batch_size=256, device=args.device)
 
 comments = db.Comments
-embeddings = db.Embeddings
+embeddings = db["Embeddings"]
 
-embed_all = args.all
+embed_all = args.allq
 
 n_comments = comments.count()
 

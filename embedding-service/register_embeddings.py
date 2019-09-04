@@ -53,5 +53,5 @@ for comment in comments.find({}, {"_id" : 1}, cursor_type=pymongo.CursorType.EXH
         bulk_results = comments.bulk_write(batch_updates)
         batch_updates = []
 
-comments.create_index({"embedded" : 1})
+comments.create_index([("embedded", pymongo.ASCENDING)], background=True)
 
