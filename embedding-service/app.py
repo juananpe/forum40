@@ -5,7 +5,7 @@ from core.proxy_wrapper import ReverseProxied
 import nmslib, pickle
 from BertFeatureExtractor import BertFeatureExtractor
 from utils import concat
-from retrieve_comments_ps import RetrieveComment
+from retrieve_comments import RetrieveComment
 
 
 dictConfig({

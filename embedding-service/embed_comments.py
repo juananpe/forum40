@@ -43,8 +43,8 @@ parser.add_argument('--embed-all', dest='all', type=bool, default=False, nargs=1
                     help='(Re-)embed all data (default: False)')
 parser.add_argument('--device', type=str, default='cpu', nargs='?',
                     help='Pytorch device for tensor operations (default: cpu, else cuda)')
-parser.add_argument('--batch-size', dest='batch_size', type=int, default=32, nargs='?',
-                    help='Batch size for tensor operations (default: 32).')
+parser.add_argument('--batch-size', dest='batch_size', type=int, default=16, nargs='?',
+                    help='Batch size for tensor operations (default: 16).')
 args = parser.parse_args()
 
 # Connect to DB
@@ -63,11 +63,21 @@ n_comments = comments.count()
 
 logger.info("Comments in the database: " + str(n_comments))
 
+if embed_all:
+    embed_query = {}
+else:
+    embed_query = {"embedded": {"$ne": True}}
+
 batch_size = args.batch_size
 batch_i = 0
 i = 0
 comment_batch = []
-for comment in comments.find({"embedded" : {"$ne" : True}}, {"_id" : 1, "title" : 1, "text" : 1}):
+for comment in comments.find(
+        embed_query,
+        {"_id" : 1, "title" : 1, "text" : 1},
+        cursor_type=pymongo.CursorType.EXHAUST,
+        snapshot=True
+):
     i += 1
     comment_batch.append(comment)
     if i % batch_size == 0:
