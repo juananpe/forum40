@@ -62,7 +62,7 @@ be = BertFeatureExtractor(batch_size=256, device=args.device)
 comments = db.Comments
 embeddings = db["Embeddings"]
 
-embed_all = args.allq
+embed_all = args.all
 
 n_comments = comments.count()
 
