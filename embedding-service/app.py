@@ -3,7 +3,7 @@ from logging.config import dictConfig
 from flask_restplus import Api, Resource, fields
 from core.proxy_wrapper import ReverseProxied
 import nmslib, pickle
-from BertFeatureExtractor import BertFeatureExtractor
+#from BertFeatureExtractor import BertFeatureExtractor
 from utils import concat
 from retrieve_comments_ps import RetrieveComment
 
@@ -28,9 +28,9 @@ app = Flask(__name__)
 app.wsgi_app = ReverseProxied(app.wsgi_app)
 
 # load BERT model
-app.logger.debug('Loading BERT model')
-be = BertFeatureExtractor()
-app.logger.debug('BERT model loaded')
+# app.logger.debug('Loading BERT model')
+# be = BertFeatureExtractor()
+# app.logger.debug('BERT model loaded')
 
 
 
@@ -58,7 +58,8 @@ class CommentsEmbedding(Resource):
         comment_texts = [
             concat(c.get('title', ''), c.get('text', '')) for c in comments
         ]
-        results = be.extract_features(comment_texts)
+        #results = be.extract_features(comment_texts)
+        results=comment_texts
         return results, 200
 
 
@@ -68,42 +69,42 @@ class CommentsEmbedding(Resource):
 
 """edited part"""
 #load_indexes
-# get_comment=RetrieveComment('mongo',27017)
+get_comment=RetrieveComment()
 
-# commentid_model = api.model(
-#     'comment_id', {
-#         'id': fields.String('5cadf570694377c8a2f450d8')})
+commentid_model = api.model(
+    'comment_id', {
+        'id': fields.String('5cadf570694377c8a2f450d8')})
         
-# commentsid_model = api.model('comments_id', {
-#     'ids': fields.List(fields.Nested(commentid_model))
-# })
+commentsid_model = api.model('comments_id', {
+    'ids': fields.List(fields.Nested(commentid_model))
+})
 
 
 
-# @api.route('/commentid')
-# class Idembeddings(Resource):
-#     @api.expect(commentsid_model)
-#     def post(self):
-#         comments_id = api.payload.get('ids', [])
-#         all_ids= [c.get('id', '') for c in comments_id]
-#         results = []
-#         for _id in all_ids:
-#             embedding=get_comment.get_embeddings(_id)
-#             results.append(embedding)
-#         return results, 200
+@api.route('/commentid')
+class Idembeddings(Resource):
+    @api.expect(commentsid_model)
+    def post(self):
+        comments_id = api.payload.get('ids', [])
+        all_ids= [c.get('id', '') for c in comments_id]
+        results = []
+        for _id in all_ids:
+            embedding=get_comment.get_embeddings(_id)
+            results.append(embedding)
+        return results, 200
 
 
-# @api.route('/similarids')
-# class similarIds(Resource):
-#     @api.expect(commentsid_model)
-#     def post(self):
-#         comments_id = api.payload.get('ids', [])
-#         all_ids= [c.get('id', '') for c in comments_id]
-#         results =[]
-#         for _id in all_ids:
-#             ids=get_comment.get_nearest_ids(_id)
-#             results.append(ids)
-#         return results, 200
+@api.route('/similarids')
+class similarIds(Resource):
+    @api.expect(commentsid_model)
+    def post(self):
+        comments_id = api.payload.get('ids', [])
+        all_ids= [c.get('id', '') for c in comments_id]
+        results =[]
+        for _id in all_ids:
+            ids=get_comment.get_nearest_ids(_id)
+            results.append(ids)
+        return results, 200
 
 
 

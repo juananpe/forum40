@@ -26,10 +26,7 @@ logger.addHandler(ch)
 
 
 class RetrieveComment:
-	def __init__(self,host = "mongo", port = 27017, nearest_neighbours=10):
-		self.client = pymongo.MongoClient(host, port)
-		self.db = self.client.omp
-		self.comments = self.db.Comments
+	def __init__(self, nearest_neighbours=10):
 		logger.info("Loading Index")
 		self.index = nmslib.init()
 		self.index.loadIndex("model/comment_vectors.index", load_data=True)
@@ -45,17 +42,15 @@ class RetrieveComment:
 		if(type(_id)==str):
 			_id = ObjectId(_id)
 		print(_id)
-		#query_id = self.id_comment_mapping[_id]
-		query_comment = self.comments.find_one({"_id": _id})
-		return query_comment["embedding"]
+		index_id=self.comment_id_mapping[_id]
+		return self.index[index_id]
 		
 
 	def get_nearest_ids(self,_id):
 		if(type(_id)==str):
 			_id = ObjectId(_id)
-
-		query_comment = self.comments.find_one({"_id":_id})
-		ids, distances = self.index.knnQuery(query_comment["embedding"], k=(self.nearest_neighbours+1))
+		index_id=self.comment_id_mapping[_id]
+		ids, distances = self.index.knnQuery(self.index[index_id], k=(self.nearest_neighbours+1))
 		comment_db_id=[]
 		for _id_ in ids:
 			if (self.id_comment_mapping[_id_] != _id):
@@ -76,7 +71,7 @@ if __name__== "__main__":
                         help='MongoDB port')
     args = parser.parse_args()
     comment_id = args.id
-    get_comment=RetrieveComment('localhost',27017)
+    get_comment=RetrieveComment()
     
     embeddings=get_comment.get_embeddings(comment_id)
     if(embeddings!=-1):
