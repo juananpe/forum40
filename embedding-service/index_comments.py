@@ -25,7 +25,7 @@ comment_id_running = 0
 batch_embeddings = []
 batch_ids = []
 
-debug = True
+debug = False
 max_comment_i = 20000
 # index batches
 for comment_i, comment in enumerate(embeddings.find({})):

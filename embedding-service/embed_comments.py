@@ -1,5 +1,6 @@
-import pymongo, math, argparse, logging
+import pymongo, argparse, logging
 from BertFeatureExtractor import BertFeatureExtractor
+from pymongo import UpdateOne
 
 from app import concat
 
@@ -23,14 +24,18 @@ logger.addHandler(ch)
 def process_batch(comment_batch):
     comment_texts = [concat(c["title"], c["text"]) for c in comment_batch]
     comment_embeddings = be.extract_features(comment_texts)
+    batch_update_embeddings = []
+    batch_update_comments = []
     for i, comment_embedding in enumerate(comment_embeddings):
 
         # get comment object id
         comment_id = comment_batch[i]["_id"]
 
         # update mongo db
-        embeddings.update_one({"_id": comment_id}, {"$set": {'embedding' : comment_embedding["embedding"]}})
-        comments.update_one({"_id": comment_id}, {"$set": {'embedded': True}})
+        batch_update_embeddings.append(UpdateOne({"_id": comment_id}, {"$set": {'embedding' : comment_embedding["embedding"]}}))
+        batch_update_comments.append(UpdateOne({"_id": comment_id}, {"$set": {'embedded': True}}))
+    embeddings.bulk_write(batch_update_embeddings)
+    comments.bulk_write(batch_update_comments)
 
 
 # CLI parser
@@ -43,8 +48,8 @@ parser.add_argument('--embed-all', dest='all', type=bool, default=False, nargs=1
                     help='(Re-)embed all data (default: False)')
 parser.add_argument('--device', type=str, default='cpu', nargs='?',
                     help='Pytorch device for tensor operations (default: cpu, else cuda)')
-parser.add_argument('--batch-size', dest='batch_size', type=int, default=16, nargs='?',
-                    help='Batch size for tensor operations (default: 16).')
+parser.add_argument('--batch-size', dest='batch_size', type=int, default=8, nargs='?',
+                    help='Batch size for tensor operations (default: 8).')
 args = parser.parse_args()
 
 # Connect to DB
@@ -78,6 +83,8 @@ for comment in comments.find(
         cursor_type=pymongo.CursorType.EXHAUST,
         snapshot=True
 ):
+    if not comment['title'] and not comment['text']:
+        continue
     i += 1
     comment_batch.append(comment)
     if i % batch_size == 0:
