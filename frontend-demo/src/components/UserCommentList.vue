@@ -21,13 +21,22 @@
       :footer-props="footerprops"
       :items-per-page="rowsPerPage"
       :page.sync="page"
+      :expanded.sync="expanded"
       :server-items-length="totalItems"
       item-key="_id.$oid"
+      single-expand
+      show-expand
+      class="elevation-1"
     >
       <template v-slot:item="props">
         <tr>
-          <td @click="commentClicked(props)" class="text-left commenttext">
-            <div v-if="!props.expanded">
+          <td>
+            <v-icon v-if="!props.isExpanded" @click="commentClicked(props)">expand_more</v-icon>
+
+            <v-icon v-else @click="commentClicked(props)">expand_less</v-icon>
+          </td>
+          <td class="text-left commenttext">
+            <div v-if="!props.isExpanded">
               <span v-html="highlight(shortText(commentText(props)), keyword)"></span>
             </div>
 
@@ -44,6 +53,9 @@
             />
           </td>
         </tr>
+      </template>
+      <template v-slot:expanded-item="{ headers }">
+        <td :colspan="headers.length">Peek-a-boo!</td>
       </template>
     </v-data-table>
   </div>
@@ -62,6 +74,7 @@ export default {
   data() {
     return {
       comments: [],
+      expanded: [],
       loading: false,
       selected: [],
       expand: false,
@@ -211,8 +224,11 @@ export default {
       this.totalItems = data.count;
     },
     commentClicked(props) {
-      props.expanded = !props.expanded;
-      if (props.expanded) {
+      props.expand(!props.isExpanded);
+      // console.log(props);
+
+      // props.isExpanded = !props.isExpanded;
+      if (props.isExpanded) {
         const selectedComment = props.item;
         this[Mutations.setSelectedComment](selectedComment);
       } else {
