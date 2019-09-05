@@ -27,7 +27,7 @@ dictConfig({
 app = Flask(__name__)
 app.wsgi_app = ReverseProxied(app.wsgi_app)
 
-# load BERT model
+#load BERT model
 app.logger.debug('Loading BERT model')
 be = BertFeatureExtractor()
 app.logger.debug('BERT model loaded')
@@ -63,9 +63,29 @@ class CommentsEmbedding(Resource):
     @api.expect(comments_model)
     def post(self):
         comments = api.payload.get('comments', [])
-        comment_texts = [c.get('text', '') for c in comments]
+        comment_texts = [
+            concat(c.get('title', ''), c.get('text', '')) for c in comments
+        ]
         results = be.extract_features(comment_texts)
         return results, 200
+
+
+ 
+       
+
+
+"""edited part"""
+#load_indexes
+get_comment=RetrieveComment()
+
+commentid_model = api.model(
+    'comment_id', {
+        'id': fields.String('5cadf570694377c8a2f450d8')})
+        
+commentsid_model = api.model('comments_id', {
+    'ids': fields.List(fields.Nested(commentid_model))
+})
+
 
 @api.route('/embedding')
 class IdEmbedding(Resource):

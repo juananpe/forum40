@@ -47,23 +47,22 @@ class RetrieveComment:
         return embedding["embedding"]
 
     def get_nearest_ids(self, _id):
-        if (type(_id) == str):
+        if(type(_id)==str):
             _id = ObjectId(_id)
-
         query_comment = self.comments.find_one({"_id": _id})
         ids, distances = self.index.knnQuery(query_comment["embedding"], k=(self.nearest_neighbours + 1))
         comment_db_id = []
         for _id_ in ids:
             if (self.id_comment_mapping[_id_] != _id):
-                comment_db_id.append(self.id_comment_mapping[_id_])
+                comment_db_id.append(str(self.id_comment_mapping[_id_]))
         return comment_db_id
 
     def get_nearest_embedding(self, embedding):
         ids, distances = self.index.knnQuery(embedding, k=(self.nearest_neighbours + 1))
-        comment_db_id = []
+        embeddings = []
         for _id_ in ids:
-            comment_db_id.append(self.id_comment_mapping[_id_])
-        return comment_db_id
+            embeddings.append(self.index[self.comment_id_mapping[_id_]])
+        return embeddings
 
     def get_comment_text(self, _id):
         if type(_id) == str:
