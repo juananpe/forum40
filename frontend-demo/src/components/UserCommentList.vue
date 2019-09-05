@@ -26,12 +26,11 @@
       item-key="_id.$oid"
       single-expand
       show-expand
-      class="elevation-1"
     >
       <template v-slot:item="props">
-        <tr>
+        <tr @click="commentClicked(props)" class="mb-2">
           <td>
-            <v-icon v-if="!props.isExpanded" @click="commentClicked(props)">expand_more</v-icon>
+            <v-icon v-if="!props.isExpanded">expand_more</v-icon>
 
             <v-icon v-else @click="commentClicked(props)">expand_less</v-icon>
           </td>
@@ -54,8 +53,16 @@
           </td>
         </tr>
       </template>
-      <template v-slot:expanded-item="{ headers }">
-        <td :colspan="headers.length">Peek-a-boo!</td>
+      <template v-slot:expanded-item="{ item, headers }">
+        <td :colspan="headers.length" class="elevation-1">
+          <v-btn
+            outlined
+            small
+            color="primary"
+            text
+            @click="loadSimilarComments(item)"
+          >Ähnliche Kommentare anzeigen</v-btn>
+        </td>
       </template>
     </v-data-table>
   </div>
@@ -92,7 +99,6 @@ export default {
           align: "left",
           sortable: false,
           value: "text",
-          class: "tableheader",
           width: "80%"
         },
         {
@@ -109,7 +115,7 @@ export default {
     moment: function(date) {
       return moment(date)
         .locale("de")
-        .format("DD. MMM YY");
+        .format("DD. MMM YYYY");
     }
   },
   computed: {
@@ -237,6 +243,10 @@ export default {
     },
     keywordChanged() {
       //this.loadTable();
+    },
+    loadSimilarComments(item) {
+      const commentId = item._id.$oid;
+      // Service.
     }
   },
   components: {
@@ -247,15 +257,7 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-.container {
-  display: flex;
-  flex-wrap: wrap;
-}
 .commenttext >>> .highlight {
   background-color: yellow;
-}
-.tableheader {
-  font-size: 24pt;
-  color: aqua;
 }
 </style>
