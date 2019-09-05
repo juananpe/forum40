@@ -87,37 +87,6 @@ commentsid_model = api.model('comments_id', {
 })
 
 
-
-@api.route('/commentid')
-class Idembeddings(Resource):
-    @api.expect(commentsid_model)
-    def post(self):
-        comments_id = api.payload.get('ids', [])
-        all_ids= [c.get('id', '') for c in comments_id]
-        results = []
-        for _id in all_ids:
-            embedding=get_comment.get_embeddings(_id)
-            results.append(embedding)
-        return results, 200
-
-
-@api.route('/similarids')
-class similarIds(Resource):
-    @api.expect(commentsid_model)
-    def post(self):
-        comments_id = api.payload.get('ids', [])
-        all_ids= [c.get('id', '') for c in comments_id]
-        results =[]
-        for _id in all_ids:
-            ids=get_comment.get_nearest_ids(_id)
-            results.append(ids)
-        return results, 200
-
-
-        comment_texts = [c.get('text', '') for c in comments]
-        results = be.extract_features(comment_texts)
-        return results, 200
-
 @api.route('/embedding')
 class IdEmbedding(Resource):
     @api.expect(commentsid_model)
@@ -157,10 +126,10 @@ class SimilarIds(Resource):
         return results, 200
 
 # todo api
-# [.] get embedding given comment id
+# [X] get embedding given comment id
 # [X] get embedding given text
-# [.] get nearest neighbors given comment id
-# [.] get nearest neighbors given text
+# [X] get nearest neighbors given comment id
+# [X] get nearest neighbors given text
 
 # run app manually
 if __name__ == "__main__":
