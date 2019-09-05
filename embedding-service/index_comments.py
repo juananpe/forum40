@@ -10,13 +10,12 @@ db = client.omp
 index = nmslib.init(method='hnsw', space="cosinesimil", data_type=nmslib.DataType.DENSE_VECTOR)
 
 comments = db.Comments
-embeddings = db.Embeddings
 
 comment_batch = []
 batch_size = 256
 batch_i = 0
 i = 0
-n_comments = embeddings.find({}).count()
+n_comments = comments.find({"embedded" : True}).count()
 n_batches = math.ceil(n_comments / batch_size)
 
 # get all ids
@@ -25,10 +24,10 @@ comment_id_running = 0
 batch_embeddings = []
 batch_ids = []
 
-debug = False
+debug = True
 max_comment_i = 20000
 # index batches
-for comment_i, comment in enumerate(embeddings.find({})):
+for comment_i, comment in enumerate(comments.find({"embedded" : True}, {"_id": 1, "embedding" : 1})):
     batch_ids.append(comment_id_running)
     comment_id_mapping[comment["_id"]] = comment_id_running
     comment_id_running += 1
