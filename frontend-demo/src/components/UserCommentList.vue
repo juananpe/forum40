@@ -19,7 +19,7 @@
       :items="comments"
       :loading="loading"
       :footer-props="footerprops"
-      :items-per-page="rowsPerPage"
+      :items-per-page.sync="rowsPerPage"
       :page.sync="page"
       :expanded.sync="expanded"
       :server-items-length="totalItems"
@@ -146,9 +146,9 @@ export default {
       const limit =
         this.rowsPerPage === -1 ? this.totalItems : this.rowsPerPage;
       const skip = (this.page - 1) * limit;
-      const pageQueryString =
+      const queryString =
         this.countQueryString + `&skip=${skip}&limit=${limit}`;
-      return pageQueryString;
+      return queryString;
     },
     keyword: {
       set(state) {
@@ -172,6 +172,11 @@ export default {
     },
     async page() {
       this.setSelectedComment({});
+      this.loading = true;
+      await this.fetchComments();
+      this.loading = false;
+    },
+    async rowsPerPage() {
       this.loading = true;
       await this.fetchComments();
       this.loading = false;
