@@ -236,10 +236,9 @@ export default {
     },
     commentClicked(props) {
       props.expand(!props.isExpanded);
-      // console.log(props);
 
-      // props.isExpanded = !props.isExpanded;
-      if (props.isExpanded) {
+      
+      if (!props.isExpanded) { // working like this, but don't know why
         const selectedComment = props.item;
         this[Mutations.setSelectedComment](selectedComment);
       } else {
