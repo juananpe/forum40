@@ -1,6 +1,6 @@
 import numpy as np
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_validate
 import pickle     
 
 class EmbedClassifier:
@@ -38,6 +38,7 @@ class EmbedClassifier:
         pkl_filename = path_to_folder +"/"+"model_"+label_name+".pkl"
         with open(pkl_filename, 'wb') as file:
             pickle.dump(classifier, file)
+        return classifier
 
     def cross_validation(self,embedlabellist,label_name,model):
         train_X=[]
@@ -51,19 +52,23 @@ class EmbedClassifier:
         # model definition
         classifier = model
         ## fit procedure
-        scores = cross_val_score(classifier, train_X, train_Y, cv=10, scoring='f1_macro')
-        return scores.mean() 
+        scores = cross_validate(classifier, train_X, train_Y, cv=10, scoring=('f1_macro','accuracy'))
+        classifier.fit(train_X,train_Y)
+        print(scores)
+  
+
+        return scores['test_accuracy'].mean(),scores['test_f1_macro'].mean(),scores['fit_time'].mean(),scores['score_time'].mean()
         # Save to file in the current working directory
         
-    ###will take around 1 minute and 40 seconds on 1 million data
-    def predict(self,embedlist,label_name):
+    def predict(self,embedlist,label_name,model=None, get_from_file = True):
         # # Load from file
-        path_to_folder= "model"
-        pkl_filename = path_to_folder +"/"+"model_"+label_name+".pkl"
-        
-        with open(pkl_filename, 'rb') as file:
-            classifier = pickle.load(file)
-            
+        if(get_from_file):
+            path_to_folder= "model"
+            pkl_filename = path_to_folder +"/"+"model_"+label_name+".pkl"
+            with open(pkl_filename, 'rb') as file:
+                classifier = pickle.load(file)
+        else:
+            classifier=model    
         # # predict target confidence
         test_X = np.array(embedlist)
         predict_confidence = classifier.predict_proba(test_X)

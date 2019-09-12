@@ -7,6 +7,10 @@ from classifier import *
 import pandas as pd
 import time
 import os
+from sklearn.metrics import cohen_kappa_score
+from RunClassifier import *
+
+
 # create logger
 logger = logging.getLogger('Measuring stability logger')
 logger.setLevel(logging.DEBUG)
@@ -24,95 +28,112 @@ ch.setFormatter(formatter)
 # add ch to logger
 logger.addHandler(ch)
 
-class StabilityMeasure:
-    """Functions for collection of training data and prediction on entire MngoDB"""
-    def __init__(self, labelname, host = "mongo", port = 27017):
-        # db connection
-        self.client = pymongo.MongoClient(host, port, w=0)
-        self.db = self.client.omp
-        self.labels = self.db.Labels
-        self.comments = self.db.Comments
+class StabilityMeasure(RunClassifier):
+     
+    
+    def getBatchPredict(self,comment_batch):
+        
 
-        self.labelname = labelname
-        self.label_id = None
-        self.classification_model = None
-        self.batch_size = 20000
+        comments_object, embeddings = zip(*comment_batch)
+        start=timer()
+        comment_labels = self.classification_model.predict(embeddings, self.labelname,self.model,
+            get_from_file=False)
+        end =timer()
+        logger.info("Batch took "+str((end-start))+" seconds of prediction time")
+        start=timer()
+        current_predict=[]
+        previous_predict=[]
 
 
-    def collect_trainingdata(self):
+        for i, comment in enumerate(comments_object):
 
-        label = self.labels.find_one({"classname" : self.labelname})
-        self.label_id = label["_id"]
+            comment_id = comment["_id"]
+            confidence = comment_labels[i].tolist()
 
-        logger.info("Labelname: " + self.labelname + " (" + str(self.label_id) + ")")
+            # initialize labels field for comment
+            if "labels" in comment:
+                labels_object = {"labels" : comment["labels"]}
+            else:
+                labels_object = {"labels" : []}
 
-        try:
-            labeled_comments = self.comments.find(
-                {"labels" : {"$elemMatch" : {"manualLabels" : {"$ne" : None}, "labelId" :self.label_id}}}
-            )
-        except:
-            logging.error("No comments for label " + labelname)
-            exit(1)
+            # manipulate machine classification entry
+            target_label_object = None
+            for current_label in labels_object["labels"]:
+                if current_label["labelId"] == self.label_id:
+                    target_label_object = current_label
 
-        logger.info("Number of comments " + str(labeled_comments.count()))
+            #do not append if the previous mahchine lable is not present
+            if target_label_object:
+                previous_predict.append(target_label_object["classified"])
+                current_predict.append(int(np.argmax(confidence)))            
+       
+        return previous_predict,current_predict
 
-        start = timer()
-        # training data compilation
-        annotation_dataset = []
-        annotation_counts = Counter()
-        for labeled_comment in labeled_comments:
 
-            if not "embedding" in labeled_comment:
+    def getStability(self):
+        # db update
+        comment_batch = []
+        i = 0
+        previous_predict_all=[]
+        current_predict_all=[]
+
+        for comment in self.comments.find({},
+                                          {'_id':1, 'embedding':1, 'labels':1},
+                                          cursor_type=pymongo.CursorType.EXHAUST,
+                                          snapshot=True):
+
+            i += 1
+            if not "embedding" in comment:
                 continue
+            comment_batch.append((comment, comment["embedding"]))
+            print(i)
 
-            for current_label in labeled_comment["labels"]:
-                if current_label["labelId"] == label["_id"]:
-                    if "manualLabels" in current_label:
-                        manual_label = current_label["manualLabels"][0]['label']
-                        annotation_counts[manual_label] += 1
-                        labeled_instance = (labeled_comment["embedding"],manual_label)
-                        annotation_dataset.append(labeled_instance)
-        end = timer()
+            if i % self.batch_size == 0:
+                current_predict,previous_predict=self.getBatchPredict(comment_batch)
+                previous_predict_all+=previous_predict
+                current_predict_all+=current_predict
+                comment_batch = []
+                print("comments_processed "+str(i))
+                break
 
-        logger.info("Manual annotations found: " + str(annotation_counts))
-        logger.info("Length of datset: " + str(len(annotation_dataset)))
-        logger.info("Dataset collection duration (seconds): " + str(end - start))
+        # last batch
+        if comment_batch:
+            current_predict,previous_predict=self.getBatchPredict(comment_batch)
+            previous_predict_all+=previous_predict
+            current_predict_all+=current_predict
 
-        return(annotation_dataset)
-
+        return cohen_kappa_score(current_predict_all,previous_predict_all)
+    
+    
     
 
-    def storeCrossValidation(self,classifier):
+    
+    def storeResults(self):
 
-        # get training data from MongDB
-        annotation_dataset = self.collect_trainingdata()
+        # get training data from MongDB and train
+        len_data=super().run_trainer()
 
-        # train model on embeddings
-        self.classification_model = EmbedClassifier()
-        logger.info("Cross_validation started")
-        start=timer()
-        mean_f1=self.classification_model.cross_validation(annotation_dataset, self.labelname,classifier)
-        end=timer()
-        logger.info("Cross validation took "+str(end-start)+" seconds.")
-
-        model_name = type(classifier).__name__
+        #get stability with this trained model and annotated comments
+        stability = self.getStability()
+        print(stability)
+        model_name = type(self.model).__name__
         current_timestamp = time.time()
+
 
         if(os.path.isfile('history.csv')):
             df=pd.read_csv('history.csv')
-            df = df.append({'model_name' :model_name,'model_parameters':classifier, 
-                                        'time_stamp' :current_timestamp,'label_name':self.labelname,'cross_val_score':mean_f1 } , ignore_index=True)
-            df.to_csv('models/history.csv')
+            df = df.append({'model_name' :model_name,'model_parameters':self.model, 
+                                        'time_stamp' :current_timestamp,'label_name':self.labelname,'length_of_annotated':len_data,'stability':stability} , ignore_index=True)
+            df.to_csv('history.csv',index=False)
 
         else:
             df = pd.DataFrame(columns=['model_name', 'model_parameters', 
-                                                        'time_stamp','label_name','cross_val_score'])
-            df = df.append({'model_name' :model_name,'model_parameters':classifier, 
-                                        'time_stamp' :current_timestamp,'label_name':self.labelname,'cross_val_score':mean_f1 } , ignore_index=True)
-            df.to_csv('history.csv')
+                                                        'time_stamp','label_name','length_of_annotated','stability'])
+            df = df.append({'model_name' :model_name,'model_parameters':self.model, 
+                                        'time_stamp' :current_timestamp,'label_name':self.labelname,'length_of_annotated':len_data,'stability':stability} , ignore_index=True)
+            df.to_csv('history.csv',index=False)
 
-
-
+    
         
 
 
@@ -128,19 +149,11 @@ if __name__== "__main__":
     args = parser.parse_args()
     labelname = args.labelname
 
-    classifier = LogisticRegression(
-                            n_jobs=10, 
-                            random_state=42,
-                            class_weight='balanced',
-                            solver='saga',
-                            penalty= 'elasticnet',
-                            tol=0.001,
-                            max_iter=200,
-                            C=1.0,
-                            l1_ratio=0.1
-                            
-                        )
         
     stability_keeper = StabilityMeasure(labelname,host=args.host, port=args.port)
-    stability_keeper.storeCrossValidation(classifier)
+    stability_keeper.storeResults()
+
+
+    
+
 

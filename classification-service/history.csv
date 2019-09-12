@@ -1,6 +1,6 @@
-,model_name,model_parameters,time_stamp,label_name,cross_val_score
-0,LogisticRegression,"LogisticRegression(C=1.0, class_weight='balanced', dual=False,
+model_name,model_parameters,time_stamp,label_name,length_of_annotated,stability
+LogisticRegression,"LogisticRegression(C=1.0, class_weight='balanced', dual=False,
                    fit_intercept=True, intercept_scaling=1, l1_ratio=0.1,
                    max_iter=200, multi_class='warn', n_jobs=10,
                    penalty='elasticnet', random_state=42, solver='saga',
-                   tol=0.001, verbose=0, warm_start=False)",1567173500.6126754,offtopic,0.5302646478236093
+                   tol=0.001, verbose=0, warm_start=False)",1568033635.821586,offtopic,2033,1.0
