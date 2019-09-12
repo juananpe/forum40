@@ -112,8 +112,47 @@ if __name__== "__main__":
 
 
     classifier = LogisticRegression()
-    grid_params = {
-                    "C":np.logspace(-3,3,7),
-                    "penalty":["l1","l2"]
+    grid_params = [{
+                    "C":np.linspace(-3,3,7),
+                    "penalty":["elasticnet"],
+                    "class_weight":['balanced'],
+                    "solver":["saga"],
+                    "max_iter":np.linspace(100,1000,100),
+                    "penalty_ratio":np.linspace(0,1,10)
+
+
+ 
+                },
+                {
+                    "C":np.linspace(-3,3,7),
+                    "penalty":[None],
+                    "class_weight":['balanced'],
+                    "solver":["saga"],
+                    "max_iter":np.linspace(100,1000,100),
+                    
+
+ 
+                },
+                {
+                    "C":np.linspace(-3,3,7),
+                    "penalty":["l2",None],
+                    "class_weight":['balanced'],
+                    "solver":["newton-cg", "lbfgs", "sag" ],
+                    "max_iter":np.linspace(100,1000,100),
+                    
+
+ 
+                },
+                {
+                    "C":np.linspace(-3,3,7),
+                    "penalty":["l1"],
+                    "class_weight":['balanced'],
+                    "solver":["liblinear" ],
+                    "max_iter":np.linspace(100,1000,100),
+                   
+
+ 
                 }
+                ]
+
     eval_perform.runOptimizer(classifier,grid_params)

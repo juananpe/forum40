@@ -58,7 +58,16 @@ class InputFeatures(object):
 class BertFeatureExtractor(object):
 
     def __init__(self, bert_model = "bert-base-german-cased", do_lower_case="False", max_seq_length=256,
-                 batch_size=32, device = None):
+                 batch_size=32, device = None,keep_cls=False, use_layers=4 , use_token=False):
+        #parameter explaination
+        #keep_cls is used to decide whether or not to keep CLS with all the tokens
+        #use_layers is used to decide how many layers from the last layer to be used 
+        #use_token is used to decide whether to use the tokens or the CLS 
+        
+        # number of layers cannot be greater than 13 (12 hidden +one output)
+        if(use_layers > 13):
+            use_layers=13
+
 
         if device:
             print("selected device: " + device)
@@ -68,9 +77,15 @@ class BertFeatureExtractor(object):
         self.n_gpu = torch.cuda.device_count()
         logger.info("device: {} n_gpu: {}".format(self.device, self.n_gpu))
 
-        self.layers = "-1,-2,-3,-4"
-        self.layer_weights = [4, 3, 2, 1]
-        self.layer_indexes = [int(x) for x in self.layers.split(",")]
+        self.layer_weights = list(np.arange(1,use_layers+1))
+        self.layer_indexes = [int(-x) for x in self.layer_weights]
+        self.layer_weights.sort(reverse=True)
+        self.keep_cls =keep_cls
+        self.use_token= use_token
+
+        # self.layers = "-1,-2,-3,-4"
+        # self.layer_weights = [4, 3, 2, 1]
+        # self.layer_indexes = [int(x) for x in self.layers.split(",")]
 
         self.bert_model = bert_model
         self.do_lower_case = do_lower_case
@@ -215,7 +230,11 @@ class BertFeatureExtractor(object):
 
 
     def extract_features(self, sequences):
-
+        
+        #print("layers", self.layers)
+        print("layer_weights", self.layer_weights)
+        print("layer_indexes", self.layer_indexes)
+        
         examples = self.convert_sequences_to_examples(sequences)
 
         features = self.convert_examples_to_features(
@@ -256,12 +275,31 @@ class BertFeatureExtractor(object):
                     all_layers = []
                     for (j, layer_index) in enumerate(self.layer_indexes):
                         layer_output = all_encoder_layers[int(layer_index)].detach().cpu().numpy()
-                        layer_output = layer_output[b, CLS_index]
+                        #print("layer output shape is this",layer_output.shape)
+                        
+
+                        if(self.use_token):
+                            if(self.keep_cls):
+                                layer_output = np.mean(layer_output[b, :],axis=0)
+                            else:
+                                layer_output = np.mean(layer_output[b, CLS_index+1:],axis=0)
+                        else:
+                            layer_output = layer_output[b,CLS_index]
+
+
+
+
+        
+                        #print("layer output shape is this",layer_output.shape)
+                        
                         # weighted sum of final j layers
                         all_layers.append(layer_output * self.layer_weights[j])
                     sequence_embedding = np.sum(all_layers, axis=0)
                     output_json["embedding"] = [round(x.item(), 6) for x in sequence_embedding]
-
                     json_result.append(output_json)
 
         return json_result
+
+
+
+    
