@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_validate
+from sklearn.model_selection import GridSearchCV
 import pickle     
 
 class EmbedClassifier:
@@ -59,6 +60,21 @@ class EmbedClassifier:
 
         return scores['test_accuracy'].mean(),scores['test_f1_macro'].mean(),scores['fit_time'].mean(),scores['score_time'].mean()
         # Save to file in the current working directory
+
+    def hyperparameter_opt(self,embedlabellist,classifier,grid):
+
+        train_X=[]
+        train_Y=[]
+        for ele in embedlabellist:
+            train_X.append(ele[0])
+            train_Y.append(ele[1])
+        train_X=np.array(train_X)
+        train_Y=np.array(train_Y)
+        
+        model_cv=GridSearchCV(classifier,grid,cv=10)
+        model_cv.fit(train_X,train_Y)
+        return model_cv
+
         
     def predict(self,embedlist,label_name,model=None, get_from_file = True):
         # # Load from file

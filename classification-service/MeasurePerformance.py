@@ -44,6 +44,13 @@ logger.addHandler(ch)
 
 class PerformEvaluator(RunClassifier):
     
+    def runOptimizer(self,classifier,param_dict):
+        annotation_dataset=super().collect_trainingdata()
+        self.classification_model = EmbedClassifier()
+        optimized_model=self.classification_model.hyperparameter_opt(annotation_dataset,classifier,param_dict)
+        print("tuned hyperparameters:" ,logreg_cv.best_params_)        
+        print("accuracy",logreg_cv.best_score)
+
 
 
     def storeResults(self,classifier):
@@ -88,16 +95,25 @@ if __name__== "__main__":
 
     #classifier = 
     
-    classifiers = [
-    KNeighborsClassifier(3),
-    SVC(kernel="linear", C=0.025,class_weight='balanced'),
-    SVC(gamma=2, C=1,class_weight='balanced'),
-    DecisionTreeClassifier(max_depth=5,class_weight='balanced'),
-    RandomForestClassifier(max_depth=5, n_estimators=10, max_features=1,class_weight='balanced'),
-    MLPClassifier(alpha=1, max_iter=1000),
-    GaussianNB(),
-    LogisticRegression(n_jobs=10,random_state=42,class_weight='balanced',solver='saga',penalty= 'elasticnet',tol=0.001,max_iter=200,C=1.0,l1_ratio=0.1)]
+    # classifiers = [
+    # KNeighborsClassifier(3),
+    # SVC(kernel="linear", C=0.025,class_weight='balanced'),
+    # SVC(gamma=2, C=1,class_weight='balanced'),
+    # DecisionTreeClassifier(max_depth=5,class_weight='balanced'),
+    # RandomForestClassifier(max_depth=5, n_estimators=10, max_features=1,class_weight='balanced'),
+    # MLPClassifier(alpha=1, max_iter=1000),
+    # GaussianNB(),
+    # LogisticRegression(n_jobs=10,random_state=42,class_weight='balanced',solver='saga',penalty= 'elasticnet',tol=0.001,max_iter=200,C=1.0,l1_ratio=0.1)]
 
 
-    for classifier in classifiers:
-        eval_perform.storeResults(classifier)
+    # for classifier in classifiers:
+    #     eval_perform.storeResults(classifier)
+
+
+
+    classifier = LogisticRegression()
+    grid_params = {
+                    "C":np.logspace(-3,3,7),
+                    "penalty":["l1","l2"]
+                }
+    eval_perform.runOptimizer(classifier,grid_params)

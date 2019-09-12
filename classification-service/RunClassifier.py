@@ -32,7 +32,7 @@ class RunClassifier:
 	def __init__(self, labelname, host = "mongo", port = 27017, cross_val=False):
         # db connection
 		self.client = pymongo.MongoClient(host, port, w=0)
-		self.db = self.client.omp_backup
+		self.db = self.client.omp
 		self.labels = self.db.Labels
 		self.comments =self.db.Comments
 		self.labelname = labelname
@@ -87,7 +87,7 @@ class RunClassifier:
 		logger.info("Length of datset: " + str(len(annotation_dataset)))
 		logger.info("Dataset collection duration (seconds): " + str(end - start))
 
-		return(annotation_dataset)
+		return annotation_dataset
 
 	def run_trainer(self,classifier=None):
 		annotation_dataset = self.collect_trainingdata()
