@@ -27,16 +27,22 @@ class RetrieveComment:
         self.client = pymongo.MongoClient(host, port)
         self.db = self.client.omp
         self.comments = self.db.Comments
-        self.embeddings = self.db.Embeddings
-        logger.info("Loading Index")
         self.index = nmslib.init()
-        self.index.loadIndex("model/comment_vectors.index", load_data=True)
-        logger.info("Index Loaded")
-        logger.info("Loading comment vectors")
-        self.comment_id_mapping = pickle.load(open("model/comment_vectors.mapping", "rb"))
-        logger.info("Comment vectors loaded")
-        self.id_comment_mapping = {v: k for k, v in self.comment_id_mapping.items()}
-        self.nearest_neighbours = nearest_neighbours
+        self.comment_id_mapping = {}
+        self.id_comment_mapping = {}
+        self.load_index()
+
+    def load_index(self):
+        try:
+            logger.info("Loading index")
+            self.index.loadIndex("model/comment_vectors.index", load_data=True)
+            logger.info("Loading comment vectors")
+            self.comment_id_mapping = pickle.load(open("model/comment_vectors.mapping", "rb"))
+            # reverse mapping
+            self.id_comment_mapping = {v: k for k, v in self.comment_id_mapping.items()}
+            self.nearest_neighbours = nearest_neighbours
+        except:
+            logger.error("No index of embeddings present in ./model directory present.")
 
     def get_mongodb_id(self, p_id):
         return self.id_comment_mapping[p_id]
@@ -44,15 +50,15 @@ class RetrieveComment:
     def get_embedding(self, _id):
         if type(_id) == str:
             _id = ObjectId(_id)
-        embedding = self.embeddings.find_one({"_id": _id})
+        embedding = self.comments.find_one({"_id": _id})
         return embedding["embedding"]
 
     def get_nearest_ids(self, _id):
         if(type(_id)==str):
             _id = ObjectId(_id)
-        index_id=self.comment_id_mapping[_id]
-        ids, distances = self.index.knnQuery(self.index[index_id], k=(self.nearest_neighbours+1))
-        comment_db_id=[]
+        query_comment = self.comments.find_one({"_id": _id})
+        ids, distances = self.index.knnQuery(query_comment["embedding"], k=(self.nearest_neighbours + 1))
+        comment_db_id = []
         for _id_ in ids:
             if (self.id_comment_mapping[_id_] != _id):
                 comment_db_id.append(str(self.id_comment_mapping[_id_]))
@@ -60,10 +66,10 @@ class RetrieveComment:
 
     def get_nearest_embedding(self, embedding):
         ids, distances = self.index.knnQuery(embedding, k=(self.nearest_neighbours + 1))
-        embeddingss = []
+        embeddings = []
         for _id_ in ids:
             embeddings.append(self.index[self.comment_id_mapping[_id_]])
-        return embddings
+        return embeddings
 
     def get_comment_text(self, _id):
         if type(_id) == str:

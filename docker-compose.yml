@@ -37,7 +37,7 @@ services:
         links:      
             - mongo
     mongo:
-        image: mongo
+        image: mongo:4.2.0
         volumes:
             - mongodb:/data/db
         ports:

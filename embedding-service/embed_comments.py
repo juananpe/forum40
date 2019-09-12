@@ -2,15 +2,15 @@ import pymongo, argparse, logging
 from BertFeatureExtractor import BertFeatureExtractor
 from pymongo import UpdateOne
 
-from app import concat
+from utils import concat
 
 # create logger
 logger = logging.getLogger('Embedding logger')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 # create console handler and set level to debug
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.INFO)
 
 # create formatter
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -24,7 +24,6 @@ logger.addHandler(ch)
 def process_batch(comment_batch):
     comment_texts = [concat(c["title"], c["text"]) for c in comment_batch]
     comment_embeddings = be.extract_features(comment_texts)
-    batch_update_embeddings = []
     batch_update_comments = []
     for i, comment_embedding in enumerate(comment_embeddings):
 
@@ -32,9 +31,12 @@ def process_batch(comment_batch):
         comment_id = comment_batch[i]["_id"]
 
         # update mongo db
-        batch_update_embeddings.append(UpdateOne({"_id": comment_id}, {"$set": {'embedding' : comment_embedding["embedding"]}}))
-        batch_update_comments.append(UpdateOne({"_id": comment_id}, {"$set": {'embedded': True}}))
-    embeddings.bulk_write(batch_update_embeddings)
+        batch_update_comments.append(
+            UpdateOne({"_id": comment_id}, {"$set": {
+                'embedding' : comment_embedding["embedding"],
+                'embedded' : True
+            }})
+        )
     comments.bulk_write(batch_update_comments)
 
 
@@ -55,12 +57,12 @@ args = parser.parse_args()
 # Connect to DB
 client = pymongo.MongoClient(args.host, args.port)
 db = client.omp
+batch_size = args.batch_size
 
 print("Loading BERT model")
-be = BertFeatureExtractor(batch_size=256, device=args.device)
+be = BertFeatureExtractor(batch_size=batch_size, device=args.device)
 
 comments = db.Comments
-embeddings = db["Embeddings"]
 
 embed_all = args.all
 
@@ -73,7 +75,9 @@ if embed_all:
 else:
     embed_query = {"embedded": {"$ne": True}}
 
-batch_size = args.batch_size
+n_to_embed = comments.find(embed_query).count()
+logger.info("Comments to embed: " + str(n_to_embed))
+
 batch_i = 0
 i = 0
 comment_batch = []
@@ -89,7 +93,7 @@ for comment in comments.find(
     comment_batch.append(comment)
     if i % batch_size == 0:
         batch_i += 1
-        logger.info("Batch: " + str(batch_i) + ";  comments: " + str(i))
+        logger.info("Batch: " + str(batch_i) + ";  comment " + str(i) + " of " + str(n_to_embed))
         # get embeddings
         process_batch(comment_batch)
         # reset batch

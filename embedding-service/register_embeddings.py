@@ -33,25 +33,23 @@ client = pymongo.MongoClient(args.host, args.port)
 db = client.omp
 
 comments = db.Comments
-embeddings = db.Embeddings
 
 batch_size = 2048
 i = 0
 batch_updates = []
-for comment in comments.find({}, {"_id" : 1}, cursor_type=pymongo.CursorType.EXHAUST, snapshot=True):
+for comment in comments.find({}, {"_id" : 1, "embedding" : 1}, cursor_type=pymongo.CursorType.EXHAUST, snapshot=True):
     i += 1
     comment_id = comment["_id"]
-    embedding = embeddings.find_one({"_id" : comment_id}, {"_id" : 1})
     updates = {}
-    if embedding:
-        batch_updates.append(UpdateOne({"_id": comment_id}, {"$set": {'embedded': True}, "$unset": {"embedding": ""}}))
+    if "embedding" in comment:
+        batch_updates.append(UpdateOne({"_id": comment_id}, {"$set": {"embedded": True}}))
     else:
-        batch_updates.append(UpdateOne({"_id": comment_id}, {"$set": {'embedded': False}, "$unset": {"embedding": ""}}))
+        batch_updates.append(UpdateOne({"_id": comment_id}, {"$set": {"embedded": False}}))
 
     if len(batch_updates) == batch_size:
         logger.info("Registering embedding " + str(i))
         bulk_results = comments.bulk_write(batch_updates)
         batch_updates = []
 
-comments.create_index([("embedded", pymongo.ASCENDING)], background=True)
-
+if batch_updates:
+    bulk_results = comments.bulk_write(batch_updates)

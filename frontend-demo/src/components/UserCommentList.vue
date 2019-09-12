@@ -19,15 +19,23 @@
       :items="comments"
       :loading="loading"
       :footer-props="footerprops"
-      :items-per-page="rowsPerPage"
+      :items-per-page.sync="rowsPerPage"
       :page.sync="page"
+      :expanded.sync="expanded"
       :server-items-length="totalItems"
       item-key="_id.$oid"
+      single-expand
+      show-expand
     >
       <template v-slot:item="props">
-        <tr>
-          <td @click="commentClicked(props)" class="text-left commenttext">
-            <div v-if="!props.expanded">
+        <tr @click="commentClicked(props)" class="mb-2">
+          <td>
+            <v-icon v-if="!props.isExpanded">expand_more</v-icon>
+
+            <v-icon v-else @click="commentClicked(props)">expand_less</v-icon>
+          </td>
+          <td class="text-left commenttext">
+            <div v-if="!props.isExpanded">
               <span v-html="highlight(shortText(commentText(props)), keyword)"></span>
             </div>
 
@@ -44,6 +52,17 @@
             />
           </td>
         </tr>
+      </template>
+      <template v-slot:expanded-item="{ item, headers }">
+        <td :colspan="headers.length" class="elevation-1">
+          <v-btn
+            outlined
+            small
+            color="primary"
+            text
+            @click="loadSimilarComments(item)"
+          >Ähnliche Kommentare anzeigen</v-btn>
+        </td>
       </template>
     </v-data-table>
   </div>
@@ -62,6 +81,7 @@ export default {
   data() {
     return {
       comments: [],
+      expanded: [],
       loading: false,
       selected: [],
       expand: false,
@@ -79,7 +99,6 @@ export default {
           align: "left",
           sortable: false,
           value: "text",
-          class: "tableheader",
           width: "80%"
         },
         {
@@ -96,7 +115,7 @@ export default {
     moment: function(date) {
       return moment(date)
         .locale("de")
-        .format("DD. MMM YY");
+        .format("DD. MMM YYYY");
     }
   },
   computed: {
@@ -127,9 +146,9 @@ export default {
       const limit =
         this.rowsPerPage === -1 ? this.totalItems : this.rowsPerPage;
       const skip = (this.page - 1) * limit;
-      const pageQueryString =
+      const queryString =
         this.countQueryString + `&skip=${skip}&limit=${limit}`;
-      return pageQueryString;
+      return queryString;
     },
     keyword: {
       set(state) {
@@ -153,6 +172,11 @@ export default {
     },
     async page() {
       this.setSelectedComment({});
+      this.loading = true;
+      await this.fetchComments();
+      this.loading = false;
+    },
+    async rowsPerPage() {
       this.loading = true;
       await this.fetchComments();
       this.loading = false;
@@ -211,8 +235,10 @@ export default {
       this.totalItems = data.count;
     },
     commentClicked(props) {
-      props.expanded = !props.expanded;
-      if (props.expanded) {
+      props.expand(!props.isExpanded);
+
+      
+      if (!props.isExpanded) { // working like this, but don't know why
         const selectedComment = props.item;
         this[Mutations.setSelectedComment](selectedComment);
       } else {
@@ -221,6 +247,10 @@ export default {
     },
     keywordChanged() {
       //this.loadTable();
+    },
+    loadSimilarComments(item) {
+      const commentId = item._id.$oid;
+      // Service.
     }
   },
   components: {
@@ -231,15 +261,7 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-.container {
-  display: flex;
-  flex-wrap: wrap;
-}
 .commenttext >>> .highlight {
   background-color: yellow;
-}
-.tableheader {
-  font-size: 24pt;
-  color: aqua;
 }
 </style>
