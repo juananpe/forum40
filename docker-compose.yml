@@ -42,6 +42,14 @@ services:
             - mongodb:/data/db
         ports:
             - 27017:27017
+
+    druid:
+        image: druidio/example-cluster
+        #volumes:
+        #    - mongodb:/data/db
+        ports:
+            - 3000:8082
+            - 3001:8081
 #    offlang:
 #        build:
 #            context: ./offlang-service
