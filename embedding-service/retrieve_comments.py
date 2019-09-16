@@ -27,15 +27,22 @@ class RetrieveComment:
         self.client = pymongo.MongoClient(host, port)
         self.db = self.client.omp
         self.comments = self.db.Comments
-        logger.info("Loading Index")
         self.index = nmslib.init()
-        self.index.loadIndex("model/comment_vectors.index", load_data=True)
-        logger.info("Index Loaded")
-        logger.info("Loading comment vectors")
-        self.comment_id_mapping = pickle.load(open("model/comment_vectors.mapping", "rb"))
-        logger.info("Comment vectors loaded")
-        self.id_comment_mapping = {v: k for k, v in self.comment_id_mapping.items()}
-        self.nearest_neighbours = nearest_neighbours
+        self.comment_id_mapping = {}
+        self.id_comment_mapping = {}
+        self.load_index()
+
+    def load_index(self):
+        try:
+            logger.info("Loading index")
+            self.index.loadIndex("model/comment_vectors.index", load_data=True)
+            logger.info("Loading comment vectors")
+            self.comment_id_mapping = pickle.load(open("model/comment_vectors.mapping", "rb"))
+            # reverse mapping
+            self.id_comment_mapping = {v: k for k, v in self.comment_id_mapping.items()}
+            self.nearest_neighbours = nearest_neighbours
+        except:
+            logger.error("No index of embeddings present in ./model directory present.")
 
     def get_mongodb_id(self, p_id):
         return self.id_comment_mapping[p_id]

@@ -37,7 +37,8 @@ def process_batch(comment_batch):
                 'embedded' : True
             }})
         )
-    comments.bulk_write(batch_update_comments)
+    
+    #comments.bulk_write(batch_update_comments)
 
 
 # CLI parser
@@ -52,6 +53,13 @@ parser.add_argument('--device', type=str, default='cpu', nargs='?',
                     help='Pytorch device for tensor operations (default: cpu, else cuda)')
 parser.add_argument('--batch-size', dest='batch_size', type=int, default=8, nargs='?',
                     help='Batch size for tensor operations (default: 8).')
+parser.add_argument('--keep-CLS', dest='keep_cls', type=bool, default=True, nargs=1,
+                    help='include CLS when calculating embeddings for all the tokens (default: True).')
+parser.add_argument('--use-tokens', dest='use_token', type=bool, default=True, nargs=1,
+                    help='use tokens or CLS (default: True).')
+parser.add_argument('--layers', dest='use_layers', type=int, default=4, nargs='?',
+                    help='how many previous layers from the last to be used (default=4).')
+
 args = parser.parse_args()
 
 # Connect to DB
@@ -60,7 +68,7 @@ db = client.omp
 batch_size = args.batch_size
 
 print("Loading BERT model")
-be = BertFeatureExtractor(batch_size=batch_size, device=args.device)
+be = BertFeatureExtractor(batch_size=batch_size, device=args.device,keep_cls=args.keep_cls,use_layers=args.use_layers, use_token=args.use_token)
 
 comments = db.Comments
 
@@ -98,6 +106,7 @@ for comment in comments.find(
         process_batch(comment_batch)
         # reset batch
         comment_batch = []
+        break
 
 if comment_batch:
     process_batch(comment_batch)
