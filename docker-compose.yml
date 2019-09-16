@@ -42,6 +42,16 @@ services:
             - mongodb:/data/db
         ports:
             - 27017:27017
+    postgres:
+        image: "postgres:11.5"
+        volumes:
+            - postgres:/var/lib/postgresql/data
+        environment:
+            POSTGRES_DB: omp
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
+        ports:
+            - 5432:5432
 #    offlang:
 #        build:
 #            context: ./offlang-service
@@ -70,3 +80,4 @@ services:
             - mongo
 volumes:
     mongodb:
+    postgres:
