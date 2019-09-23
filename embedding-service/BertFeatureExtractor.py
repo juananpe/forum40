@@ -232,8 +232,8 @@ class BertFeatureExtractor(object):
     def extract_features(self, sequences):
         
         #print("layers", self.layers)
-        print("layer_weights", self.layer_weights)
-        print("layer_indexes", self.layer_indexes)
+        #print("layer_weights", self.layer_weights)
+        #print("layer_indexes", self.layer_indexes)
         
         examples = self.convert_sequences_to_examples(sequences)
 
@@ -252,7 +252,7 @@ class BertFeatureExtractor(object):
         eval_sampler = SequentialSampler(eval_data)
         eval_dataloader = DataLoader(eval_data, sampler=eval_sampler, batch_size=self.batch_size)
 
-        json_result = []
+        be_result = []
         with torch.no_grad():
             for input_ids, input_mask, example_indices in eval_dataloader:
                 input_ids = input_ids.to(self.device)
@@ -264,8 +264,6 @@ class BertFeatureExtractor(object):
                 for b, example_index in enumerate(example_indices):
                     feature = features[example_index.item()]
                     unique_id = int(feature.unique_id)
-                    output_json = collections.OrderedDict()
-                    output_json["sequence_index"] = unique_id
 
                     # todo:
                     # - pool all tokens instead of CLS
@@ -295,10 +293,13 @@ class BertFeatureExtractor(object):
                         # weighted sum of final j layers
                         all_layers.append(layer_output * self.layer_weights[j])
                     sequence_embedding = np.sum(all_layers, axis=0)
-                    output_json["embedding"] = [round(x.item(), 6) for x in sequence_embedding]
-                    json_result.append(output_json)
+                    be_result.append(sequence_embedding.tolist())
 
-        return json_result
+        #import pdb
+        #pdb.set_trace()
+        #print(be_result)
+
+        return be_result
 
 
 
