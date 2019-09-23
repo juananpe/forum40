@@ -33,15 +33,16 @@ parser.add_argument('--device', type=str, default='cpu', nargs='?',
                     help='Pytorch device for tensor operations (default: cpu, else cuda)')
 parser.add_argument('--batch-size', dest='batch_size', type=int, default=8, nargs='?',
                     help='Batch size for tensor operations (default: 8).')
-parser.add_argument('--keep-CLS', dest='keep_cls', default=True, action='store_true',
+parser.add_argument('--include-CLS', dest='keep_cls', default=False, action='store_true',
                     help='Include CLS when calculating embeddings for all the tokens (default: True).')
-parser.add_argument('--use-tokens', dest='use_token', default=True, action='store_true',
+parser.add_argument('--exclude-tokens', dest='use_token', default=True, action='store_false',
                     help='Use tokens or CLS (default: True).')
 parser.add_argument('--layers', dest='use_layers', type=int, default=4, nargs='?',
                     help='How many final model layers to use (default=4).')
 
 args = parser.parse_args()
 
+logger.info(args)
 
 def process_batch(comment_batch):
 
@@ -55,19 +56,16 @@ def process_batch(comment_batch):
 
         # update mongo db
         batch_update_comments.append(
-            (comment_id, comment_embedding)
+            (comment_embedding, comment_id)
         )
 
-    #import pdb
-    #pdb.set_trace()
-
-    cur.executemany(insert_statement, batch_update_comments)
+    cur.executemany(update_statement, batch_update_comments)
 
 
 # Connect to DB
 conn = psycopg2.connect(host = args.host, port = args.port, dbname="omp", user="postgres", password="postgres")
 
-insert_statement = """INSERT INTO embeddings (id, embedding) VALUES (%s, %s)"""
+update_statement = """UPDATE comments SET embedding=%s WHERE id=%s"""
 
 try:
     cur = conn.cursor()
@@ -89,27 +87,13 @@ try:
 
     logger.info("Comments in the database: " + str(n_comments))
 
-    # default: embed all comments
-    embed_query = """SELECT c.id, c.title, c.text FROM comments c"""
+    embed_query = """SELECT id, title, text FROM comments"""
     n_to_embed = n_comments
 
     if not embed_all:
-        # select unembedded comments
-        logger.info("Embedding unembedded comments only.")
-        embed_query += " LEFT JOIN embeddings e ON c.id = e.id WHERE e.embedding IS NULL"
-
-        cur.execute("""SELECT COUNT(*) FROM comments c LEFT JOIN embeddings e ON c.id = e.id WHERE e.embedding IS NULL""")
-        n_to_embed = cur.fetchone()[0]
-    else:
-        # recreate table
-        logger.info("Recreating embeddings table.")
-        cur.execute("""DROP TABLE IF EXISTS public.embeddings""")
-        cur.execute(
-            """CREATE TABLE public.embeddings (
-            id bigint NOT NULL,
-            embedding float8[] NOT NULL);"""
-        )
-        conn.commit()
+        embed_query += " WHERE embedding IS NULL"
+        cur.execute("""SELECT COUNT(*) from comments WHERE embedding IS NULL""")
+        n_to_embed = cur.fetchone()
 
     logger.info("Comments to embed: " + str(n_to_embed))
 
@@ -132,16 +116,11 @@ try:
         if batch_i % 100 == 0:
             logger.info("Commit to DB ...")
             conn.commit()
-            # break
-
-    # ensure primary key for embeddings
-    if embed_all:
-        cur.execute("""ALTER TABLE public.embeddings ADD CONSTRAINT embeddings_pk PRIMARY KEY (id)""")
-        conn.commit()
 
 except Exception as err:
     logger.error(err)
     traceback.print_tb(err.__traceback__)
+
 finally:
     cur.close()
     # cursor_large.close()
