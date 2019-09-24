@@ -46,13 +46,14 @@ logger.info(args)
 
 def process_batch(comment_batch):
 
-    comment_texts = [concat(c[1], c[2]) for c in comment_batch]
+    comment_texts = [concat(c[1], c[2]) for c in comment_batch if c[1] or c[2]]
+    comment_ids = [c[0] for c in comment_batch if c[1] or c[2]]
     comment_embeddings = be.extract_features(comment_texts)
 
     batch_update_comments = []
     for i, comment_embedding in enumerate(comment_embeddings):
         # get comment object id
-        comment_id = comment_batch[i][0]
+        comment_id = comment_ids[i]
 
         # update mongo db
         batch_update_comments.append(

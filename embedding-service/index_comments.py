@@ -1,57 +1,87 @@
 import pymongo, math
 import nmslib, pickle
+import psycopg2
+import logging, traceback, argparse
 
-client = pymongo.MongoClient("localhost", 27017)
+# create logger
+logger = logging.getLogger('Embedding logger')
+logger.setLevel(logging.INFO)
 
-print(client)
+# create console handler and set level to debug
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
 
-db = client.omp
+# create formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
+# add formatter to ch
+ch.setFormatter(formatter)
+
+# add ch to logger
+logger.addHandler(ch)
+
+# CLI parser
+parser = argparse.ArgumentParser(description='Embed comments in DB.')
+parser.add_argument('host', type=str, default='localhost', nargs='?',
+                    help='DB host (default: localhost)')
+parser.add_argument('port', type=int, default=5432, nargs='?',
+                    help='DB port (default: 5432)')
+args = parser.parse_args()
+
+# Connect to DB
+conn = psycopg2.connect(host = args.host, port = args.port, dbname="omp", user="postgres", password="postgres")
+
+# init index
 index = nmslib.init(method='hnsw', space="cosinesimil", data_type=nmslib.DataType.DENSE_VECTOR)
 
-comments = db.Comments
-
-comment_batch = []
+# config
 batch_size = 256
-batch_i = 0
-i = 0
-n_comments = comments.find({"embedded" : True}).count()
-n_batches = math.ceil(n_comments / batch_size)
+debug = False
+max_batches = 100
 
-# get all ids
+# batch and id vars
 comment_id_mapping = {}
 comment_id_running = 0
 batch_embeddings = []
 batch_ids = []
+batch_i = 0
 
-debug = True
-max_comment_i = 20000
-# index batches
-for comment_i, comment in enumerate(comments.find({"embedded" : True}, {"_id": 1, "embedding" : 1})):
-    batch_ids.append(comment_id_running)
-    comment_id_mapping[comment["_id"]] = comment_id_running
-    comment_id_running += 1
-    batch_embeddings.append(comment["embedding"])
-    if comment_i > 0 and comment_i % batch_size == 0:
-        print("Adding comment %d of %d" % (comment_i, n_comments))
-        # import pdb
-        # pdb.set_trace()
-        index.addDataPointBatch(data = batch_embeddings, ids = batch_ids)
-        batch_embeddings = []
-        batch_ids = []
+try:
+    cursor_large = conn.cursor(name='fetch_large_result', withhold=True)
+    cursor_large.execute("SELECT id, embedding FROM comments WHERE embedding IS NOT NULL")
 
-    if debug and comment_i == max_comment_i:
-        break
+    while True:
+        records = cursor_large.fetchmany(size=batch_size)
 
-# ensure indexing of last batch
-if batch_embeddings:
-    index.addDataPointBatch(data = batch_embeddings, ids = batch_ids)
+        if not records:
+            break
 
-# create index
+        batch_i += 1
+        logger.info("Batch: " + str(batch_i) + ";  comment " + str(batch_i * batch_size))
+
+        batch_embeddings = [r[1] for r in records]
+        batch_ids = [r[0] for r in records]
+
+        # add batch
+        index.addDataPointBatch(data=batch_embeddings, ids=batch_ids)
+
+        if debug and batch_i == max_batches:
+            break
+
+
+except Exception as err:
+    logger.error(err)
+    traceback.print_tb(err.__traceback__)
+
+finally:
+    cursor_large.close()
+    # cursor_large.close()
+    conn.close()
+
+
+
+# create and save index
 index.createIndex({'post': 2}, print_progress=True)
-
-print("\nIndex saved to ./model")
-
-# save index
 index.saveIndex("model/comment_vectors.index", save_data=True)
-pickle.dump(comment_id_mapping, open("model/comment_vectors.mapping", "wb"))
+print()
+logger.info("Index saved to ./model")
