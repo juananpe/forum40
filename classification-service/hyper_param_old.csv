@@ -1,8 +1,0 @@
-model_parameters,score,labelname,label_name
-{'C': 4.0},0.5346568551338549,,offtopic
-"{'C': 4.0, 'class_weight': 'balanced', 'l1_ratio': 0.4444444444444444, 'max_iter': 100.0, 'penalty': 'elasticnet', 'solver': 'saga'}",0.5531579028429334,,offtopic
-"{'C': 6.0, 'class_weight': 'balanced', 'l1_ratio': 0.6666666666666666, 'max_iter': 100.0, 'penalty': 'elasticnet', 'solver': 'saga'}",0.6435973926262958,,sentimentnegative
-"{'C': 7.0, 'class_weight': 'balanced', 'l1_ratio': 0.6666666666666666, 'max_iter': 200.0, 'penalty': 'elasticnet', 'solver': 'saga'}",0.5933855598932261,,sentimentpositive
-"{'C': 8.0, 'class_weight': 'balanced', 'l1_ratio': 0.0, 'max_iter': 100.0, 'penalty': 'elasticnet', 'solver': 'saga'}",0.6396849320713067,,sentimentneutral
-"{'C': 4.0, 'class_weight': 'balanced', 'l1_ratio': 0.3333333333333333, 'max_iter': 500.0, 'penalty': 'elasticnet', 'solver': 'saga'}",0.5739190276958451,,inappropriate
-"{'C': 6.0, 'class_weight': 'balanced', 'max_iter': 100.0, 'penalty': 'l2', 'solver': 'sag'}",0.5722236351638595,,discriminating
