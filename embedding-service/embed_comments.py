@@ -38,76 +38,77 @@ def process_batch(comment_batch):
             }})
         )
     
-    #comments.bulk_write(batch_update_comments)
+    comments.bulk_write(batch_update_comments)
 
+
+
+if __name__== "__main__":
 
 # CLI parser
-parser = argparse.ArgumentParser(description='Embed comments in MongoDB.')
-parser.add_argument('host', type=str, default='localhost', nargs='?',
-                    help='MongoDB host (default: localhost)')
-parser.add_argument('port', type=int, default=27017, nargs='?',
-                    help='MongoDB port (default: 27017)')
-parser.add_argument('--embed-all', dest='all', type=bool, default=False, nargs=1,
-                    help='(Re-)embed all data (default: False)')
-parser.add_argument('--device', type=str, default='cpu', nargs='?',
-                    help='Pytorch device for tensor operations (default: cpu, else cuda)')
-parser.add_argument('--batch-size', dest='batch_size', type=int, default=8, nargs='?',
-                    help='Batch size for tensor operations (default: 8).')
-parser.add_argument('--keep-CLS', dest='keep_cls', type=bool, default=True, nargs=1,
-                    help='include CLS when calculating embeddings for all the tokens (default: True).')
-parser.add_argument('--use-tokens', dest='use_token', type=bool, default=True, nargs=1,
-                    help='use tokens or CLS (default: True).')
-parser.add_argument('--layers', dest='use_layers', type=int, default=4, nargs='?',
-                    help='how many previous layers from the last to be used (default=4).')
 
-args = parser.parse_args()
 
-# Connect to DB
-client = pymongo.MongoClient(args.host, args.port)
-db = client.omp
-batch_size = args.batch_size
+    parser = argparse.ArgumentParser(description='Embed comments in MongoDB.')
+    parser.add_argument('host', type=str, default='localhost', nargs='?',
+                        help='MongoDB host (default: localhost)')
+    parser.add_argument('port', type=int, default=27017, nargs='?',
+                        help='MongoDB port (default: 27017)')
+    parser.add_argument('--embed-all', dest='all', type=bool, default=False, nargs=1,
+                        help='(Re-)embed all data (default: False)')
+    parser.add_argument('--device', type=str, default='cpu', nargs='?',
+                        help='Pytorch device for tensor operations (default: cpu, else cuda)')
+    parser.add_argument('--batch-size', dest='batch_size', type=int, default=8, nargs='?',
+                        help='Batch size for tensor operations (default: 8).')
+    parser.add_argument('--keep-CLS', dest='keep_cls', type=bool, default=True, nargs=1,
+                        help='include CLS when calculating embeddings for all the tokens (default: True).')
+    parser.add_argument('--use-tokens', dest='use_token', type=bool, default=True, nargs=1,
+                        help='use tokens or CLS (default: True).')
+    parser.add_argument('--layers', dest='use_layers', type=int, default=4, nargs='?',
+                        help='how many previous layers from the last to be used (default=4).')
 
-print("Loading BERT model")
-be = BertFeatureExtractor(batch_size=batch_size, device=args.device,keep_cls=args.keep_cls,use_layers=args.use_layers, use_token=args.use_token)
+    args = parser.parse_args()
 
-comments = db.Comments
+    # Connect to DB
+    client = pymongo.MongoClient(args.host, args.port)
+    db = client.omp
+    batch_size = args.batch_size
 
-embed_all = args.all
+    print("Loading BERT model")
+    be = BertFeatureExtractor(batch_size=batch_size, device=args.device,keep_cls=args.keep_cls,use_layers=args.use_layers, use_token=args.use_token)
 
-n_comments = comments.count()
+    comments = db.Comments
 
-logger.info("Comments in the database: " + str(n_comments))
+    embed_all = args.all
 
-if embed_all:
-    embed_query = {}
-else:
-    embed_query = {"embedded": {"$ne": True}}
+    n_comments = comments.count()
 
-n_to_embed = comments.find(embed_query).count()
-logger.info("Comments to embed: " + str(n_to_embed))
+    logger.info("Comments in the database: " + str(n_comments))
 
-batch_i = 0
-i = 0
-comment_batch = []
-for comment in comments.find(
-        embed_query,
-        {"_id" : 1, "title" : 1, "text" : 1},
-        cursor_type=pymongo.CursorType.EXHAUST,
-        snapshot=True
-):
-    if not comment['title'] and not comment['text']:
-        continue
-    i += 1
-    comment_batch.append(comment)
-    if i % batch_size == 0:
-        batch_i += 1
-        logger.info("Batch: " + str(batch_i) + ";  comment " + str(i) + " of " + str(n_to_embed))
-        # get embeddings
+    if embed_all:
+        embed_query = {}
+    else:
+        embed_query = {"embedded": {"$ne": True}}
+
+    n_to_embed = comments.find(embed_query).count()
+    logger.info("Comments to embed: " + str(n_to_embed))
+
+    batch_i = 0
+    i = 0
+    comment_batch = []
+    for comment in comments.find(embed_query,{"_id" : 1, "title" : 1, "text" : 1},
+            cursor_type=pymongo.CursorType.EXHAUST,snapshot=True):
+        if not comment['title'] and not comment['text']:
+            continue
+        i += 1
+        comment_batch.append(comment)
+        if i % batch_size == 0:
+            batch_i += 1
+            logger.info("Batch: " + str(batch_i) + ";  comment " + str(i) + " of " + str(n_to_embed))
+            # get embeddings
+            process_batch(comment_batch)
+            # reset batch
+            comment_batch = []
+            break
+
+    if comment_batch:
         process_batch(comment_batch)
-        # reset batch
-        comment_batch = []
-        break
-
-if comment_batch:
-    process_batch(comment_batch)
 

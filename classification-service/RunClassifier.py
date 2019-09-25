@@ -89,8 +89,9 @@ class RunClassifier:
 
 		return annotation_dataset
 
-	def run_trainer(self,classifier=None):
-		annotation_dataset = self.collect_trainingdata()
+	def run_trainer(self,classifier=None,annotation_dataset=None):
+		if annotation_dataset is None:
+			annotation_dataset = self.collect_trainingdata()
 		# train model on embeddings
 		self.classification_model = EmbedClassifier()
 

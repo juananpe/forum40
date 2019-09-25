@@ -59,7 +59,7 @@ class BertFeatureExtractor(object):
 
     def __init__(self, bert_model = "bert-base-german-cased", do_lower_case="False", max_seq_length=256,
                  batch_size=32, device = None,keep_cls=False, use_layers=4 , use_token=False):
-        #parameter explaination
+        #parameter explanation
         #keep_cls is used to decide whether or not to keep CLS with all the tokens
         #use_layers is used to decide how many layers from the last layer to be used 
         #use_token is used to decide whether to use the tokens or the CLS 
@@ -297,7 +297,7 @@ class BertFeatureExtractor(object):
                     sequence_embedding = np.sum(all_layers, axis=0)
                     output_json["embedding"] = [round(x.item(), 6) for x in sequence_embedding]
                     json_result.append(output_json)
-
+        print(json_result)
         return json_result
 
 

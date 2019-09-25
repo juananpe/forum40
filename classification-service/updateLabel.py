@@ -84,7 +84,7 @@ class LabelUpdater(RunClassifier):
 
         return bulk_results
 
-
+    #TODO : include the option for hyperparmeterized model for each 
     def updateLabels(self):
 
         # get training data from MongDB
