@@ -2,7 +2,6 @@ from flask import Flask
 from logging.config import dictConfig
 from flask_restplus import Api, Resource, fields
 from core.proxy_wrapper import ReverseProxied
-import nmslib, pickle
 from BertFeatureExtractor import BertFeatureExtractor
 from utils import concat
 from retrieve_comments import RetrieveComment
@@ -33,7 +32,7 @@ be = BertFeatureExtractor()
 app.logger.debug('BERT model loaded')
 
 # db connection
-retriever = RetrieveComment('mongo', 27017)
+retriever = RetrieveComment('postgres', 5432)
 
 # define API
 api = Api(app, version='0.1', title='Embedding API',
@@ -68,23 +67,6 @@ class CommentsEmbedding(Resource):
         ]
         results = be.extract_features(comment_texts)
         return results, 200
-
-
- 
-       
-
-
-"""edited part"""
-#load_indexes
-get_comment=RetrieveComment()
-
-commentid_model = api.model(
-    'comment_id', {
-        'id': fields.String('5cadf570694377c8a2f450d8')})
-        
-commentsid_model = api.model('comments_id', {
-    'ids': fields.List(fields.Nested(commentid_model))
-})
 
 
 @api.route('/embedding')
@@ -125,11 +107,6 @@ class SimilarIds(Resource):
             results.append([retriever.get_comment_text(id) for id in nn_ids])
         return results, 200
 
-# todo api
-# [X] get embedding given comment id
-# [X] get embedding given text
-# [X] get nearest neighbors given comment id
-# [X] get nearest neighbors given text
 
 # run app manually
 if __name__ == "__main__":
