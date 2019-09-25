@@ -58,12 +58,11 @@ def process_batch(comment_batch):
         # update mongo db
         batch_update_comments.append(
             (comment_embedding, comment_id)
-        )
-
     cur.executemany(update_statement, batch_update_comments)
 
 
-# Connect to DB
+
+#Connect to DB
 conn = psycopg2.connect(host = args.host, port = args.port, dbname="omp", user="postgres", password="postgres")
 
 update_statement = """UPDATE comments SET embedding=%s WHERE id=%s"""

@@ -332,3 +332,53 @@ LogisticRegression,"LogisticRegression(C=1.0, class_weight='balanced', dual=Fals
                    max_iter=200, multi_class='warn', n_jobs=10,
                    penalty='elasticnet', random_state=42, solver='saga',
                    tol=0.001, verbose=0, warm_start=False)",1568054274.7128642,argumentsused,0.7648631389291436,0.7954035592369834,13.653484773635864,0.0038305044174194334
+LogisticRegression,"LogisticRegression(C=2.0, class_weight='balanced', dual=False,
+                   fit_intercept=True, intercept_scaling=1, l1_ratio=0.5,
+                   max_iter=100.0, multi_class='warn', n_jobs=None,
+                   penalty='elasticnet', random_state=None, solver='saga',
+                   tol=0.0001, verbose=0, warm_start=False)",1569000850.4456189,offtopic,0.5388796270226439,0.6582745280099039,4.873863697052002,0.016657352447509766
+LogisticRegression,"LogisticRegression(C=2.0, class_weight='balanced', dual=False,
+                   fit_intercept=True, intercept_scaling=1, l1_ratio=0.5,
+                   max_iter=100.0, multi_class='warn', n_jobs=None,
+                   penalty='elasticnet', random_state=None, solver='saga',
+                   tol=0.0001, verbose=0, warm_start=False)",1569003703.2404475,offtopic,0.5394446823473189,0.6582745280099039,4.811640119552612,0.018510198593139647
+LogisticRegression,"LogisticRegression(C=1.0, class_weight='balanced', dual=False,
+                   fit_intercept=True, intercept_scaling=1, l1_ratio=0.5,
+                   max_iter=100.0, multi_class='warn', n_jobs=None,
+                   penalty='elasticnet', random_state=None, solver='saga',
+                   tol=0.0001, verbose=0, warm_start=False)",1569003941.15915,sentimentnegative,0.6183007579173234,0.6201401588318154,4.782553625106812,0.022539544105529784
+LogisticRegression,"LogisticRegression(C=5.0, class_weight='balanced', dual=False,
+                   fit_intercept=True, intercept_scaling=1, l1_ratio=0.5,
+                   max_iter=600.0, multi_class='warn', n_jobs=None,
+                   penalty='elasticnet', random_state=None, solver='saga',
+                   tol=0.0001, verbose=0, warm_start=False)",1569004435.1800866,sentimentpositive,0.5763872388309879,0.9819443587099008,28.61864342689514,0.012474727630615237
+LogisticRegression,"LogisticRegression(C=2.0, class_weight='balanced', dual=False,
+                   fit_intercept=True, intercept_scaling=1, l1_ratio=0.5,
+                   max_iter=100.0, multi_class='warn', n_jobs=None,
+                   penalty='elasticnet', random_state=None, solver='saga',
+                   tol=0.0001, verbose=0, warm_start=False)",1569004679.2959974,sentimentneutral,0.6123296676835611,0.6139795188748886,4.739770984649658,0.011577677726745606
+LogisticRegression,"LogisticRegression(C=10.0, class_weight='balanced', dual=False,
+                   fit_intercept=True, intercept_scaling=1, l1_ratio=0.5,
+                   max_iter=100.0, multi_class='warn', n_jobs=None,
+                   penalty='elasticnet', random_state=None, solver='saga',
+                   tol=0.0001, verbose=0, warm_start=False)",1569004927.4501436,inappropriate,0.5700807958373412,0.7858067620549198,4.796737098693848,0.014056229591369629
+LogisticRegression,"LogisticRegression(C=9.0, class_weight='balanced', dual=False,
+                   fit_intercept=True, intercept_scaling=1, l1_ratio=None,
+                   max_iter=200.0, multi_class='warn', n_jobs=None,
+                   penalty='l2', random_state=None, solver='sag', tol=0.0001,
+                   verbose=0, warm_start=False)",1569005148.012153,discriminating,0.5200425319119848,0.7908108794563744,3.6175644636154174,0.010103201866149904
+LogisticRegression,"LogisticRegression(C=7.0, class_weight='balanced', dual=False,
+                   fit_intercept=True, intercept_scaling=1, l1_ratio=0.5,
+                   max_iter=100.0, multi_class='warn', n_jobs=None,
+                   penalty='elasticnet', random_state=None, solver='saga',
+                   tol=0.0001, verbose=0, warm_start=False)",1569005424.07659,possiblyfeedback,0.7348406697776966,0.7959832262800715,7.958854484558105,0.015810585021972655
+LogisticRegression,"LogisticRegression(C=9.0, class_weight='balanced', dual=False,
+                   fit_intercept=True, intercept_scaling=1, l1_ratio=0.5,
+                   max_iter=100.0, multi_class='warn', n_jobs=None,
+                   penalty='elasticnet', random_state=None, solver='saga',
+                   tol=0.0001, verbose=0, warm_start=False)",1569005731.2258596,personalstories,0.8099284417163112,0.8752275725322862,12.455684423446655,0.021284270286560058
+LogisticRegression,"LogisticRegression(C=10.0, class_weight='balanced', dual=False,
+                   fit_intercept=True, intercept_scaling=1, l1_ratio=0.5,
+                   max_iter=100.0, multi_class='warn', n_jobs=None,
+                   penalty='elasticnet', random_state=None, solver='saga',
+                   tol=0.0001, verbose=0, warm_start=False)",1569005956.8019497,argumentsused,0.7543272136365063,0.7849335793057388,4.724662590026855,0.012561988830566407
