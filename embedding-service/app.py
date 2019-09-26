@@ -32,78 +32,82 @@ be = BertFeatureExtractor()
 app.logger.debug('BERT model loaded')
 
 # db connection
-retriever = RetrieveComment('postgres', 5432)
+try:
+    retriever = RetrieveComment('postgres', 5432)
+except:
+    app.logger.error('DB connection failed.')
 
 # define API
 api = Api(app, version='0.1', title='Embedding API',
           description="An API for embedding user comments")
 
-# API for comment texts
-comment_model = api.model(
-    'comment', {
-        'text': fields.String('Text of the comment.')
-    })
-comments_model = api.model('comments', {
-    'comments': fields.List(fields.Nested(comment_model))
+# API for comments
+comments_model = api.model('Comments', {
+    'comments': fields.List(fields.String)
+})
+sim_comments_model = api.model('SimComments', {
+    'comments': fields.List(fields.String),
+    'n' : fields.Integer
 })
 
 # API for comment ids
-commentid_model = api.model(
-    'comment_id', {
-        'id': fields.String('Mongodb object ID')
-    })
-commentsid_model = api.model('comments_id', {
-    'ids': fields.List(fields.Nested(commentid_model))
+id_model = api.model('Id', {
+    'ids': fields.List(fields.Integer)
 })
-
+sim_id_model = api.model('SimId', {
+    'ids': fields.List(fields.Integer),
+    'n' : fields.Integer
+})
 
 @api.route('/comment')
 class CommentsEmbedding(Resource):
     @api.expect(comments_model)
     def post(self):
-        comments = api.payload.get('comments', [])
-        comment_texts = [
-            concat(c.get('title', ''), c.get('text', '')) for c in comments
-        ]
+        comment_texts = api.payload.get('comments', [])
         results = be.extract_features(comment_texts)
         return results, 200
 
 
-@api.route('/embedding')
+@api.route('/id')
 class IdEmbedding(Resource):
-    @api.expect(commentsid_model)
+    @api.expect(id_model)
     def post(self):
         comments_id = api.payload.get('ids', [])
-        all_ids = [c.get('id', '') for c in comments_id]
+        all_ids = [int(c) for c in comments_id]
         results = []
-        for _id in all_ids:
-            embedding = retriever.get_embeddings(_id)
+        for id in all_ids:
+            embedding = retriever.get_embedding(id)
             results.append(embedding)
         return results, 200
 
 
 @api.route('/similar-ids')
 class SimilarIds(Resource):
-    @api.expect(commentsid_model)
+    @api.expect(sim_id_model)
     def post(self):
-        comments_id = api.payload.get('ids', [])
-        all_ids= [c.get('id', '') for c in comments_id]
+        comments_ids = api.payload.get('ids', [])
+        n = api.payload.get('n', 10)
+        if n == 0:
+            n = 1
         results =[]
-        for _id in all_ids:
-            ids = retriever.get_nearest_ids(_id)
+        for _id in comments_ids:
+            ids = retriever.get_nearest_for_id(_id, n = n)
             results.append(ids)
         return results, 200
 
+
 @api.route('/similar-comments')
-class SimilarIds(Resource):
-    @api.expect(comments_model)
+class SimilarComments(Resource):
+    @api.expect(sim_comments_model)
     def post(self):
-        comments = api.payload.get('comments', [])
-        comment_texts = [c.get('text', '') for c in comments]
+        comment_texts = api.payload.get('comments', [])
+        n = api.payload.get('n', 10)
+
+        # get embedding
         embeddings = be.extract_features(comment_texts)
         results = []
         for embedding in embeddings:
-            nn_ids = retriever.get_nearest_embeddings(embedding)
+            nn_ids = retriever.get_nearest_for_embedding(embedding)
             results.append([retriever.get_comment_text(id) for id in nn_ids])
         return results, 200
 

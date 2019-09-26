@@ -1,7 +1,7 @@
-import pymongo, math
-import nmslib, pickle
+import nmslib
 import psycopg2
 import logging, traceback, argparse
+import utils
 
 # create logger
 logger = logging.getLogger('Embedding logger')
@@ -29,7 +29,7 @@ parser.add_argument('port', type=int, default=5432, nargs='?',
 args = parser.parse_args()
 
 # Connect to DB
-conn = psycopg2.connect(host = args.host, port = args.port, dbname="omp", user="postgres", password="postgres")
+conn = psycopg2.connect(host = args.host, port = args.port,  dbname=utils.DB_NAME, user=utils.DB_USER, password=utils.DB_PASSWORD)
 
 # init index
 index = nmslib.init(method='hnsw', space="cosinesimil", data_type=nmslib.DataType.DENSE_VECTOR)
