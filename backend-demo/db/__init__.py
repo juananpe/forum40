@@ -14,3 +14,4 @@ PG_PASSWORD = 'postgres' # TODO hide
 
 postgres_con = psycopg2.connect(host=PG_HOST, port=PG_PORT, database=PG_DATABASE, user=PG_USER, password=PG_PASSWORD)
 postgres = postgres_con.cursor()
+postgres_json = postgres_con.cursor(cursor_factory=RealDictCursor)

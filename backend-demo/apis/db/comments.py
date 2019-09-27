@@ -5,6 +5,9 @@ from apis.db import api
 from models.db_models import comments_parser, comments_parser_sl, groupByModel
 
 from db import mongo
+from db import postgres
+from db import postgres_json
+
 from db.util import getCommentsByQuery, getCommentById, getLabelIdByName
 
 from db.queries.comments_timeseries import getCommentsGroupedByDay, getCommentsGroupedByMonth, getCommentsGroupedByYear
@@ -60,6 +63,15 @@ def convertObjectToJSonResponse(obj):
 def convertCursorToJSonResponse(cursor):
     return convertObjectToJSonResponse(list(cursor))
 
+import sys
+
+def getLabelIdByName2(name):
+        postgres.execute("SELECT id FROM labels WHERE name = '{0}';".format(name))
+        db_return = postgres.fetchone()
+        if db_return:
+            return db_return[0]
+        return -1
+
 @ns.route('/')
 @api.expect(comments_parser_sl)
 class CommentsGet(Resource):
@@ -68,10 +80,26 @@ class CommentsGet(Resource):
         skip = args["skip"]
         limit = args["limit"]
 
-        query = createCommentsQueryFromArgs(args)
-        cursor = getCommentsByQuery(query).skip(skip).limit(limit)
-        response = convertCursorToJSonResponse(cursor)
-        return response
+        annotations_sub_query = 'SELECT label_id, comment_id, user_id FROM annotations'
+        if 'label' in args and args['label']:
+            labelIds = ' WHERE ' + 'label_id IN ({0})'.format(", ".join(str(getLabelIdByName2(i)) for i in args['label']) )
+            annotations_sub_query += labelIds
+
+        comments_sub_query = 'SELECT id AS comment_id, user_id, parent_comment_id, title, text FROM comments'
+        if 'keyword' in args and args['keyword']:
+            searchwords = ' WHERE ' + ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
+            comments_sub_query += searchwords
+
+        query = 'SELECT * FROM ( {0} ) AS a, ( {1} ) AS c WHERE a.comment_id = c.comment_id'.format(annotations_sub_query, comments_sub_query)
+
+        if limit:
+            query += " LIMIT " + str(limit)
+
+        if skip:
+            query += " OFFSET " + str(skip)
+        
+        postgres_json.execute(query)
+        return json.dumps(postgres_json.fetchall())
 
 @ns.route('/count')
 @api.expect(comments_parser)
@@ -230,7 +258,6 @@ class CommentsParentRec(Resource):
             "size" : i
         }
         return convertObjectToJSonResponse(response)
-
 
 @ns.route('/label/<string:comment_id>/<string:label_name>/<int:label>')
 class LabelComment(Resource):
