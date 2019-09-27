@@ -29,18 +29,23 @@ class LabelsGetAll(Resource):
 @ns.route('/count')
 class LabelsCount(Resource):
     def get(self):
-        coll = mongo.db.Labels
-        return {'count': coll.find().count()}, 200
+        postgres.execute("SELECT COUNT(*) FROM labels;")
+        db_return = postgres.fetchone()
+
+        if db_return:
+             return {'count': db_return[0]}, 200
+        
+        return {"msg": "Error"}, 400        
 
 @ns.route('/id/<string:name>')
 class LabelsId(Resource):
     def get(self, name):
-        coll = mongo.db.Labels
-        c = coll.find_one({"description" : name}, {"_id": 1})
-        id = None
-        if c: 
-            id = str(c["_id"])
-        return {"id" : id }, 200
+        postgres.execute("SELECT id FROM labels WHERE name = '{0}';".format(name))
+        db_return = postgres.fetchone()
+        if db_return:
+            return {'id': db_return[0]}, 200
+        else:
+            return {"msg": "Label: '{0}' does not exists!"}, 400
 
 @ns.route('/binary/<string:label_name>')
 class AddLabel(Resource):
