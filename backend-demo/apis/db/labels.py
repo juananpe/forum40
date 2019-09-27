@@ -2,6 +2,7 @@ from flask import request, Response
 from flask_restplus import Resource, reqparse
 
 from apis.db import api
+from db import postgres
 from db import mongo
 
 from bson import json_util
@@ -14,13 +15,12 @@ ns = api.namespace('labels', description="labels api")
 @ns.route('/')
 class LabelsGetAll(Resource):
     def get(self):
-        coll = mongo.db.Labels
-        labels = coll.find({}, {"description" : 1, "_id": 1})
-        i_list = []
-        d_list = []
-        for l in labels:
-            i_list.append(str(l["_id"]))
-            d_list.append(l["description"])
+        postgres.execute('SELECT name FROM labels')
+        d_list = [t[0] for t in postgres.fetchall()]
+
+        postgres.execute('SELECT id FROM labels')
+        i_list = [t[0] for t in postgres.fetchall()]
+
         return { 
             "labels" : d_list,
             "ids" : i_list
