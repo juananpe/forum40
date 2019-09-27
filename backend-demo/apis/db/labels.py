@@ -3,6 +3,8 @@ from flask_restplus import Resource, reqparse
 
 from apis.db import api
 from db import postgres
+from db import postgres_con
+
 from db import mongo
 
 from bson import json_util
@@ -47,22 +49,27 @@ class LabelsId(Resource):
         else:
             return {"msg": "Label: '{0}' does not exists!"}, 400
 
+
 @ns.route('/binary/<string:label_name>')
 class AddLabel(Resource):
     @token_required
     @api.doc(security='apikey')
     def put(self, data, label_name):
-        coll = mongo.db.Labels
-        c = coll.find_one({"description" : label_name})
-        if c: 
-            return 'Label already exists.', 400
 
-        coll.insert({  
-            "type" : "binary", 
-            "description" : label_name, 
-            "scale" : "ordinal",
-            "annotatorId": self["user"],
-        })
+        postgres.execute("SELECT COUNT(*) FROM labels WHERE name = '{0}';".format(label_name))
+        db_result = postgres.fetchone()
 
-        return "ok", 200
+        if db_result:
+            if db_result[0] >= 1:
+                return { 'msg' : 'Label already exists.' } , 400
+
+        postgres.execute('SELECT MAX(id) FROM labels')
+        max_id = postgres.fetchone()[0]
+
+        postgres.execute(
+            "INSERT INTO labels (id, type, name) VALUES(%s, %s, %s)", 
+            (max_id+1 , 'classification', label_name))
+        postgres_con.commit()
+        
+        return "ok", 200 
                 
