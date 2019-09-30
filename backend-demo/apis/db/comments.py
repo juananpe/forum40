@@ -101,7 +101,7 @@ class CommentsGet(Resource):
         skip = args["skip"]
         limit = args["limit"]
 
-        query = 'SELECT * FROM' + createQuery(args, skip, limit)
+        query = 'SELECT * FROM' + createQuery(args, skip, limit) 
         
         postgres_json.execute(query)
         return json.dumps(postgres_json.fetchall())
@@ -139,14 +139,14 @@ def addMissingDays2(data):
             min_ = min_ + timedelta(1)
         min_ = min_ + + timedelta(1)
     data = data + missing
-    return sorted(data, key=lambda x: (x['year'], x['month'], x['day'] ))
+    return sorted(data, key=lambda x: (x['year'], x['month'], x['day'] )) 
 
 def addMissingMonths2(data):
     if len(data) == 0:
         return data
 
-    #el0 = data[0]
-    min_ = min_date #date(el0["_id"]['year'], el0["_id"]['month'], 1)
+    #el0 = data[0] 
+    min_ = min_date #date(el0["_id"]['year'], el0["_id"]['month'], 1) 
     missing = []
     for el in data:
         while min_ < date(el['year'], el['month'], 1):
@@ -356,13 +356,12 @@ def prepareForVisualisation(data, f):
 @ns.route('/parent/<string:id>/')
 class CommentsParent(Resource):
     def get(self, id):
-        base_comment = getCommentById(ObjectId(id))
-        if "parentCommentId" in base_comment:
-            parent_id = base_comment["parentCommentId"]
-            parent_comment = getCommentById(parent_id)
-            return convertObjectToJSonResponse(parent_comment)
-        else:
-            return convertObjectToJSonResponse({})
+        
+        postgres_json.execute('SELECT id, text, title, user_id, year, month, day FROM comments p, (SELECT parent_comment_id FROM comments c WHERE id = {}) as c WHERE p.id = c.parent_comment_id;'.format(id))
+        db_result = postgres_json.fetchone()
+        if not db_result:
+            return {'msg' : "Error: No such Comment"}
+        return db_result
 
 @ns.route('/parent_recursive/<string:id>/')
 class CommentsParentRec(Resource):
