@@ -356,35 +356,38 @@ def prepareForVisualisation(data, f):
 @ns.route('/parent/<string:id>/')
 class CommentsParent(Resource):
     def get(self, id):
-        
+
         postgres_json.execute('SELECT id, text, title, user_id, year, month, day FROM comments p, (SELECT parent_comment_id FROM comments c WHERE id = {}) as c WHERE p.id = c.parent_comment_id;'.format(id))
         db_result = postgres_json.fetchone()
         if not db_result:
             return {'msg' : "Error: No such Comment"}
         return db_result
 
+
 @ns.route('/parent_recursive/<string:id>/')
 class CommentsParentRec(Resource):
     def get(self, id):
-        base_comment = getCommentById(ObjectId(id))
-        if not base_comment:
-            return convertObjectToJSonResponse([])
+        comments = []
+
+        postgres_json.execute('SELECT id, parent_comment_id, user_id, title, text  FROM comments WHERE id = {0};'.format(id))
+        db_response = postgres_json.fetchone()
         
-        i = 1
-        c_list = [base_comment]
-        parent = base_comment
-        while "parentCommentId" in parent:
-            next_parentId = parent["parentCommentId"]
-            next_parent = getCommentById(next_parentId)
-            c_list.insert(0, next_parent)
-            i += 1
-            parent = next_parent
+        if db_response:
+            id_ = db_response['parent_comment_id']
+            while True:
+                comments.append(db_response)
+                if id_:
+                    postgres_json.execute('SELECT id, parent_comment_id, user_id, title, text FROM comments WHERE id = {0};'.format(id_))
+                    db_response = postgres_json.fetchone()
+                    id_ = db_response['parent_comment_id']
+                else:
+                    break
 
         response = {
-            "comments" : c_list,
-            "size" : i
+            "comments" : comments,
+            "size" : len(comments)
         }
-        return convertObjectToJSonResponse(response)
+        return response
 
 @ns.route('/label/<string:comment_id>/<string:label_name>/<int:label>')
 class LabelComment(Resource):
