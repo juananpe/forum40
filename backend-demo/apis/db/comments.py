@@ -90,7 +90,7 @@ def createQuery(args, skip=None, limit=None):
 
     if skip:
         query += " OFFSET " + str(skip)
-        
+
     return query
 
 @ns.route('/')
@@ -129,16 +129,93 @@ def getLabelsByTime(args, commensByTimeintervall, addMissingIntervalls, formatte
     response_obj = prepareForVisualisation(timeseries, formatter)
     return convertObjectToJSonResponse(response_obj)
 
+def addMissingDays2(data):
+    #el0 = data[0]
+    min_ = min_date #date(el0["_id"]['year'], el0["_id"]['month'], el0["_id"]['dayOfMonth'])
+    missing = []
+    for el in data:
+        while min_ < date(el['year'], el['month'], el['day']):
+            missing.append({"year": min_.year, "month": min_.month, "day": min_.day, "count": 0})
+            min_ = min_ + timedelta(1)
+        min_ = min_ + + timedelta(1)
+    data = data + missing
+    return sorted(data, key=lambda x: (x['year'], x['month'], x['day'] ))
+
+def addMissingMonths2(data):
+    if len(data) == 0:
+        return data
+
+    #el0 = data[0]
+    min_ = min_date #date(el0["_id"]['year'], el0["_id"]['month'], 1)
+    missing = []
+    for el in data:
+        while min_ < date(el['year'], el['month'], 1):
+            missing.append({"year": min_.year, "month": min_.month, "count": 0})
+            min_ = min_ + relativedelta(months=1)
+        min_ = min_ + relativedelta(months=1)
+    data = data + missing
+    return sorted(data, key=lambda x: (x['year'], x['month'] ))
+
+def addMissingYears2(data):
+    if len(data) == 0:
+        return data
+
+    min_ = min_date.year # data[0]["_id"]['year']
+    missing = []
+    for el in data:
+        while min_ < el['year']:
+            missing.append({"year": min_, "count": 0})
+            min_ = min_ + 1
+        min_ = min_ + 1
+    data = data + missing
+    return sorted(data, key=lambda x: (x['year']))
+
+def prepareForVisualisation2(data, f):
+    if len(data) == 0:
+        return data
+
+    time_list = []
+    data_list = []
+    for e in data:
+        time_list.append(f(e))
+        data_list.append(e["count"])
+    start_time = data[0]
+    del start_time['count']
+    return {"start_time": start_time, "time": time_list, "data": data_list}
+
 @ns.route('/groupByDay')
 @api.expect(groupByModel)
 class CommentsGroupByDay(Resource):
     def get(self):
         args = groupByModel.parse_args()
-        return getLabelsByTime(
-            args, 
-            getCommentsGroupedByDay, 
-            addMissingDays, 
-            lambda d : "{}.{}.{}".format(d['dayOfMonth'], d['month'], d['year']))
+
+        annotations_sub_query = ''
+        if 'label' in args and args['label']:
+            labelIds = ' WHERE ' + 'label_id IN ({0})'.format(args['label'])
+            annotations_sub_query += labelIds
+
+        comments_sub_query = ''
+        if 'keyword' in args and args['keyword']:
+            searchwords = ' WHERE ' + ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
+            comments_sub_query += searchwords
+
+        postgres_json.execute("""
+            SELECT day, month, year, Count(*) FROM 
+                (SELECT label_id,comment_id FROM annotations {0}) AS a, 
+                (SELECT id AS comment_id, year, month, day FROM comments {1}) AS c 
+            WHERE a.comment_id = c.comment_id
+            GROUP BY label_id, year, month, day
+            """.format(annotations_sub_query, comments_sub_query))
+        db_result = postgres_json.fetchall()
+
+        return prepareForVisualisation2(addMissingDays2(db_result), lambda d : "{}.{}.{}".format(d['day'], d['month'], d['year']))
+
+        #args = groupByModel.parse_args()
+        #return getLabelsByTime(
+        #    args, 
+        #    getCommentsGroupedByDay, 
+        #    addMissingDays, 
+        #    lambda d : "{}.{}.{}".format(d['dayOfMonth'], d['month'], d['year']))
 
 # TODO 
 months =	{
@@ -161,22 +238,65 @@ months =	{
 class CommentsGroupByMonth(Resource):
     def get(self):
         args = groupByModel.parse_args()
-        return getLabelsByTime(
-            args, 
-            getCommentsGroupedByMonth, 
-            addMissingMonths, 
-            lambda d : "{} {}".format(months[str(d['month'])], d['year']))
+
+        annotations_sub_query = ''
+        if 'label' in args and args['label']:
+            labelIds = ' WHERE ' + 'label_id IN ({0})'.format(args['label'])
+            annotations_sub_query += labelIds
+
+        comments_sub_query = ''
+        if 'keyword' in args and args['keyword']:
+            searchwords = ' WHERE ' + ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
+            comments_sub_query += searchwords
+
+        postgres_json.execute("""
+            SELECT month, year, Count(*) FROM 
+                (SELECT label_id,comment_id FROM annotations {0}) AS a, 
+                (SELECT id AS comment_id, year, month FROM comments {1}) AS c 
+            WHERE a.comment_id = c.comment_id
+            GROUP BY label_id, year, month
+            """.format(annotations_sub_query, comments_sub_query))
+        db_result = postgres_json.fetchall()
+        return prepareForVisualisation2(addMissingMonths2(db_result), lambda d : "{}.{}".format(d['month'], d['year']))
+        
+        #args = groupByModel.parse_args()
+        #return getLabelsByTime(
+        #    args, 
+        #    getCommentsGroupedByMonth, 
+        #    addMissingMonths, 
+        #    lambda d : "{} {}".format(months[str(d['month'])], d['year']))
 
 @ns.route('/groupByYear')
 @api.expect(groupByModel)
 class CommentsGroupByYear(Resource):
     def get(self):
         args = groupByModel.parse_args()
-        return getLabelsByTime(
-            args, 
-            getCommentsGroupedByYear, 
-            addMissingYears, 
-            lambda d : d['year'])
+
+        annotations_sub_query = ''
+        if 'label' in args and args['label']:
+            labelIds = ' WHERE ' + 'label_id IN ({0})'.format(args['label'])
+            annotations_sub_query += labelIds
+
+        comments_sub_query = ''
+        if 'keyword' in args and args['keyword']:
+            searchwords = ' WHERE ' + ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
+            comments_sub_query += searchwords
+
+        postgres_json.execute("""
+            SELECT year, Count(*) FROM 
+                (SELECT label_id,comment_id FROM annotations {0}) AS a, 
+                (SELECT id AS comment_id, year FROM comments {1}) AS c 
+            WHERE a.comment_id = c.comment_id
+            GROUP BY label_id, year
+            """.format(annotations_sub_query, comments_sub_query))
+        db_result = postgres_json.fetchall()
+        return prepareForVisualisation2(addMissingYears2(db_result), lambda d : "{}".format(d['year']))
+        #args = groupByModel.parse_args()
+        #return getLabelsByTime(
+        #    args, 
+        #    getCommentsGroupedByYear, 
+        #    addMissingYears, 
+        #    lambda d : d['year'])
             
 min_date = date(2015, 6, 1)
 
