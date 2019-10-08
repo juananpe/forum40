@@ -23,40 +23,7 @@ import sys
 from jwt_auth.token import token_required
 
 ns = api.namespace('comments', description="comments api")
-
-def createCommentsQueryFromArgs(args):
-    query = {}
-    query["timestamp"] = { "$gt" : datetime.strptime('2015-05-31-22','%Y-%m-%d-%H'), "$lt" : datetime.strptime('2016-05-31-22','%Y-%m-%d-%H') }
-    if 'label' in args and args['label']:
-        labelIds = [getLabelIdByName(i) for i in args['label']]
-        # query["labels"] = {
-        #     "$elemMatch" : {
-        #         "labelId": { "$in": labelIds },
-        #         	"$or" : [
-        #                     { "manualLabels.label" : 1},
-        #                     { "$and" :
-        #                         [
-        #                             {"classified" : 0}, {"confidence" : {"$ne" : []}}
-        #                         ]
-        #                     }
-        #                 ]
-        #             }
-        #         }
-        query["labels"] = {
-            "$elemMatch": {
-                "labelId": {"$in": labelIds},
-                "classified": 1
-            }
-        }
-    else :
-        query["labels"] = {"$exists": 1}
-    if 'keyword' in args and args['keyword']:
-        searchwords = " ".join(x for x in args['keyword'])
-        query["$text"] = {
-            "$search" : searchwords,
-            "$caseSensitive": False
-        }
-    return query
+min_date = date(2015, 6, 1)
 
 def convertObjectToJSonResponse(obj):
     return Response(json.dumps(obj, default=json_util.default), mimetype='application/json')
@@ -64,7 +31,6 @@ def convertObjectToJSonResponse(obj):
 def convertCursorToJSonResponse(cursor):
     return convertObjectToJSonResponse(list(cursor))
 
-import sys
 
 def getLabelIdByName2(name):
         postgres.execute("SELECT id FROM labels WHERE name = '{0}';".format(name))
@@ -120,19 +86,8 @@ class CommentsCount(Resource):
 
         return {"count" : comments_count}
 
-def getLabelsByTime(args, commensByTimeintervall, addMissingIntervalls, formatter):
-    coll = mongo.db.Comments
-    label = args['label']
-    keywords = args['keyword']
-    id = getLabelIdByName(label)
-    cursor = coll.aggregate(commensByTimeintervall(id, keywords))
-    timeseries = addMissingIntervalls(list(cursor))
-    response_obj = prepareForVisualisation(timeseries, formatter)
-    return convertObjectToJSonResponse(response_obj)
-
-def addMissingDays2(data):
-    #el0 = data[0]
-    min_ = min_date #date(el0["_id"]['year'], el0["_id"]['month'], el0["_id"]['dayOfMonth'])
+def addMissingDays(data):
+    min_ = min_date
     missing = []
     for el in data:
         while min_ < date(el['year'], el['month'], el['day']):
@@ -142,12 +97,11 @@ def addMissingDays2(data):
     data = data + missing
     return sorted(data, key=lambda x: (x['year'], x['month'], x['day'] )) 
 
-def addMissingMonths2(data):
+def addMissingMonths(data):
     if len(data) == 0:
         return data
 
-    #el0 = data[0] 
-    min_ = min_date #date(el0["_id"]['year'], el0["_id"]['month'], 1) 
+    min_ = min_date
     missing = []
     for el in data:
         while min_ < date(el['year'], el['month'], 1):
@@ -157,11 +111,11 @@ def addMissingMonths2(data):
     data = data + missing
     return sorted(data, key=lambda x: (x['year'], x['month'] ))
 
-def addMissingYears2(data):
+def addMissingYears(data):
     if len(data) == 0:
         return data
 
-    min_ = min_date.year # data[0]["_id"]['year']
+    min_ = min_date.year
     missing = []
     for el in data:
         while min_ < el['year']:
@@ -171,7 +125,7 @@ def addMissingYears2(data):
     data = data + missing
     return sorted(data, key=lambda x: (x['year']))
 
-def prepareForVisualisation2(data, f):
+def prepareForVisualisation(data, f):
     if len(data) == 0:
         return data
 
@@ -209,30 +163,7 @@ class CommentsGroupByDay(Resource):
             """.format(annotations_sub_query, comments_sub_query))
         db_result = postgres_json.fetchall()
 
-        return prepareForVisualisation2(addMissingDays2(db_result), lambda d : "{}.{}.{}".format(d['day'], d['month'], d['year']))
-
-        #args = groupByModel.parse_args()
-        #return getLabelsByTime(
-        #    args, 
-        #    getCommentsGroupedByDay, 
-        #    addMissingDays, 
-        #    lambda d : "{}.{}.{}".format(d['dayOfMonth'], d['month'], d['year']))
-
-# TODO 
-months =	{
-  "1": "Jan.",
-  "2": "Feb.",
-  "3": "Mär.",
-  "4": "Apr.",
-  "5": "Mai",
-  "6": "Juni",
-  "7": "Juli",
-  "8": "Aug.",
-  "9": "Sep.",
-  "10": "Okt.",
-  "11": "Nov.",
-  "12": "Dez.",
-}
+        return prepareForVisualisation(addMissingDays(db_result), lambda d : "{}.{}.{}".format(d['day'], d['month'], d['year']))
 
 @ns.route('/groupByMonth')
 @api.expect(groupByModel)
@@ -258,14 +189,7 @@ class CommentsGroupByMonth(Resource):
             GROUP BY label_id, year, month
             """.format(annotations_sub_query, comments_sub_query))
         db_result = postgres_json.fetchall()
-        return prepareForVisualisation2(addMissingMonths2(db_result), lambda d : "{}.{}".format(d['month'], d['year']))
-        
-        #args = groupByModel.parse_args()
-        #return getLabelsByTime(
-        #    args, 
-        #    getCommentsGroupedByMonth, 
-        #    addMissingMonths, 
-        #    lambda d : "{} {}".format(months[str(d['month'])], d['year']))
+        return prepareForVisualisation(addMissingMonths(db_result), lambda d : "{}.{}".format(d['month'], d['year']))
 
 @ns.route('/groupByYear')
 @api.expect(groupByModel)
@@ -291,68 +215,8 @@ class CommentsGroupByYear(Resource):
             GROUP BY label_id, year
             """.format(annotations_sub_query, comments_sub_query))
         db_result = postgres_json.fetchall()
-        return prepareForVisualisation2(addMissingYears2(db_result), lambda d : "{}".format(d['year']))
-        #args = groupByModel.parse_args()
-        #return getLabelsByTime(
-        #    args, 
-        #    getCommentsGroupedByYear, 
-        #    addMissingYears, 
-        #    lambda d : d['year'])
-            
-min_date = date(2015, 6, 1)
-
-def addMissingDays(data):
-    #el0 = data[0]
-    min_ = min_date #date(el0["_id"]['year'], el0["_id"]['month'], el0["_id"]['dayOfMonth'])
-    missing = []
-    for el in data:
-        while min_ < date(el["_id"]['year'], el["_id"]['month'], el["_id"]['dayOfMonth']):
-            missing.append({"_id": {"year": min_.year, "month": min_.month, "dayOfMonth": min_.day}, "count": 0})
-            min_ = min_ + timedelta(1)
-        min_ = min_ + + timedelta(1)
-    data = data + missing
-    return sorted(data, key=lambda x: (x["_id"]['year'], x["_id"]['month'], x["_id"]['dayOfMonth'] ))
-
-def addMissingMonths(data):
-    if len(data) == 0:
-        return data
-
-    #el0 = data[0]
-    min_ = min_date #date(el0["_id"]['year'], el0["_id"]['month'], 1)
-    missing = []
-    for el in data:
-        while min_ < date(el["_id"]['year'], el["_id"]['month'], 1):
-            missing.append({"_id": {"year": min_.year, "month": min_.month}, "count": 0})
-            min_ = min_ + relativedelta(months=1)
-        min_ = min_ + relativedelta(months=1)
-    data = data + missing
-    return sorted(data, key=lambda x: (x["_id"]['year'], x["_id"]['month'] ))
-
-def addMissingYears(data):
-    if len(data) == 0:
-        return data
-
-    min_ = min_date.year # data[0]["_id"]['year']
-    missing = []
-    for el in data:
-        while min_ < el["_id"]['year']:
-            missing.append({"_id": {"year": min_}, "count": 0})
-            min_ = min_ + 1
-        min_ = min_ + 1
-    data = data + missing
-    return sorted(data, key=lambda x: (x["_id"]['year']))
-
-def prepareForVisualisation(data, f):
-    if len(data) == 0:
-        return data
-
-    time_list = []
-    data_list = []
-    for e in data:
-        time_list.append(f(e["_id"]))
-        data_list.append(e["count"])
-    start_time = data[0]["_id"]
-    return {"start_time": start_time, "time": time_list, "data": data_list}
+        return prepareForVisualisation(addMissingYears(db_result), lambda d : "{}".format(d['year']))
+        
 
 @ns.route('/parent/<string:id>/')
 class CommentsParent(Resource):
