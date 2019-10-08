@@ -7,6 +7,7 @@ from models.db_models import comments_parser, comments_parser_sl, groupByModel
 from db import mongo
 from db import postgres
 from db import postgres_json
+from db import postgres_con
 
 from db.util import getCommentsByQuery, getCommentById, getLabelIdByName
 
@@ -389,65 +390,57 @@ class CommentsParentRec(Resource):
         }
         return response
 
-@ns.route('/label/<string:comment_id>/<string:label_name>/<int:label>')
+
+def _comment_exists(id):
+    postgres.execute("SELECT id FROM comments WHERE id = {0} fetch first 1 rows only;".format(id))
+    db_result = postgres.fetchone()
+    return db_result != None
+
+def _label_exists(id):
+    postgres.execute("SELECT id FROM labels WHERE id = {0} fetch first 1 rows only;".format(id))
+    db_result = postgres.fetchone()
+    return db_result != None
+
+def _user_exists(id):
+    postgres.execute("SELECT id FROM users WHERE id = {0} fetch first 1 rows only;".format(id))
+    db_result = postgres.fetchone()
+    return db_result != None
+
+import sys
+
+@ns.route('/label2/<int:comment_id>/<int:label_id>/<int:user_id>/<int:label>')
 class LabelComment(Resource):
     @token_required
     @api.doc(security='apikey')
-    def put(self, data, comment_id ,label_name, label):
-        coll_c = mongo.db.Comments
-        comment = getCommentById(ObjectId(comment_id))
-        label_id = getLabelIdByName(label_name)
+    def put(self, data, comment_id ,label_id, user_id, label):
 
-        if not comment:
-            return {"msg": "No comment with ObjectId: {}".format(comment_id)}, 400
-        if not (label == 1 or label == 0): 
-            return {"msg": "Label is not 1 or 0"}, 400
-        if not 'labels' in comment:
-            comment['labels'] = []
-        
-        current_manuel_label = next(
-            (x for x in comment['labels'] if x['labelId'] == label_id),
-            None
-        )
-        new_manuel_label = {
-            "annotatorId": self["user"],
-            "label": label,
-            "timestamp": datetime.now()
-        }
+        label = bool(label)
 
-        if current_manuel_label:
+        # Check Args
+        if not _comment_exists(comment_id):
+            return {"msg": "No Comments with id: {0}".format(comment_id)}, 400
 
-            isAlreadyLabeldByUser = False
-            for manual_label in current_manuel_label['manualLabels']:
-                if manual_label['annotatorId'] == self["user"]:
-                    isAlreadyLabeldByUser = True
-                    break
+        if not _label_exists(label_id):
+            return {"msg": "No Label with id: {0}".format(comment_id)}, 400
 
-            if isAlreadyLabeldByUser:
-                coll_c.update(
-                    {"_id": comment["_id"], "labels.labelId" : label_id}, 
-                    {"$pull": {
-                        "labels.$.manualLabels": {"annotatorId" : self["user"]}
-                    }
-                })
-            
-            coll_c.update(
-                {"_id": comment["_id"], "labels.labelId" : label_id}, 
-                {"$push": {
-                    "labels.$.manualLabels": new_manuel_label
-                }
-            })
-        else:
-            default_labels = {
-                "labelId": label_id,
-                "classified": 0,
-                "confidence": [],
-                "manualLabels": [new_manuel_label]
-            }
-            coll_c.update(
-                {"_id": comment["_id"]}, 
-                {"$push": {
-                    "labels": default_labels
-                }
-            })
+        if not _user_exists(user_id):
+            return {"msg": "No User with id: {0}".format(comment_id)}, 400
+
+        record_to_select = (label_id, comment_id, user_id)
+        postgres_json.execute("SELECT label FROM annotations WHERE label_id = %s AND comment_id = %s AND user_id = '%s';", record_to_select)
+        db_result = postgres_json.fetchone()
+
+        print(db_result['label'], label, file=sys.stderr)
+
+        if not db_result: # No Annotation found
+            record_to_insert = (label_id, comment_id, user_id, label)
+            postgres.execute("INSERT INTO annotations (label_id, comment_id, user_id, label) VALUES (%s, %s, %s, %s)", record_to_insert)
+        elif db_result['label'] != label: # Update
+            record_to_update = (label, label_id, comment_id, user_id)
+            postgres.execute("UPDATE annotations SET label = %s WHERE label_id = %s AND comment_id = %s AND user_id = '%s'", record_to_update)
+        else: 
+            pass
+
+        postgres_con.commit()
+
         return "ok", 200
