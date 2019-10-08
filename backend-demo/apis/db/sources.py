@@ -3,13 +3,14 @@ from flask_restplus import Resource, reqparse, fields
 from apis.db import api
 
 from db import postgres
+from db.queries import COUNT_SOURCES
 
 ns = api.namespace('sources', description="sources api")
 
 @ns.route('/count')
 class SourcesCount(Resource):
     def get(self):
-        postgres.execute("SELECT COUNT(*) FROM sources;")
+        postgres.execute(COUNT_SOURCES)
         db_return = postgres.fetchone()
 
         if db_return:

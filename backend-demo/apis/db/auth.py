@@ -4,6 +4,7 @@ from flask_restplus import Resource
 from apis.db import api
 from db import mongo
 from db import postgres
+from db.queries import SELECT_PASSWORD_BY_NAME
 
 import json
 import datetime
@@ -33,7 +34,7 @@ import sys
 class AuthLogin(Resource):
     def get(self, username, password):
 
-        postgres.execute("SELECT password FROM users WHERE name = '{0}';".format(username))
+        postgres.execute(SELECT_PASSWORD_BY_NAME(username))
         db_result = postgres.fetchone()
 
         if not db_result or db_result[0] != password or password == None:
