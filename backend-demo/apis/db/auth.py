@@ -46,13 +46,6 @@ class AuthLogin(Resource):
             )
             return jsonify({'token' : token.decode('UTF-8'), 'user' : username})
 
-@ns.route('/logout/')
-class AuthLogout(Resource):
-    @token_required
-    @api.doc(security='apikey')
-    @api.deprecated
-    def get(self, data):
-        return {"Warning": "logout not used"}, 200
 
 @ns.route('/refreshToken/')
 class AuthRefresh(Resource):
@@ -67,39 +60,3 @@ class AuthRefresh(Resource):
             globalSecret) # TODO hide pwd
 
         return jsonify({'token' : token.decode('UTF-8'), 'user' : user})
-
-
-
-@ns.route('/initDB/')
-class AuthInitDB(Resource):
-    def put(self):
-
-        db = mongo.cx["admin"]
-        if not "Users" in  db.collection_names():
-            users_coll = db.Users
-            secrets_coll = db.Secrets
-
-            users_coll.insert_many([{ 
-                "user" : "user1", 
-                "password" : "22880", 
-                "blocked" : False
-            },
-            { 
-                "user" : "user2", 
-                "password" : "0815", 
-                "blocked" : False
-            },
-            { 
-                "user" : "Hugo", 
-                "password" : "123", 
-                "blocked" : True
-            }])
-
-            secrets_coll.insert({
-                "globalSecret" : "eh9Df9G27gahgHJ7g2oGQz6Ug5he6ud5shd"
-            })
-
-            return {"msg": "Database setup completed"}
-
-        return {"msg": "Database already exists."}
-        
