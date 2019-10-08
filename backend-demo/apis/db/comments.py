@@ -4,14 +4,9 @@ from flask_restplus import Resource, reqparse
 from apis.db import api
 from models.db_models import comments_parser, comments_parser_sl, groupByModel
 
-from db import mongo
 from db import postgres
 from db import postgres_json
 from db import postgres_con
-
-from db.util import getCommentsByQuery, getCommentById, getLabelIdByName
-
-from db.queries.comments_timeseries import getCommentsGroupedByDay, getCommentsGroupedByMonth, getCommentsGroupedByYear
 
 from datetime import timedelta, date, datetime
 from dateutil.relativedelta import relativedelta
@@ -32,7 +27,7 @@ def convertCursorToJSonResponse(cursor):
     return convertObjectToJSonResponse(list(cursor))
 
 
-def getLabelIdByName2(name):
+def getLabelIdByName(name):
         postgres.execute("SELECT id FROM labels WHERE name = '{0}';".format(name))
         db_return = postgres.fetchone()
         if db_return:
@@ -42,7 +37,7 @@ def getLabelIdByName2(name):
 def createQuery(args, skip=None, limit=None):
     annotations_sub_query = 'SELECT label_id, comment_id, user_id FROM annotations'
     if 'label' in args and args['label']:
-        labelIds = ' WHERE ' + 'label_id IN ({0})'.format(", ".join(str(getLabelIdByName2(i)) for i in args['label']) )
+        labelIds = ' WHERE ' + 'label_id IN ({0})'.format(", ".join(str(getLabelIdByName(i)) for i in args['label']) )
         annotations_sub_query += labelIds
 
     comments_sub_query = 'SELECT id AS comment_id, user_id, parent_comment_id, title, text FROM comments'
