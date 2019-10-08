@@ -9,6 +9,11 @@ import time
 import os
 from sklearn.metrics import cohen_kappa_score
 from RunClassifier import *
+import pandas as pd 
+
+
+
+
 
 
 ###importing classifier 
@@ -42,14 +47,43 @@ ch.setFormatter(formatter)
 # add ch to logger
 logger.addHandler(ch)
 
+import pandas as pd
+import json
+def get_optimized_model(label_name):
+	opt_df=pd.read_csv('hyper_param.csv')
+	model_parameter=None
+	for index,row in opt_df.iterrows():
+	    if(row['label_name']==label_name):
+	        model_parameter=json.loads(row['model_parameters'].replace("'", "\""))
+	        break
+	return model_parameter
+
+
+
+
+
+
+
 class PerformEvaluator(RunClassifier):
     
     def runOptimizer(self,classifier,param_dict):
         annotation_dataset=super().collect_trainingdata()
         self.classification_model = EmbedClassifier()
+        _,f1_score,_,_,_=super().run_trainer(classifier,annotation_dataset)
+
         optimized_model=self.classification_model.hyperparameter_opt(annotation_dataset,classifier,param_dict)
-        print("tuned hyperparameters:" ,logreg_cv.best_params_)        
-        print("accuracy",logreg_cv.best_score)
+        print("tuned hyperparameters:" ,optimized_model.best_params_)        
+        print("f score",optimized_model.best_score_)
+
+        if(os.path.isfile('hyper_param.csv')):
+            df=pd.read_csv('hyper_param.csv')
+            df = df.append({'model':classifier,'model_parameters':optimized_model.best_params_,'optimized_score':optimized_model.best_score_,'default_score':f1_score,'label_name':self.labelname} , ignore_index=True)
+            df.to_csv('hyper_param.csv',index=False)
+
+        else:
+            df = pd.DataFrame(columns=['model','model_parameters','optimized_score','default_score','label_name'])
+            df = df.append({'model':classifier,'model_parameters':optimized_model.best_params_,'optimized_score':optimized_model.best_score_,'default_score':f1_score,'label_name':self.labelname} , ignore_index=True)
+            df.to_csv('hyper_param.csv',index=False)
 
 
 
@@ -93,6 +127,16 @@ if __name__== "__main__":
         
     eval_perform = PerformEvaluator(labelname,host=args.host, port=args.port,cross_val=True)
 
+    classifier =LogisticRegression()
+    model_parameters=get_optimized_model(labelname)
+    classifier.set_params(**model_parameters)
+    eval_perform.storeResults(classifier)
+
+
+
+
+    #------XXXXXX-----all_classfier cross validation------XXXXXX
+    
     #classifier = 
     
     # classifiers = [
@@ -103,56 +147,33 @@ if __name__== "__main__":
     # RandomForestClassifier(max_depth=5, n_estimators=10, max_features=1,class_weight='balanced'),
     # MLPClassifier(alpha=1, max_iter=1000),
     # GaussianNB(),
-    # LogisticRegression(n_jobs=10,random_state=42,class_weight='balanced',solver='saga',penalty= 'elasticnet',tol=0.001,max_iter=200,C=1.0,l1_ratio=0.1)]
+    # LogisticRegression()]
 
 
     # for classifier in classifiers:
     #     eval_perform.storeResults(classifier)
 
-
-
-    classifier = LogisticRegression()
-    grid_params = [{
-                    "C":np.linspace(-3,3,7),
-                    "penalty":["elasticnet"],
-                    "class_weight":['balanced'],
-                    "solver":["saga"],
-                    "max_iter":np.linspace(100,1000,100),
-                    "penalty_ratio":np.linspace(0,1,10)
-
-
  
-                },
-                {
-                    "C":np.linspace(-3,3,7),
-                    "penalty":[None],
-                    "class_weight":['balanced'],
-                    "solver":["saga"],
-                    "max_iter":np.linspace(100,1000,100),
-                    
+    #------XXXXXX-----hyperparameter optimization ------XXXXXX
 
- 
-                },
-                {
-                    "C":np.linspace(-3,3,7),
-                    "penalty":["l2",None],
-                    "class_weight":['balanced'],
-                    "solver":["newton-cg", "lbfgs", "sag" ],
-                    "max_iter":np.linspace(100,1000,100),
-                    
+    # classifier = LogisticRegression()
+    
 
- 
-                },
-                {
-                    "C":np.linspace(-3,3,7),
-                    "penalty":["l1"],
-                    "class_weight":['balanced'],
-                    "solver":["liblinear" ],
-                    "max_iter":np.linspace(100,1000,100),
-                   
-
- 
-                }
-                ]
-
-    eval_perform.runOptimizer(classifier,grid_params)
+    # grid_params = [
+    #                 {
+    #                 "C":np.linspace(1,10,10),
+    #                 "penalty":["elasticnet"],
+    #                 "class_weight":['balanced'],
+    #                 "solver":["saga"],
+    #                 "max_iter":np.linspace(100,1000,10),
+    #                 "l1_ratio":[0.5]
+    #                 },
+    #                 {
+    #                 "C":np.linspace(1,10,10),
+    #                 "penalty":["l2"],
+    #                 "class_weight":['balanced'],
+    #                 "solver":["sag"],
+    #                 "max_iter":np.linspace(100,1000,10),
+    #                 },
+    #             ]
+    # eval_perform.runOptimizer(classifier,grid_params)

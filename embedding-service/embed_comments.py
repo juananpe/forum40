@@ -1,6 +1,6 @@
-import pymongo, argparse, logging
+import argparse, logging
 from BertFeatureExtractor import BertFeatureExtractor
-from utils import concat
+import utils
 import psycopg2
 import traceback
 
@@ -46,7 +46,7 @@ logger.info(args)
 
 def process_batch(comment_batch):
 
-    comment_texts = [concat(c[1], c[2]) for c in comment_batch if c[1] or c[2]]
+    comment_texts = [utils.concat(c[1], c[2]) for c in comment_batch if c[1] or c[2]]
     comment_ids = [c[0] for c in comment_batch if c[1] or c[2]]
     comment_embeddings = be.extract_features(comment_texts)
 
@@ -59,12 +59,16 @@ def process_batch(comment_batch):
         batch_update_comments.append(
             (comment_embedding, comment_id)
         )
-
     cur.executemany(update_statement, batch_update_comments)
 
 
-# Connect to DB
-conn = psycopg2.connect(host = args.host, port = args.port, dbname="omp", user="postgres", password="postgres")
+#Connect to DB
+conn = psycopg2.connect(
+    host = args.host,
+    port = args.port,
+    dbname=utils.DB_NAME,
+    user=utils.DB_USER,
+    password=utils.DB_PASSWORD)
 
 update_statement = """UPDATE comments SET embedding=%s WHERE id=%s"""
 

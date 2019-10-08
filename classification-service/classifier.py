@@ -71,7 +71,7 @@ class EmbedClassifier:
         train_X=np.array(train_X)
         train_Y=np.array(train_Y)
         
-        model_cv=GridSearchCV(classifier,grid,cv=10,error_score=0,verbose=2)
+        model_cv=GridSearchCV(classifier,grid,scoring='f1_macro',cv=10,error_score=0,n_jobs=-1)
         model_cv.fit(train_X,train_Y)
         return model_cv
 

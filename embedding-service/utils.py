@@ -1,3 +1,9 @@
+# configuration
+DB_NAME = "omp"
+DB_USER = "postgres"
+DB_PASSWORD = "postgres"
+
+# util functions
 def concat(title: str, text: str) -> str:
     """
     Concatenates comment's title and text

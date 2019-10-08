@@ -14,4 +14,6 @@ COPY . /app
 EXPOSE 5060
 ENV FLASK_APP app.py
 ENV FLASK_DEBUG 0
-CMD gunicorn -b 0.0.0.0:5060 --worker-connections 500 --timeout 400 app:app
+CMD gunicorn -b 0.0.0.0:5060 --worker-connections 500 --timeout 500 app:app
+# ENTRYPOINT ["python"]
+# CMD ["app.py"]

@@ -1,6 +1,5 @@
 version: '2'
 services:
-
     reverseproxy:
         build: 
             context: ./reverseproxy
@@ -77,6 +76,10 @@ services:
             - ./embedding-service/model:/app/model
         links:
             - mongo
+    rabbitmq:
+        image: rabbitmq
+        ports:
+            - 5462:5462
 volumes:
     mongodb:
     postgres:
