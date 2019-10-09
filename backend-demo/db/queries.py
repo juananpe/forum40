@@ -9,6 +9,7 @@ COUNT_SOURCES = "SELECT COUNT(*) FROM sources;"
 COUNT_DOCUMENTS = "SELECT COUNT(*) FROM documents;"
 
 ## Annotations
+SELECT_ANNOTATION_BY_COMMENTID = lambda x : f"SELECT label_id, user_id, label FROM Annotations WHERE comment_id = {x}"
 SELECT_LABEL_FROM_ANNOTATIONS_BY_IDS = lambda label_id, comment_id, user_id: "SELECT label FROM annotations WHERE label_id = {label_id} AND comment_id = {comment_id} AND user_id = '{user_id}';"
 INSERT_ANNOTATION = lambda label_id, comment_id, user_id, label: f"INSERT INTO annotations (label_id, comment_id, user_id, label) VALUES ({label_id}, {comment_id}, {user_id}, {label})"
 UPDATE_ANNOTATION = lambda label_id, comment_id, user_id, label: f"UPDATE annotations SET label = {label} WHERE label_id = {label_id} AND comment_id = {comment_id} AND user_id = '{user_id}'"

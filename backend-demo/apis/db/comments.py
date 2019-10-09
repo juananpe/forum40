@@ -253,6 +253,13 @@ def _user_exists(id):
 
 import sys
 
+@ns.route('/get_labels/<int:comment_id>')
+class GetLabel(Resource):
+    def get(self, comment_id):
+        postgres_json.execute(f"SELECT label_id, user_id, label FROM Annotations WHERE comment_id = {comment_id}")
+        db_return = postgres_json.fetchall()
+        return db_return
+
 @ns.route('/add_label/<int:comment_id>/<int:label_id>/<int:user_id>/<int:label>')
 class LabelComment(Resource):
     @token_required
