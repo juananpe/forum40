@@ -1,5 +1,3 @@
-import sys
-
 from flask import request, Response
 from flask_restplus import Resource, reqparse
 
@@ -20,9 +18,7 @@ ns = api.namespace('labels', description="labels api")
 @ns.route('/')
 class LabelsGetAll(Resource):
     def get(self):
-        print(postgres_con, file=sys.stderr)
         postgres.execute(SELECT_NAMES_FROM_LABES)
-        print(postgres_con, file=sys.stderr)
         d_list = [t[0] for t in postgres.fetchall()]
 
         postgres.execute(SELECT_IDS_FROM_LABES)
