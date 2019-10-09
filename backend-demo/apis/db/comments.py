@@ -253,7 +253,7 @@ def _user_exists(id):
 
 import sys
 
-@ns.route('/label2/<int:comment_id>/<int:label_id>/<int:user_id>/<int:label>')
+@ns.route('/add_label/<int:comment_id>/<int:label_id>/<int:user_id>/<int:label>')
 class LabelComment(Resource):
     @token_required
     @api.doc(security='apikey')
