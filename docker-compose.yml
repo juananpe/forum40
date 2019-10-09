@@ -26,6 +26,8 @@ services:
             - ./backend-demo:/usr/src/app
         links:      
            - mongo
+        depends_on:
+            - postgres
     meta:
         build:
             context: ./metacomment-service
