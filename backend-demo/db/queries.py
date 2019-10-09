@@ -32,22 +32,25 @@ SELECT_PASSWORD_BY_NAME = lambda x: f"SELECT password FROM users WHERE name = '{
 SELECT_COMMENT_BY_ID =  lambda x: f"SELECT * FROM comments WHERE id = {x} fetch first 1 rows only"
 GROUP_COMMENTS_BY_DAY = lambda sub_a, sub_c: f"""
             SELECT day, month, year, Count(*) FROM 
-                (SELECT label_id,comment_id FROM annotations {sub_a}) AS a, 
+                (SELECT DISTINCT comment_id FROM annotations {sub_a}) AS a, 
                 (SELECT id AS comment_id, year, month, day FROM comments {sub_c}) AS c 
             WHERE a.comment_id = c.comment_id
-            GROUP BY label_id, year, month, day
+            GROUP BY year, month, day
+            ORDER BY year
             """
 GROUP_COMMENTS_BY_MONTH = lambda sub_a, sub_c: f"""
             SELECT month, year, Count(*) FROM 
-                (SELECT label_id,comment_id FROM annotations {sub_a}) AS a, 
+                (SELECT DISTINCT comment_id FROM annotations {sub_a}) AS a, 
                 (SELECT id AS comment_id, year, month FROM comments {sub_c}) AS c 
             WHERE a.comment_id = c.comment_id
-            GROUP BY label_id, year, month
+            GROUP BY year, month
+            ORDER BY year
             """
 GROUP_COMMENTS_BY_YEAR = lambda sub_a, sub_c: f"""
             SELECT year, Count(*) FROM 
-                (SELECT label_id,comment_id FROM annotations {sub_a}) AS a, 
+                (SELECT DISTINCT comment_id FROM annotations {sub_a}) AS a, 
                 (SELECT id AS comment_id, year FROM comments {sub_c}) AS c 
             WHERE a.comment_id = c.comment_id
-            GROUP BY label_id, year
+            GROUP BY year
+            ORDER BY year
             """
