@@ -36,7 +36,7 @@ def getLabelIdByName(name):
         return -1
 
 def createQuery(args, skip=None, limit=None):
-    annotations_sub_query = 'SELECT label_id, comment_id, user_id FROM annotations'
+    annotations_sub_query = 'SELECT DISTINCT comment_id FROM annotations'
     if 'label' in args and args['label']:
         labelIds = ' WHERE ' + 'label_id IN ({0})'.format(", ".join(i for i in args['label']) )
         annotations_sub_query += labelIds
