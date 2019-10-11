@@ -2,7 +2,6 @@ from flask import request, Response
 from flask_restplus import Resource, reqparse
 
 from apis.db import api
-from db import postgres
 from db import postgres_con
 from db.queries import *
 
@@ -18,6 +17,7 @@ ns = api.namespace('labels', description="labels api")
 @ns.route('/')
 class LabelsGetAll(Resource):
     def get(self):
+        postgres = postgres_con.cursor()
         postgres.execute(SELECT_NAMES_FROM_LABES)
         d_list = [t[0] for t in postgres.fetchall()]
 
@@ -32,6 +32,7 @@ class LabelsGetAll(Resource):
 @ns.route('/count')
 class LabelsCount(Resource):
     def get(self):
+        postgres = postgres_con.cursor()
         postgres.execute(COUNT_LABELS)
         db_return = postgres.fetchone()
 
@@ -43,6 +44,7 @@ class LabelsCount(Resource):
 @ns.route('/id/<string:name>')
 class LabelsId(Resource):
     def get(self, name):
+        postgres = postgres_con.cursor()
         postgres.execute(SELECT_ID_FROM_LABELS_BY_NAME(name))
         db_return = postgres.fetchone()
         if db_return:
@@ -56,7 +58,7 @@ class AddLabel(Resource):
     @token_required
     @api.doc(security='apikey')
     def put(self, data, label_name):
-
+        postgres = postgres_con.cursor()
         postgres.execute(COUNT_LABELS_BY_NAME(label_name))
         db_result = postgres.fetchone()
 

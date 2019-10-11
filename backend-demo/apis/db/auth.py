@@ -2,14 +2,14 @@ from flask import jsonify, make_response
 from flask_restplus import Resource
 
 from apis.db import api
-from db import mongo
-from db import postgres
+from db import postgres_con
 from db.queries import SELECT_PASSWORD_BY_NAME
 
 import json
 import datetime
 from bson import ObjectId
 
+from psycopg2.extras import RealDictCursor
 
 from jwt_auth.token import token_required
 
@@ -28,12 +28,11 @@ class AuthTest(Resource):
         user = self["user"]
 
         return {"ok": user }, 200
-import sys
 
 @ns.route('/login/<string:username>/<string:password>')
 class AuthLogin(Resource):
     def get(self, username, password):
-
+        postgres = postgres_con.cursor()
         postgres.execute(SELECT_PASSWORD_BY_NAME(username))
         db_result = postgres.fetchone()
 

@@ -3,7 +3,7 @@ from flask import request
 import jwt
 
 from db import mongo
-from db import postgres
+from db import postgres_con
 
 globalSecret = "eh9Df9G27gahgHJ7g2oGQz6Ug5he6ud5shd" # TODO hide
 
@@ -22,6 +22,7 @@ def checkIfTokenIsValidAndGetData(token):
         return False, None
 
 def checkIfUserIsAuthorised(token, data):
+    postgres = postgres_con.cursor()
     postgres.execute("SELECT COUNT(*) FROM users WHERE name = '{0}';".format(data["user"]))
     db_result = postgres.fetchone()
 

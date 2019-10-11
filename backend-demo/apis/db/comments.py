@@ -4,10 +4,12 @@ from flask_restplus import Resource, reqparse
 from apis.db import api
 from models.db_models import comments_parser, comments_parser_sl, groupByModel
 
-from db import postgres
-from db import postgres_json
+#from db import postgres
+#from db import postgres_json
 from db import postgres_con
 from db.queries import *
+
+from psycopg2.extras import RealDictCursor
 
 from datetime import timedelta, date, datetime
 from dateutil.relativedelta import relativedelta
@@ -31,6 +33,7 @@ def convertCursorToJSonResponse(cursor):
 
 
 def getLabelIdByName(name):
+    postgres = postgres_con.cursor()
     postgres.execute(SELECT_ID_FROM_LABELS_BY_NAME(name))
     db_return = postgres.fetchone()
     if db_return:
@@ -62,7 +65,6 @@ def createQuery(args, skip=None, limit=None):
 
     return query
 
-
 @ns.route('/')
 @api.expect(comments_parser_sl)
 class CommentsGet(Resource):
@@ -73,9 +75,10 @@ class CommentsGet(Resource):
 
         query = 'SELECT * FROM' + createQuery(args, skip, limit)
 
-        postgres_json.execute(query)
+        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+        postgres.execute(query)
 
-        return postgres_json.fetchall()
+        return postgres.fetchall()
 
 
 @ns.route('/count')
@@ -86,8 +89,9 @@ class CommentsCount(Resource):
 
         query = 'SELECT COUNT(*) FROM' + createQuery(args)
 
-        postgres_json.execute(query)
-        comments_count = postgres_json.fetchone()
+        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+        postgres.execute(query)
+        comments_count = postgres.fetchone()
         return {"count": comments_count}
 
 
@@ -167,9 +171,10 @@ class CommentsGroupByDay(Resource):
                             for x in args['keyword'])
             comments_sub_query += searchwords
 
-        postgres_json.execute(GROUP_COMMENTS_BY_DAY(
+        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+        postgres.execute(GROUP_COMMENTS_BY_DAY(
             annotations_sub_query, comments_sub_query))
-        db_result = postgres_json.fetchall()
+        db_result = postgres.fetchall()
 
         return prepareForVisualisation(addMissingDays(db_result), lambda d: "{}.{}.{}".format(d['day'], d['month'], d['year']))
 
@@ -192,9 +197,10 @@ class CommentsGroupByMonth(Resource):
                             for x in args['keyword'])
             comments_sub_query += searchwords
 
-        postgres_json.execute(GROUP_COMMENTS_BY_MONTH(
+        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+        postgres.execute(GROUP_COMMENTS_BY_MONTH(
             annotations_sub_query, comments_sub_query))
-        db_result = postgres_json.fetchall()
+        db_result = postgres.fetchall()
         return prepareForVisualisation(addMissingMonths(db_result), lambda d: "{}.{}".format(d['month'], d['year']))
 
 
@@ -216,9 +222,10 @@ class CommentsGroupByYear(Resource):
                             for x in args['keyword'])
             comments_sub_query += searchwords
 
-        postgres_json.execute(GROUP_COMMENTS_BY_YEAR(
+        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+        postgres.execute(GROUP_COMMENTS_BY_YEAR(
             annotations_sub_query, comments_sub_query))
-        db_result = postgres_json.fetchall()
+        db_result = postgres.fetchall()
         return prepareForVisualisation(addMissingYears(db_result), lambda d: "{}".format(d['year']))
 
 
@@ -226,10 +233,11 @@ class CommentsGroupByYear(Resource):
 class CommentsParent(Resource):
     def get(self, id):
 
+        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
         # TODO externalize str
-        postgres_json.execute(
+        postgres.execute(
             'SELECT id, text, title, user_id, year, month, day FROM comments p, (SELECT parent_comment_id FROM comments c WHERE id = {}) as c WHERE p.id = c.parent_comment_id;'.format(id))
-        db_result = postgres_json.fetchone()
+        db_result = postgres.fetchone()
         if not db_result:
             return {'msg': "Error: No such Comment"}
         return db_result
@@ -240,10 +248,11 @@ class CommentsParentRec(Resource):
     def get(self, id):
         comments = []
 
+        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
         # TODO externalize str
-        postgres_json.execute(
+        postgres.execute(
             'SELECT id, parent_comment_id, user_id, title, text  FROM comments WHERE id = {0};'.format(id))
-        db_response = postgres_json.fetchone()
+        db_response = postgres.fetchone()
 
         if db_response:
             id_ = db_response['parent_comment_id']
@@ -251,9 +260,9 @@ class CommentsParentRec(Resource):
                 comments.append(db_response)
                 if id_:
                     # TODO externalize str
-                    postgres_json.execute(
+                    postgres.execute(
                         'SELECT id, parent_comment_id, user_id, title, text FROM comments WHERE id = {0};'.format(id_))
-                    db_response = postgres_json.fetchone()
+                    db_response = postgres.fetchone()
                     id_ = db_response['parent_comment_id']
                 else:
                     break
