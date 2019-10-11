@@ -4,6 +4,8 @@ from flask_restplus import Resource, reqparse
 from apis.db import api
 from models.db_models import comments_parser, comments_parser_sl, groupByModel
 
+from psycopg2.extras import RealDictCursor
+
 from db import postgres
 from db import postgres_json
 from db import postgres_con
@@ -45,7 +47,7 @@ def createQuery(args, skip=None, limit=None):
             'label_id IN ({0})'.format(", ".join(i for i in args['label']))
         annotations_sub_query += labelIds
 
-    comments_sub_query = "SELECT id AS comment_id, user_id, to_char(timestamp, 'DD/MM/YYYY') as timestamp, parent_comment_id, title, text FROM comments"
+    comments_sub_query = "SELECT id AS comment_id, user_id, timestamp, parent_comment_id, title, text FROM comments"
     if 'keyword' in args and args['keyword']:
         searchwords = ' WHERE ' + \
             ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
@@ -73,9 +75,13 @@ class CommentsGet(Resource):
 
         query = 'SELECT * FROM' + createQuery(args, skip, limit)
 
-        postgres_json.execute(query)
+        conn = postgres_con.cursor(cursor_factory=RealDictCursor)
+        conn.execute(query)
+        comments = conn.fetchall()
+        for c in comments:
+            c['timestamp'] = c['timestamp'].isoformat()
 
-        return postgres_json.fetchall()
+        return comments
 
 
 @ns.route('/count')
