@@ -23,7 +23,7 @@
       :page.sync="page"
       :expanded.sync="expanded"
       :server-items-length="totalItems"
-      item-key="comment_id"
+      item-key="_id.$oid"
       single-expand
       show-expand
     >
@@ -43,10 +43,11 @@
               <span v-html="highlight(commentText(props), keyword)"></span>
             </b>
           </td>
-          <td class="text-right">{{ props.item.timestamp['$date'] | moment}}</td>
-          <td v-for="(label, i) in selectedLabels" :key="props.item.comment_id+i">
+          <!-- <td class="text-right">{{ props.item.timestamp['$date'] | moment}}</td> -->
+          <td>Test</td>
+          <td v-for="(label, i) in selectedLabels" :key="props.item._id.$oid+i">
             <UserCommentAnnotation
-              :commentId="props.item.comment_id"
+              :commentId="props.item._id.$oid"
               :initialLabel="getAnnotations(props.item, label)"
               :labelName="label"
             />
@@ -237,8 +238,8 @@ export default {
     commentClicked(props) {
       props.expand(!props.isExpanded);
 
-      if (!props.isExpanded) {
-        // working like this, but don't know why
+      
+      if (!props.isExpanded) { // working like this, but don't know why
         const selectedComment = props.item;
         this[Mutations.setSelectedComment](selectedComment);
       } else {
@@ -248,7 +249,10 @@ export default {
     keywordChanged() {
       //this.loadTable();
     },
-    loadSimilarComments(item) {}
+    loadSimilarComments(item) {
+      const commentId = item._id.$oid;
+      // Service.
+    }
   },
   components: {
     UserCommentAnnotation
