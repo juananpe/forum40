@@ -43,7 +43,8 @@
               <span v-html="highlight(commentText(props), keyword)"></span>
             </b>
           </td>
-          <td class="text-right">{{ props.item.timestamp['$date'] | moment}}</td>
+          <!-- <td class="text-right">{{ props.item.timestamp['$date'] | moment}}</td> -->
+          <td>Test</td>
           <td v-for="(label, i) in selectedLabels" :key="props.item._id.$oid+i">
             <UserCommentAnnotation
               :commentId="props.item._id.$oid"
@@ -232,7 +233,7 @@ export default {
       const { data } = await Service.get(
         `${Endpoint.COMMENTS_COUNT}?${this.countQueryString}`
       );
-      this.totalItems = data.count;
+      this.totalItems = data.count.count;
     },
     commentClicked(props) {
       props.expand(!props.isExpanded);
