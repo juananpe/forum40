@@ -6,6 +6,7 @@ from models.db_models import comments_parser, comments_parser_sl, groupByModel
 
 #from db import postgres
 #from db import postgres_json
+
 from db import postgres_con
 from db.queries import *
 
@@ -48,7 +49,7 @@ def createQuery(args, skip=None, limit=None):
             'label_id IN ({0})'.format(", ".join(i for i in args['label']))
         annotations_sub_query += labelIds
 
-    comments_sub_query = "SELECT id AS comment_id, user_id, to_char(timestamp, 'DD/MM/YYYY') as timestamp, parent_comment_id, title, text FROM comments"
+    comments_sub_query = "SELECT id AS comment_id, user_id, timestamp, parent_comment_id, title, text FROM comments"
     if 'keyword' in args and args['keyword']:
         searchwords = ' WHERE ' + \
             ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
@@ -79,6 +80,7 @@ class CommentsGet(Resource):
         postgres.execute(query)
 
         return postgres.fetchall()
+
 
 
 @ns.route('/count')
