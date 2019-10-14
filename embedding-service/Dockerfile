@@ -13,7 +13,9 @@ RUN pip install -r requirements.txt
 COPY . /app
 EXPOSE 5060
 ENV FLASK_APP app.py
+
 ENV FLASK_DEBUG 0
 CMD gunicorn -b 0.0.0.0:5060 --worker-connections 500 --timeout 500 app:app
-# ENTRYPOINT ["python"]
-# CMD ["app.py"]
+
+# ENV FLASK_DEBUG 1
+# CMD python -m flask run --host=0.0.0.0 --port=5060
