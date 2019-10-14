@@ -3,6 +3,9 @@ from flask import request
 import jwt
 
 from db import mongo
+from db import postgres_con
+
+globalSecret = "eh9Df9G27gahgHJ7g2oGQz6Ug5he6ud5shd" # TODO hide
 
 import sys
 
@@ -13,28 +16,28 @@ def checkIfTokenExists(token):
     return token is not None
 
 def checkIfTokenIsValidAndGetData(token):
-    secrets_coll = mongo.cx["admin"].Secrets
-    secret_mongo = secrets_coll.find_one().get('globalSecret')
     try:
-        return True, jwt.decode(token, secret_mongo)
+        return True, jwt.decode(token, globalSecret)
     except: 
         return False, None
 
 def checkIfUserIsAuthorised(token, data):
-    users_coll = mongo.cx["admin"].Users
-    user_mongo = users_coll.find_one({"user" : data["user"]})
+    postgres = postgres_con.cursor()
+    postgres.execute("SELECT COUNT(*) FROM users WHERE name = '{0}';".format(data["user"]))
+    db_result = postgres.fetchone()
 
-    if not user_mongo or user_mongo["blocked"]:
+    if not db_result or db_result == 0:
         return False
     return True
 
-def checkIfTheUSerIsLoggedIn(token, data):
+"""def checkIfTheUSerIsLoggedIn(token, data):
         tokens_coll = mongo.cx["admin"].Tokens
         token_mongo = tokens_coll.find_one({"user" : data["user"]})
 
         if not token_mongo or not token_mongo["token"] or str(token_mongo["token"], 'utf-8') != token:
             return False
         return True
+"""
 
 def token_required(func):
     @wraps(func)

@@ -24,8 +24,8 @@ services:
             dockerfile: Dockerfile
         volumes:
             - ./backend-demo:/usr/src/app
-        links:      
-           - postgres
+        depends_on:
+            - postgres
     meta:
         build:
             context: ./metacomment-service

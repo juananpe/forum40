@@ -1,7 +1,7 @@
 from flask_restplus import reqparse
 
 groupByModel = reqparse.RequestParser()
-groupByModel.add_argument('label')
+groupByModel.add_argument('label', type=int)
 groupByModel.add_argument('keyword', action='append')
 
 comments_parser_sl = reqparse.RequestParser()

@@ -3,9 +3,9 @@ import axios from "axios";
 const API_URL = process.env.VUE_APP_ROOT_API
 
 export const Endpoint = {
-    LABELS: "db/labels",
+    LABELS: "db/labels/",
     ADD_LABEL: (description) => `db/labels/binary/${description}`,
-    COMMENTS: 'db/comments',
+    COMMENTS: 'db/comments/',
     COMMENTS_GROUP_BY_DAY: "db/comments/groupByDay",
     COMMENTS_GROUP_BY_MONTH: "db/comments/groupByMonth",
     COMMENTS_GROUP_BY_YEAR: "db/comments/groupByYear",
