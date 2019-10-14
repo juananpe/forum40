@@ -7,6 +7,7 @@ from psycopg2.extras import RealDictCursor
 from db import postgres_con
 
 from db.queries import *
+from psycopg2 import DatabaseError
 
 from jwt_auth.token import token_required
 
@@ -16,7 +17,13 @@ ns = api.namespace('annotations', description="annotations api")
 class SourcesCount(Resource):
     def get(self):
         postgres = postgres_con.cursor()
-        postgres.execute(COUNT_ANNOTATIONS)
+
+        try:        
+            postgres.execute(COUNT_ANNOTATIONS)
+        except DatabaseError:
+            postgres_con.rollback()
+            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+
         db_return = postgres.fetchone()
 
         if db_return:
@@ -28,7 +35,12 @@ class SourcesCount(Resource):
 class GetLabel(Resource):
     def get(self, comment_id):
         postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
-        postgres.execute(f"SELECT label_id, user_id, label FROM Annotations WHERE comment_id = {comment_id}")
+        try:        
+            postgres.execute(f"SELECT label_id, user_id, label FROM Annotations WHERE comment_id = {comment_id}")
+        except DatabaseError:
+            postgres_con.rollback()
+            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+
         db_return = postgres.fetchall()
         return db_return
 
@@ -62,24 +74,43 @@ class LabelComment(Resource):
 
         label = bool(label)
 
-        # Check Args
-        if not _comment_exists(comment_id):
-            return {"msg": "No Comments with id: {0}".format(comment_id)}, 400
+        try: 
+            # Check Args
+            if not _comment_exists(comment_id):
+                return {"msg": "No Comments with id: {0}".format(comment_id)}, 400
 
-        if not _label_exists(label_id):
-            return {"msg": "No Label with id: {0}".format(comment_id)}, 400
+            if not _label_exists(label_id):
+                return {"msg": "No Label with id: {0}".format(comment_id)}, 400
 
-        if not _user_exists(user_id):
-            return {"msg": "No User with id: {0}".format(comment_id)}, 400
+            if not _user_exists(user_id):
+                return {"msg": "No User with id: {0}".format(comment_id)}, 400
+        except DatabaseError:
+            postgres_con.rollback()
+            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
 
         postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
-        postgres.execute(SELECT_LABEL_FROM_ANNOTATIONS_BY_IDS(label_id, comment_id, user_id))
+        
+        try:        
+            postgres.execute(SELECT_LABEL_FROM_ANNOTATIONS_BY_IDS(label_id, comment_id, user_id))
+        except DatabaseError:
+            postgres_con.rollback()
+            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+
         db_result = postgres.fetchone()
 
         if not db_result: # No Annotation found
-            postgres.execute(INSERT_ANNOTATION(label_id, comment_id, user_id, label))
+            try:        
+                postgres.execute(INSERT_ANNOTATION(label_id, comment_id, user_id, label))
+            except DatabaseError:
+                postgres_con.rollback()
+                return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+
         elif db_result['label'] != label: # Update
-            postgres.execute(UPDATE_ANNOTATION(label_id, comment_id, user_id, label))
+            try:        
+                postgres.execute(UPDATE_ANNOTATION(label_id, comment_id, user_id, label))
+            except DatabaseError:
+                postgres_con.rollback()
+                return {'msg' : 'DatabaseError: transaction is aborted'}, 400
         else: 
             pass
 

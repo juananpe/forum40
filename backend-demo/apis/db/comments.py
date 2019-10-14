@@ -9,6 +9,8 @@ from models.db_models import comments_parser, comments_parser_sl, groupByModel
 from db import postgres_con
 from db.queries import *
 
+from psycopg2 import DatabaseError
+
 from psycopg2.extras import RealDictCursor
 
 from datetime import timedelta, date, datetime
@@ -34,7 +36,12 @@ def convertCursorToJSonResponse(cursor):
 
 def getLabelIdByName(name):
     postgres = postgres_con.cursor()
-    postgres.execute(SELECT_ID_FROM_LABELS_BY_NAME(name))
+    try:        
+        postgres.execute(SELECT_ID_FROM_LABELS_BY_NAME(name))
+    except DatabaseError:
+        postgres_con.rollback()
+        return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+    
     db_return = postgres.fetchone()
     if db_return:
         return db_return[0]
@@ -77,7 +84,12 @@ class CommentsGet(Resource):
         query = 'SELECT * FROM' + createQuery(args, skip, limit)
 
         postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
-        postgres.execute(query)
+
+        try:        
+            postgres.execute(query)
+        except DatabaseError:
+            postgres_con.rollback()
+            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
 
         comments = postgres.fetchall()
         for c in comments:
@@ -177,8 +189,13 @@ class CommentsGroupByDay(Resource):
             comments_sub_query += searchwords
 
         postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
-        postgres.execute(GROUP_COMMENTS_BY_DAY(
-            annotations_sub_query, comments_sub_query))
+
+        try:        
+            postgres.execute(GROUP_COMMENTS_BY_DAY(annotations_sub_query, comments_sub_query))
+        except DatabaseError:
+            postgres_con.rollback()
+            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+
         db_result = postgres.fetchall()
 
         return prepareForVisualisation(addMissingDays(db_result), lambda d: "{}.{}.{}".format(d['day'], d['month'], d['year']))
@@ -203,8 +220,14 @@ class CommentsGroupByMonth(Resource):
             comments_sub_query += searchwords
 
         postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
-        postgres.execute(GROUP_COMMENTS_BY_MONTH(
+
+        try:        
+            postgres.execute(GROUP_COMMENTS_BY_MONTH(
             annotations_sub_query, comments_sub_query))
+        except DatabaseError:
+            postgres_con.rollback()
+            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+        
         db_result = postgres.fetchall()
         return prepareForVisualisation(addMissingMonths(db_result), lambda d: "{}.{}".format(d['month'], d['year']))
 
@@ -228,8 +251,14 @@ class CommentsGroupByYear(Resource):
             comments_sub_query += searchwords
 
         postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
-        postgres.execute(GROUP_COMMENTS_BY_YEAR(
+        try:        
+            postgres.execute(GROUP_COMMENTS_BY_YEAR(
             annotations_sub_query, comments_sub_query))
+        except DatabaseError:
+            postgres_con.rollback()
+            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+
+        
         db_result = postgres.fetchall()
         return prepareForVisualisation(addMissingYears(db_result), lambda d: "{}".format(d['year']))
 
@@ -238,10 +267,15 @@ class CommentsGroupByYear(Resource):
 class CommentsParent(Resource):
     def get(self, id):
 
-        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
         # TODO externalize str
-        postgres.execute(
+        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+        try:        
+            postgres.execute(
             'SELECT id, text, title, user_id, year, month, day FROM comments p, (SELECT parent_comment_id FROM comments c WHERE id = {}) as c WHERE p.id = c.parent_comment_id;'.format(id))
+        except DatabaseError:
+            postgres_con.rollback()
+            return {'msg' : 'DatabaseError: transaction is aborted'}
+        
         db_result = postgres.fetchone()
         if not db_result:
             return {'msg': "Error: No such Comment"}
@@ -255,15 +289,20 @@ class CommentsParentRec(Resource):
 
         postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
         # TODO externalize str
-        postgres.execute(
+        try:        
+            postgres.execute(
             'SELECT id, parent_comment_id, user_id, title, text, timestamp FROM comments WHERE id = {0};'.format(id))
+        except DatabaseError:
+            postgres_con.rollback()
+            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+
         db_response = postgres.fetchone()
         db_response['timestamp'] = db_response['timestamp'].isoformat()
 
         if db_response:
             id_ = db_response['parent_comment_id']
             while True:
-                comments.insert(0, db_response)
+                comments.append(db_response)
                 if id_:
                     # TODO externalize str
                     postgres.execute(
