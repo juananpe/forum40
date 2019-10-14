@@ -2,8 +2,8 @@
   <v-card v-if="comment">
     <v-card-title primary-title>
       <div>
-        UserId: {{this.comment.userId.$oid}}
-        {{this.comment.timestamp.$date | moment}}
+        UserId: {{this.comment.user_id}}
+        {{this.comment.timestamp | moment}}
         <br>
         <h3 class="headline">
           <b>{{this.comment.title}}</b>

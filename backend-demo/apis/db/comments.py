@@ -48,7 +48,7 @@ def createQuery(args, skip=None, limit=None):
             'label_id IN ({0})'.format(", ".join(i for i in args['label']))
         annotations_sub_query += labelIds
 
-    comments_sub_query = "SELECT id AS comment_id, user_id, to_char(timestamp, 'DD/MM/YYYY') as timestamp, parent_comment_id, title, text FROM comments"
+    comments_sub_query = "SELECT id AS comment_id, user_id, timestamp, parent_comment_id, title, text FROM comments"
     if 'keyword' in args and args['keyword']:
         searchwords = ' WHERE ' + \
             ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
@@ -65,6 +65,7 @@ def createQuery(args, skip=None, limit=None):
 
     return query
 
+
 @ns.route('/')
 @api.expect(comments_parser_sl)
 class CommentsGet(Resource):
@@ -78,7 +79,11 @@ class CommentsGet(Resource):
         postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
         postgres.execute(query)
 
-        return postgres.fetchall()
+        comments = postgres.fetchall()
+        for c in comments:
+            c['timestamp'] = c['timestamp'].isoformat()
+
+        return comments
 
 
 @ns.route('/count')
@@ -251,8 +256,9 @@ class CommentsParentRec(Resource):
         postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
         # TODO externalize str
         postgres.execute(
-            'SELECT id, parent_comment_id, user_id, title, text  FROM comments WHERE id = {0};'.format(id))
+            'SELECT id, parent_comment_id, user_id, title, text, timestamp FROM comments WHERE id = {0};'.format(id))
         db_response = postgres.fetchone()
+        db_response['timestamp'] = db_response['timestamp'].isoformat()
 
         if db_response:
             id_ = db_response['parent_comment_id']
@@ -261,8 +267,9 @@ class CommentsParentRec(Resource):
                 if id_:
                     # TODO externalize str
                     postgres.execute(
-                        'SELECT id, parent_comment_id, user_id, title, text FROM comments WHERE id = {0};'.format(id_))
+                        'SELECT id, parent_comment_id, user_id, title, text, timestamp FROM comments WHERE id = {0};'.format(id_))
                     db_response = postgres.fetchone()
+                    db_response['timestamp'] = db_response['timestamp'].isoformat()
                     id_ = db_response['parent_comment_id']
                 else:
                     break
