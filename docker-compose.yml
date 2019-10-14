@@ -15,7 +15,7 @@ services:
             - 80:8080
         restart: always
     vue:
-        build: 
+        build:
             context: ./frontend-demo
             dockerfile: Dockerfile
     flask:
@@ -25,7 +25,7 @@ services:
         volumes:
             - ./backend-demo:/usr/src/app
         links:      
-           - mongo
+           - postgres
     meta:
         build:
             context: ./metacomment-service
@@ -33,13 +33,13 @@ services:
         volumes:
             - ./metacomment-service:/app
         links:      
-            - mongo
-    mongo:
-        image: mongo:4.2.0
-        volumes:
-            - mongodb:/data/db
-        ports:
-            - 27017:27017
+            - postgres
+#    mongo:
+#        image: mongo:4.2.0
+#        volumes:
+#            - mongodb:/data/db
+#        ports:
+#            - 27017:27017
     postgres:
         image: "postgres:11.5"
         volumes:
@@ -58,6 +58,10 @@ services:
 #            - ./offlang-service:/app
 #        links:
 #            - mongo
+    rabbitmq:
+        image: rabbitmq
+        ports:
+        - 5672:5672
     classification:
         build:
             context: ./classification-service
@@ -66,7 +70,8 @@ services:
             - ./classification-service:/app
             - ./classification-service/models:/app/models
         links:
-            - mongo
+            - postgres
+            - rabbitmq
     embedding:
         build:
             context: ./embedding-service
@@ -75,11 +80,15 @@ services:
             - ./embedding-service:/app
             - ./embedding-service/model:/app/model
         links:
-            - mongo
-    rabbitmq:
-        image: rabbitmq
-        ports:
-            - 5462:5462
+            - postgres
+            - rabbitmq
+#    worker:
+#        build:
+#            context: ./embedding-service
+#            dockerfile: Dockerfile
+#        command: celery -A tasks worker --loglevel=info
+#        depends_on:
+#            - rabbitmq
+#            - embedding
 volumes:
-    mongodb:
     postgres:

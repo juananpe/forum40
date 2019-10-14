@@ -3,9 +3,15 @@ from logging.config import dictConfig
 from flask_restplus import Api, Resource, fields
 from core.proxy_wrapper import ReverseProxied
 from BertFeatureExtractor import BertFeatureExtractor
-from utils import concat
 from retrieve_comments import RetrieveComment
 
+import os
+
+pg_host = os.getenv('FLASK_PG_HOST', 'postgres')
+pg_port = os.getenv('FLASK_PG_PORT', 5432)
+
+from celery.result import AsyncResult
+import tasks
 
 dictConfig({
     'version': 1,
@@ -33,7 +39,7 @@ app.logger.debug('BERT model loaded')
 
 # db connection
 try:
-    retriever = RetrieveComment('postgres', 5432)
+    retriever = RetrieveComment(pg_host, pg_port)
 except:
     app.logger.error('DB connection failed.')
 
@@ -111,6 +117,36 @@ class SimilarComments(Resource):
             results.append([retriever.get_comment_text(id) for id in nn_ids])
         return results, 200
 
+
+@api.route('/indexing')
+class IndexComments(Resource):
+    def get(self):
+
+        i = tasks.app.control.inspect()
+        running_tasks = i.active()
+
+        app.logger.debug(running_tasks)
+
+        # check if indexing is already running
+        first_worker_id = [k for k in running_tasks.keys()][0]
+        first_worker_tasks = running_tasks[first_worker_id]
+        if first_worker_tasks:
+            for first_worker_task in first_worker_tasks:
+                if first_worker_task['name'] == 'tasks.index_comments':
+                    results = {
+                        "message" : "Indexing is already running",
+                        "details" : first_worker_task
+                    }
+                    return results, 200
+
+        # start indexing
+        t = tasks.index_comments.delay(pg_host, pg_port)
+        results = {
+            "message" : "Indexing started.",
+            "task.id" : t.id
+        }
+
+        return results, 200
 
 # run app manually
 if __name__ == "__main__":

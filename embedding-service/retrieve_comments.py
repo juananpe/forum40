@@ -34,7 +34,7 @@ class RetrieveComment:
     def load_index(self):
         try:
             logger.info("Loading index")
-            self.index.loadIndex("model/comment_vectors.index", load_data=True)
+            self.index.loadIndex("model/comment_vectors.index", load_data=False)
             logger.info("Loaded index with %d entries" % len(self.index))
             #logger.info("Loading comment vectors")
             #self.comment_id_mapping = pickle.load(open("model/comment_vectors.mapping", "rb"))
