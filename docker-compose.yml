@@ -69,7 +69,7 @@ services:
         volumes:
             - ./classification-service:/app
             - ./classification-service/models:/app/models
-        links:
+        depends_on:
             - postgres
             - rabbitmq
     embedding:
@@ -79,7 +79,7 @@ services:
         volumes:
             - ./embedding-service:/app
             - ./embedding-service/model:/app/model
-        links:
+        depends_on:
             - postgres
             - rabbitmq
 #    worker:

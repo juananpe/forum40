@@ -19,7 +19,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import collections
 import logging
 import re
 import numpy as np
@@ -59,10 +58,10 @@ class BertFeatureExtractor(object):
 
     def __init__(self, bert_model = "bert-base-german-cased", do_lower_case="False", max_seq_length=256,
                  batch_size=32, device = None,keep_cls=False, use_layers=4 , use_token=False):
-        #parameter explanation
-        #keep_cls is used to decide whether or not to keep CLS with all the tokens
-        #use_layers is used to decide how many layers from the last layer to be used 
-        #use_token is used to decide whether to use the tokens or the CLS 
+        # parameter explanation
+        # keep_cls is used to decide whether or not to keep CLS with all the tokens
+        # use_layers is used to decide how many layers from the last layer to be used
+        # use_token is used to decide whether to use the tokens or the CLS
         
         # number of layers cannot be greater than 13 (12 hidden +one output)
         if(use_layers > 13):
@@ -70,12 +69,12 @@ class BertFeatureExtractor(object):
 
 
         if device:
-            print("selected device: " + device)
+            print("Selected device: " + device)
             self.device = torch.device(device)
         else:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.n_gpu = torch.cuda.device_count()
-        logger.info("device: {} n_gpu: {}".format(self.device, self.n_gpu))
+        logger.info("Device: {} n_gpu: {}".format(self.device, self.n_gpu))
 
         self.layer_weights = list(np.arange(1,use_layers+1))
         self.layer_indexes = [int(-x) for x in self.layer_weights]
@@ -172,15 +171,6 @@ class BertFeatureExtractor(object):
             assert len(input_mask) == seq_length
             assert len(input_type_ids) == seq_length
 
-            if ex_index < 5:
-                logger.info("*** Example ***")
-                logger.info("unique_id: %s" % (example.unique_id))
-                logger.info("tokens: %s" % " ".join([str(x) for x in tokens]))
-                logger.info("input_ids: %s" % " ".join([str(x) for x in input_ids]))
-                logger.info("input_mask: %s" % " ".join([str(x) for x in input_mask]))
-                logger.info(
-                    "input_type_ids: %s" % " ".join([str(x) for x in input_type_ids]))
-
             features.append(
                 InputFeatures(
                     unique_id=example.unique_id,
@@ -188,6 +178,7 @@ class BertFeatureExtractor(object):
                     input_ids=input_ids,
                     input_mask=input_mask,
                     input_type_ids=input_type_ids))
+
         return features
 
 
@@ -231,10 +222,6 @@ class BertFeatureExtractor(object):
 
     def extract_features(self, sequences):
         
-        #print("layers", self.layers)
-        #print("layer_weights", self.layer_weights)
-        #print("layer_indexes", self.layer_indexes)
-        
         examples = self.convert_sequences_to_examples(sequences)
 
         features = self.convert_examples_to_features(
@@ -253,6 +240,7 @@ class BertFeatureExtractor(object):
         eval_dataloader = DataLoader(eval_data, sampler=eval_sampler, batch_size=self.batch_size)
 
         be_result = []
+
         with torch.no_grad():
             for input_ids, input_mask, example_indices in eval_dataloader:
                 input_ids = input_ids.to(self.device)
@@ -273,8 +261,6 @@ class BertFeatureExtractor(object):
                     all_layers = []
                     for (j, layer_index) in enumerate(self.layer_indexes):
                         layer_output = all_encoder_layers[int(layer_index)].detach().cpu().numpy()
-                        #print("layer output shape is this",layer_output.shape)
-                        
 
                         if(self.use_token):
                             if(self.keep_cls):
@@ -283,21 +269,11 @@ class BertFeatureExtractor(object):
                                 layer_output = np.mean(layer_output[b, CLS_index+1:],axis=0)
                         else:
                             layer_output = layer_output[b,CLS_index]
-
-
-
-
-        
-                        #print("layer output shape is this",layer_output.shape)
                         
                         # weighted sum of final j layers
                         all_layers.append(layer_output * self.layer_weights[j])
                     sequence_embedding = np.sum(all_layers, axis=0)
 
                     be_result.append(sequence_embedding.tolist())
-
-        #import pdb
-        #pdb.set_trace()
-        #print(be_result)
 
         return be_result

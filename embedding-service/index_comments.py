@@ -37,6 +37,8 @@ class CommentIndexer:
         # config
         self.batch_size = 256
 
+    def __del__(self):
+        self.conn.close()
 
     def indexEmbeddings(self):
 
@@ -70,8 +72,6 @@ class CommentIndexer:
 
         finally:
             cursor_large.close()
-            # cursor_large.close()
-            self.conn.close()
 
         # create and save index
         self.index.createIndex({'post': 2}, print_progress=True)
