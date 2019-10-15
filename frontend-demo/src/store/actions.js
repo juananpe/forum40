@@ -25,13 +25,6 @@ export default {
         }
         return false;
     },
-    [Actions.logout]: async function ({ commit, state }) {
-        const { data } = await Service.get(Endpoint.LOGOUT, state.currentJWT);
-        if (data.logout === "ok") {
-            commit(Mutations.setJWT, '');
-            clearInterval(state.refreshTokenInterval);
-        }
-    },
     [Actions.start]: function ({ commit }) {
         setInterval(() => {
             commit(Mutations.updateTime)

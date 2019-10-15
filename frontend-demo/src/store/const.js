@@ -36,6 +36,5 @@ export const Mutations = {
 export const Actions = {
     login: 'login',
     refreshToken: 'refreshToken',
-    logout: 'logout',
     start: 'start'
 }
