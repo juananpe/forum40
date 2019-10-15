@@ -47,30 +47,28 @@
 </template>
 
 <script>
-import { Getters, Mutations } from "../store/const";
-import { mapGetters, mapMutations } from "vuex";
+import { State, Getters, Mutations } from "../store/const";
+import { mapState, mapGetters, mapMutations } from "vuex";
 import Service, { Endpoint } from "../api/db";
 
 export default {
   name: "DataSelector",
 
   data: () => ({
-    items: [],
-    labels: {},
     dialog: false,
     newLabel: "",
     error: false,
     success: false
   }),
   methods: {
-    ...mapMutations([Mutations.setSelectedLabels]),
+    ...mapMutations([Mutations.setSelectedLabels, Mutations.setLabels]),
     async fetchLabels() {
       const { data } = await Service.get(Endpoint.LABELS);
-      const labels = data.labels;
+      const labels = {};
+      const labels_names = data.labels;
       const label_ids = data.ids;
-
-      this.items = data.labels;
-      labels.forEach((key, i) => (this.labels[key] = label_ids[i]));
+      labels_names.forEach((key, i) => (labels[key] = label_ids[i]));
+      this[Mutations.setLabels](labels);
     },
     remove(item) {
       this.selection.splice(this.selection.indexOf(item), 1);
@@ -99,6 +97,7 @@ export default {
     this.fetchLabels();
   },
   computed: {
+    ...mapState([State.labels]),
     ...mapGetters([Getters.jwt, Getters.selectedLabels, Getters.jwtLoggedIn]),
     loggedIn() {
       return this[Getters.jwtLoggedIn];
@@ -107,8 +106,8 @@ export default {
       set(state) {
         const selectedLabels = {};
         state.forEach(label => {
-          selectedLabels[label] = this.labels[label];
-        });        
+          selectedLabels[label] = this[State.labels][label];
+        });
         this[Mutations.setSelectedLabels](selectedLabels);
       },
       get() {

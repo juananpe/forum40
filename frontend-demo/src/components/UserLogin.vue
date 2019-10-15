@@ -70,7 +70,7 @@
 </template>
 
 <script>
-import { mapGetters, mapActions, mapState } from "vuex";
+import { mapGetters, mapActions } from "vuex";
 import Service, { Endpoint } from "../api/db";
 import { Getters, Actions } from "../store/const";
 export default {

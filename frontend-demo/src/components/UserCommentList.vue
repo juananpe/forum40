@@ -70,8 +70,8 @@
 
 <script>
 import Service, { Endpoint } from "../api/db";
-import { Getters, Mutations } from "../store/const";
-import { mapGetters, mapMutations } from "vuex";
+import { State, Getters, Mutations } from "../store/const";
+import { mapState, mapGetters, mapMutations } from "vuex";
 import { getLabels } from "../CommentsUtil";
 import moment from "moment";
 import UserCommentAnnotation from "./UserCommentAnnotation";
@@ -90,7 +90,6 @@ export default {
         "items-per-page-options": [15, 30]
       },
       teaserTextLength: 250,
-      labels: {},
       page: 1,
       rowsPerPage: 15,
       basicCommentsTableHeader: [
@@ -119,6 +118,7 @@ export default {
     }
   },
   computed: {
+    ...mapState([State.labels]),
     ...mapGetters([
       Getters.keywordfilter,
       Getters.selectedLabels,
@@ -162,8 +162,6 @@ export default {
   },
   async mounted() {
     this.loadTable();
-    const { data } = await Service.get(Endpoint.LABELS);
-    this.labels = data;
   },
   watch: {
     [Getters.selectedLabels]: function() {
@@ -192,16 +190,8 @@ export default {
       await Promise.all([p1, p2]);
       this.loading = false;
     },
-    idForLabel(label) {
-      const index = this.labels.labels.indexOf(label);
-      return this.labels.ids[index];
-    },
-    labelForId(id) {
-      const index = this.labels.ids.indexOf(id);
-      return this.labels.labels[index];
-    },
     getAnnotations(comment, label) {
-      const labelId = this.idForLabel(label);
+      const labelId = this[State.labels][label];
       const username = this[Getters.jwtUser];
       return getLabels(comment, labelId, username);
     },
