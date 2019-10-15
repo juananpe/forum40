@@ -1,7 +1,7 @@
 <template>
   <v-layout align-center>
     <v-flex :xs10="loggedIn" :xs12="!loggedIn" pr-2>
-      <v-select v-model="selection" :items="items" chips clearable multiple>
+      <v-select v-model="selection" :items="Object.keys(labels)" chips clearable multiple>
         <template v-slot:selection="data">
           <v-chip :input-value="data.selected" close @click:close="remove(data.item)">
             <strong>{{ data.item }}</strong>
@@ -56,6 +56,7 @@ export default {
 
   data: () => ({
     items: [],
+    labels: {},
     dialog: false,
     newLabel: "",
     error: false,
@@ -65,7 +66,11 @@ export default {
     ...mapMutations([Mutations.setSelectedLabels]),
     async fetchLabels() {
       const { data } = await Service.get(Endpoint.LABELS);
+      const labels = data.labels;
+      const label_ids = data.ids;
+
       this.items = data.labels;
+      labels.forEach((key, i) => (this.labels[key] = label_ids[i]));
     },
     remove(item) {
       this.selection.splice(this.selection.indexOf(item), 1);
@@ -100,7 +105,11 @@ export default {
     },
     selection: {
       set(state) {
-        this[Mutations.setSelectedLabels](state);
+        const selectedLabels = {};
+        state.forEach(label => {
+          selectedLabels[label] = this.labels[label];
+        });        
+        this[Mutations.setSelectedLabels](selectedLabels);
       },
       get() {
         return this[Getters.selectedLabels];

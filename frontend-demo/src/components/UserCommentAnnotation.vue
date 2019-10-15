@@ -32,7 +32,7 @@ import { Getters } from "../store/const";
 export default {
   name: "UserCommentAnnotation",
   props: {
-    commentId: String,
+    commentId: Number,
     initialLabel: Object,
     labelName: String
   },

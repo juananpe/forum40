@@ -1,6 +1,6 @@
 import { Actions, Mutations } from './const'
 import Const from '../const'
-import Service, {Endpoint} from '../api/db'
+import Service, { Endpoint } from '../api/db'
 
 export default {
     [Actions.login]: async function ({ commit, getters, state, dispatch }, { username, password }) {
@@ -14,10 +14,7 @@ export default {
             return true;
         }
         catch (error) {
-            const status = error.response.status;
-            if (status === 401) {
-                return false;
-            }
+            return false;
         }
     },
     [Actions.refreshToken]: async function ({ commit, state }) {

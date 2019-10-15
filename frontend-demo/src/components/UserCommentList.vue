@@ -45,11 +45,12 @@
           </td>
           <td class="text-right">{{ props.item.timestamp | moment}}</td>
           <td v-for="(label, i) in selectedLabels" :key="props.item.comment_id+i">
-            <UserCommentAnnotation
+            <!-- <UserCommentAnnotation
               :commentId="props.item.comment_id"
               :initialLabel="getAnnotations(props.item, label)"
               :labelName="label"
-            />
+            /> -->
+            Annotation
           </td>
         </tr>
       </template>
