@@ -47,28 +47,48 @@ def getLabelIdByName(name):
         return db_return[0]
     return -1
 
+import sys
 
 def createQuery(args, skip=None, limit=None):
-    annotations_sub_query = 'SELECT DISTINCT comment_id FROM annotations'
+
+    annotations_where_sec = ''
     if 'label' in args and args['label']:
-        labelIds = ' WHERE ' + \
-            'label_id IN ({0})'.format(", ".join(i for i in args['label']))
-        annotations_sub_query += labelIds
+        labelIds = 'a.label_id IN ({0})'.format(", ".join(i for i in args['label']))
+        annotations_where_sec += labelIds
 
-    comments_sub_query = "SELECT id AS comment_id, user_id, timestamp, parent_comment_id, title, text FROM comments"
+    comments_where_sec = ''
     if 'keyword' in args and args['keyword']:
-        searchwords = ' WHERE ' + \
-            ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
-        comments_sub_query += searchwords
+        searchwords = ' OR '.join("c.text LIKE '%{0}%'".format(x) for x in args['keyword'])
+        comments_where_sec += searchwords
 
-    query = ' ( {0} ) AS a, ( {1} ) AS c WHERE a.comment_id = c.comment_id'.format(
-        annotations_sub_query, comments_sub_query)
+    where_sec = ''
+    if annotations_where_sec or comments_where_sec:
+        where_sec = 'WHERE'
 
+    and_sec = ''
+    if comments_where_sec:
+        and_sec = 'AND'
+
+    limit_sec = ''
     if limit:
-        query += " LIMIT " + str(limit)
+        limit_sec = " LIMIT " + str(limit)
 
+    offset_sec = ''
     if skip:
-        query += " OFFSET " + str(skip)
+        offset_sec = " OFFSET " + str(skip)
+
+    query = f"""
+    SELECT c.id, c.title, c.text, c.timestamp, array_agg(a.label_id) as labels
+    FROM "comments" as c LEFT OUTER JOIN "annotations" AS a
+    ON c.id = a.comment_id
+    {where_sec} {annotations_where_sec} {and_sec} {comments_where_sec}
+    GROUP BY c.id
+    {limit_sec}
+    {offset_sec}
+    """
+
+    print(query, file=sys.stderr)
+
 
     return query
 
@@ -81,7 +101,7 @@ class CommentsGet(Resource):
         skip = args["skip"]
         limit = args["limit"]
 
-        query = 'SELECT * FROM' + createQuery(args, skip, limit)
+        query = createQuery(args, skip, limit)
 
         postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
 
@@ -104,7 +124,7 @@ class CommentsCount(Resource):
     def get(self):
         args = comments_parser.parse_args()
 
-        query = 'SELECT COUNT(*) FROM' + createQuery(args)
+        query = f'SELECT COUNT(*) FROM ({createQuery(args)}) as foo'
 
         postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
         postgres.execute(query)
