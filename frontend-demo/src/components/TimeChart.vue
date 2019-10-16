@@ -111,8 +111,11 @@ export default {
       var chart_options = this.chart_options;
       var selectEndpoint = this.selectEndpoint;
       var textFilterArg = this.textFilterArg;
-      chart_options.series.forEach(async function(x) {
+      chart_options.series.forEach(async (x) => {
         if (chart_options.legend.selected[x.name]) {
+          console.log(`updateChart: ${x.name} ${this[State.labels]}`);
+          console.log(this[State.labels]);
+          
           const label_id = this[State.labels][x.name];
           const { data } = await Service.get(
             `${selectEndpoint()}?label=${label_id}${textFilterArg("&")}`
