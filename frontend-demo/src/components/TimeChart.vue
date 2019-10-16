@@ -118,11 +118,10 @@ export default {
           const { data } = !this[State.labels] ? 
               await Service.get(`${selectEndpoint()}?label=${label_id}${textFilterArg("&")}`) 
               : 
-              await Service.get(selectEndpoint());
-            
+              await Service.get(`${selectEndpoint()}?${textFilterArg("&")}`);
+          
           chart_options.xAxis.data = data["time"];
           x.data = data.data;
-
         }
       });
     },
