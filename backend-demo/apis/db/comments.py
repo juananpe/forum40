@@ -47,8 +47,6 @@ def getLabelIdByName(name):
         return db_return[0]
     return -1
 
-import sys
-
 def createQuery(args, skip=None, limit=None):
 
     annotations_where_sec = ''
@@ -86,10 +84,6 @@ def createQuery(args, skip=None, limit=None):
     {limit_sec}
     {offset_sec}
     """
-
-    print(query, file=sys.stderr)
-
-
     return query
 
 
