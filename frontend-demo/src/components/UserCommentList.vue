@@ -48,7 +48,7 @@
             <UserCommentAnnotation
               :commentId="props.item.comment_id"
               :initialLabel="getAnnotations(props.item, label)"
-              :labelName="label"
+              :labelId="labels[label]"
             />
           </td>
         </tr>

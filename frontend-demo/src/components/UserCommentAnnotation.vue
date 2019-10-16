@@ -34,7 +34,7 @@ export default {
   props: {
     commentId: Number,
     initialLabel: Object,
-    labelName: String
+    labelId: Number
   },
   data() {
     return {
@@ -53,7 +53,7 @@ export default {
     async checkboxClicked(value) {
       try {
         await Service.put(
-          Endpoint.ADD_LABEL_TO_COMMENT(this.commentId, this.labelName, +value),
+          Endpoint.ADD_ANNOTATION_TO_COMMENT(this.commentId, this.labelId, +value),
           {},
           this[Getters.jwt]
         );
