@@ -113,15 +113,16 @@ export default {
       var textFilterArg = this.textFilterArg;
       chart_options.series.forEach(async (x) => {
         if (chart_options.legend.selected[x.name]) {
-          console.log(`updateChart: ${x.name} ${this[State.labels]}`);
-          console.log(this[State.labels]);
-          
+
           const label_id = this[State.labels][x.name];
-          const { data } = await Service.get(
-            `${selectEndpoint()}?label=${label_id}${textFilterArg("&")}`
-          );
+          const { data } = !this[State.labels] ? 
+              await Service.get(`${selectEndpoint()}?label=${label_id}${textFilterArg("&")}`) 
+              : 
+              await Service.get(selectEndpoint());
+            
           chart_options.xAxis.data = data["time"];
           x.data = data.data;
+
         }
       });
     },
