@@ -302,7 +302,7 @@ class CommentsParentRec(Resource):
         if db_response:
             id_ = db_response['parent_comment_id']
             while True:
-                comments.append(db_response)
+                comments.insert(0, db_response)
                 if id_:
                     # TODO externalize str
                     postgres.execute(
