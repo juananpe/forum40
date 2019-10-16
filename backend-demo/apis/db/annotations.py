@@ -66,12 +66,13 @@ import sys
 
 import sys
 
-@ns.route('/<int:comment_id>/<int:label_id>/<int:user_id>/<int:label>')
+@ns.route('/<int:comment_id>/<int:label_id>/<int:label>')
 class LabelComment(Resource):
     @token_required
     @api.doc(security='apikey')
-    def put(self, data, comment_id ,label_id, user_id, label):
+    def put(self, data, comment_id ,label_id, label):
 
+        user_id = self["user"]
         label = bool(label)
 
         try: 
@@ -80,10 +81,10 @@ class LabelComment(Resource):
                 return {"msg": "No Comments with id: {0}".format(comment_id)}, 400
 
             if not _label_exists(label_id):
-                return {"msg": "No Label with id: {0}".format(comment_id)}, 400
+                return {"msg": "No Label with id: {0}".format(label_id)}, 400
 
             if not _user_exists(user_id):
-                return {"msg": "No User with id: {0}".format(comment_id)}, 400
+                return {"msg": "No User with id: {0}".format(user_id)}, 400
         except DatabaseError:
             postgres_con.rollback()
             return {'msg' : 'DatabaseError: transaction is aborted'}, 400
