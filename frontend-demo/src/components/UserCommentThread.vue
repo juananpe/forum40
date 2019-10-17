@@ -2,7 +2,7 @@
   <div>
     <h3>Kommentar-Thread</h3>
     <p></p>
-    <div v-for="(comment, i) in comments" v-bind:key="comment.comment_id">
+    <div v-for="(comment, i) in comments" v-bind:key="comment.id">
       <v-layout>
         <v-flex :[dynamicFlex(i)]="true" mb-1>
           <div :class="dynamicClasses(i)">

@@ -23,18 +23,18 @@
       :page.sync="page"
       :expanded.sync="expanded"
       :server-items-length="totalItems"
-      item-key="comment_id"
+      item-key="id"
       single-expand
       show-expand
     >
       <template v-slot:item="props">
-        <tr @click="commentClicked(props)" class="mb-2">
-          <td>
+        <tr class="mb-2">
+          <td @click="commentClicked(props)">
             <v-icon v-if="!props.isExpanded">expand_more</v-icon>
 
-            <v-icon v-else @click="commentClicked(props)">expand_less</v-icon>
+            <v-icon v-else>expand_less</v-icon>
           </td>
-          <td class="text-left commenttext">
+          <td @click="commentClicked(props)" class="text-left commenttext">
             <div v-if="!props.isExpanded">
               <span v-html="highlight(shortText(commentText(props)), keyword)"></span>
             </div>
@@ -44,11 +44,12 @@
             </b>
           </td>
           <td class="text-right">{{ props.item.timestamp | moment}}</td>
-          <td v-for="(label, i) in selectedLabels" :key="props.item.comment_id+i">
+          <td v-for="(label, i) in selectedLabels" :key="props.item.id+i">
             <UserCommentAnnotation
-              :commentId="props.item.comment_id"
-              :initialLabel="getAnnotations(props.item, label)"
+              :commentId="props.item.id"
+              :initialLabel="false"
               :labelId="labels[label]"
+              :confidence="undefined"
             />
           </td>
         </tr>
@@ -72,7 +73,6 @@
 import Service, { Endpoint } from "../api/db";
 import { State, Getters, Mutations } from "../store/const";
 import { mapState, mapGetters, mapMutations } from "vuex";
-import { getLabels } from "../CommentsUtil";
 import moment from "moment";
 import UserCommentAnnotation from "./UserCommentAnnotation";
 
@@ -189,11 +189,6 @@ export default {
       const p2 = this.fetchComments();
       await Promise.all([p1, p2]);
       this.loading = false;
-    },
-    getAnnotations(comment, label) {
-      const labelId = this[State.labels][label];
-      const username = this[Getters.jwtUser];
-      return getLabels(comment, labelId, username);
     },
     commentText(props) {
       return (props.item.title || "") + " " + props.item.text;

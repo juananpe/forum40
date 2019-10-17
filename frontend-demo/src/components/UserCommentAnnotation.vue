@@ -1,12 +1,13 @@
 <template>
-  <v-layout justify-center>
+  <v-layout>
     <v-flex v-if="showCheckbox">
       <v-checkbox
+        class="justify-center"
         :input-value="checkbox"
         :color="checkBoxColor"
-        :label="label.confidence[0] | toPercentage"
+        :label="confidence | toPercentage"
         :disabled="!loggedIn"
-        @change="checkboxClicked"
+        @change="annotate"
         hide-details
       ></v-checkbox>
     </v-flex>
@@ -33,13 +34,13 @@ export default {
   name: "UserCommentAnnotation",
   props: {
     commentId: Number,
-    initialLabel: Object,
-    labelId: Number
+    labelId: Number,
+    initialLabel: Boolean,
+    confidence: Number
   },
   data() {
     return {
-      labeledManually: false,
-      manualLabel: false
+      manualLabel: undefined
     };
   },
   mounted() {},
@@ -50,32 +51,24 @@ export default {
     }
   },
   methods: {
-    async checkboxClicked(value) {
+    async annotate(value) {
       try {
         await Service.put(
-          Endpoint.ADD_ANNOTATION_TO_COMMENT(this.commentId, this.labelId, +value),
+          Endpoint.ADD_ANNOTATION_TO_COMMENT(
+            this.commentId,
+            this.labelId,
+            +value
+          ),
           {},
           this[Getters.jwt]
         );
-        this.labeledManually = true;
+        this.manualLabel = value;
         return true;
       } catch (error) {
         const status = error.response.status;
         console.error(error);
         console.error(status);
         return false;
-      }
-    },
-    async annotate(value) {
-      if (await this.checkboxClicked(value)) {
-        this.manualLabel = {
-          confidence: [],
-          manualLabel: {
-            annotatorId: this[Getters.jwtUser],
-            label: value
-          }
-        };
-        this.labeledManually = true;
       }
     }
   },
@@ -90,27 +83,28 @@ export default {
       }
       return this.initialLabel;
     },
+    labeledManually() {
+      return this.manualLabel != undefined;
+    },
     checkbox() {
       if (this.label) {
-        if (this.label.manualLabel) {
-          return this.label.manualLabel.label;
-        } else {
-          return this.label.confidence[0] > 0.5;
-        }
+        // manual label
+        return this.label;
+      } else {
+        //Classification
+        return this.confidence >= 0.5;
       }
+
       return false;
     },
     checkBoxColor() {
-      if (this.label.manualLabel || this.labeledManually) {
+      if (this.label != undefined) {
         return "success";
       }
       return "grey";
     },
     showCheckbox() {
-      return (
-        this.label &&
-        (this.label.confidence.length > 0 || this.label.manualLabel)
-      );
+      return this.label != undefined || this.confidence != undefined;
     }
   }
 };
