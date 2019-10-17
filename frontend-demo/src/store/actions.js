@@ -1,6 +1,6 @@
 import { Actions, Mutations } from './const'
 import Const from '../const'
-import Service, {Endpoint} from '../api/db'
+import Service, { Endpoint } from '../api/db'
 
 export default {
     [Actions.login]: async function ({ commit, getters, state, dispatch }, { username, password }) {
@@ -14,10 +14,7 @@ export default {
             return true;
         }
         catch (error) {
-            const status = error.response.status;
-            if (status === 401) {
-                return false;
-            }
+            return false;
         }
     },
     [Actions.refreshToken]: async function ({ commit, state }) {
@@ -27,13 +24,6 @@ export default {
             return true;
         }
         return false;
-    },
-    [Actions.logout]: async function ({ commit, state }) {
-        const { data } = await Service.get(Endpoint.LOGOUT, state.currentJWT);
-        if (data.logout === "ok") {
-            commit(Mutations.setJWT, '');
-            clearInterval(state.refreshTokenInterval);
-        }
     },
     [Actions.start]: function ({ commit }) {
         setInterval(() => {

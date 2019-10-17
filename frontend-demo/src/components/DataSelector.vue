@@ -1,7 +1,7 @@
 <template>
   <v-layout align-center>
     <v-flex :xs10="loggedIn" :xs12="!loggedIn" pr-2>
-      <v-select v-model="selection" :items="items" chips clearable multiple>
+      <v-select v-model="selection" :items="Object.keys(labels)" chips clearable multiple>
         <template v-slot:selection="data">
           <v-chip :input-value="data.selected" close @click:close="remove(data.item)">
             <strong>{{ data.item }}</strong>
@@ -47,25 +47,28 @@
 </template>
 
 <script>
-import { Getters, Mutations } from "../store/const";
-import { mapGetters, mapMutations } from "vuex";
+import { State, Getters, Mutations } from "../store/const";
+import { mapState, mapGetters, mapMutations } from "vuex";
 import Service, { Endpoint } from "../api/db";
 
 export default {
   name: "DataSelector",
 
   data: () => ({
-    items: [],
     dialog: false,
     newLabel: "",
     error: false,
     success: false
   }),
   methods: {
-    ...mapMutations([Mutations.setSelectedLabels]),
+    ...mapMutations([Mutations.setSelectedLabels, Mutations.setLabels]),
     async fetchLabels() {
       const { data } = await Service.get(Endpoint.LABELS);
-      this.items = data.labels;
+      const labels = {};
+      const labels_names = data.labels;
+      const label_ids = data.ids;
+      labels_names.forEach((key, i) => (labels[key] = label_ids[i]));
+      this[Mutations.setLabels](labels);
     },
     remove(item) {
       this.selection.splice(this.selection.indexOf(item), 1);
@@ -94,13 +97,18 @@ export default {
     this.fetchLabels();
   },
   computed: {
+    ...mapState([State.labels]),
     ...mapGetters([Getters.jwt, Getters.selectedLabels, Getters.jwtLoggedIn]),
     loggedIn() {
       return this[Getters.jwtLoggedIn];
     },
     selection: {
       set(state) {
-        this[Mutations.setSelectedLabels](state);
+        const selectedLabels = {};
+        state.forEach(label => {
+          selectedLabels[label] = this[State.labels][label];
+        });
+        this[Mutations.setSelectedLabels](selectedLabels);
       },
       get() {
         return this[Getters.selectedLabels];

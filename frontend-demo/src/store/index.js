@@ -11,6 +11,7 @@ Vue.use(Vuex);
 
 
 const state = {
+    [State.labels]: [],
     [State.selectedFilters]: {
         [State.selectedLabels]: [],
         [State.keywordfilter]: ''

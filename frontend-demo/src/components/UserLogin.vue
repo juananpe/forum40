@@ -10,9 +10,6 @@
           <v-list-item @click="checkLogin">
             <v-list-item-title>Check login</v-list-item-title>
           </v-list-item>
-          <v-list-item @click="logout">
-            <v-list-item-title>Logout</v-list-item-title>
-          </v-list-item>
         </v-list>
       </v-menu>
       <v-alert
@@ -73,9 +70,9 @@
 </template>
 
 <script>
-import { mapGetters, mapActions, mapState } from "vuex";
+import { mapGetters, mapActions } from "vuex";
 import Service, { Endpoint } from "../api/db";
-import { Getters } from "../store/const";
+import { Getters, Actions } from "../store/const";
 export default {
   data() {
     return {
@@ -91,7 +88,7 @@ export default {
     ...mapGetters([Getters.jwt, Getters.jwtUser, Getters.jwtLoggedIn])
   },
   methods: {
-    ...mapActions(["login", "logout"]),
+    ...mapActions([Actions.login]),
     async loginUser() {
       this.dialog = false;
       const success = await this.login({
@@ -103,7 +100,10 @@ export default {
       if (!success) this.error = true;
     },
     async checkLogin() {
-      const { data } = await Service.get(Endpoint.TEST_LOGIN, this[Getters.jwt]);
+      const { data } = await Service.get(
+        Endpoint.TEST_LOGIN,
+        this[Getters.jwt]
+      );
       if (data.ok === this[Getters.jwtUser]) {
         this.testalert = true;
       }

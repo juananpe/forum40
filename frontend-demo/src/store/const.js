@@ -1,4 +1,5 @@
 export const State = {
+    labels: 'labels',
     selectedFilters: 'selectedFilters',
     selectedViewAggregations: 'selectedViewAggregations',
     selectedLabels: 'selectedLabels',
@@ -30,12 +31,12 @@ export const Mutations = {
     updateTime: "updateTime",
     setSelectedComment: "setSelectedComment",
     setKeywordfilter: "setKeywordfilter",
-    setTimeFrequency: "setTimeFrequency", 
+    setTimeFrequency: "setTimeFrequency",
+    setLabels: "setLabels"
 }
 
 export const Actions = {
     login: 'login',
     refreshToken: 'refreshToken',
-    logout: 'logout',
     start: 'start'
 }
