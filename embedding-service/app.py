@@ -2,21 +2,15 @@ from flask import Flask
 from logging.config import dictConfig
 from flask_restplus import Api, Resource, fields
 from core.proxy_wrapper import ReverseProxied
-from BertFeatureExtractor import BertFeatureExtractor
 from retrieve_comments import RetrieveComment
-from index_comments import CommentIndexer
-from embed_comments import CommentEmbedder
+from tasks import celery_app, index_comments, embed_comments, get_embeddings
+from celery.contrib.abortable import AbortableAsyncResult
 
-from celery import Celery
 import os, logging
 
 # pg config
 pg_host = os.getenv('PG_HOST', 'postgres')
 pg_port = os.getenv('PG_PORT', 5432)
-
-# celery config
-config_host = os.getenv('RABBITMQ_HOST', 'rabbitmq')
-config_broker = "amqp://guest:guest@%s:5672//" % config_host
 
 dictConfig({
     'version': 1,
@@ -38,16 +32,6 @@ app = Flask(__name__)
 app.wsgi_app = ReverseProxied(app.wsgi_app)
 app.logger.setLevel(logging.INFO)
 
-#load BERT model
-app.logger.info('Loading BERT model')
-be = BertFeatureExtractor(
-    batch_size=8,
-    device='cpu',
-    keep_cls=False,
-    use_layers=4,
-    use_token=True
-)
-app.logger.info('BERT model loaded')
 
 # db connection
 try:
@@ -77,12 +61,18 @@ sim_id_model = api.model('SimId', {
     'n' : fields.Integer
 })
 
+
+# API for task ids
+tasks_model = api.model('TaskId', {
+    'task_id': fields.String
+})
+
 @api.route('/comment')
 class CommentsEmbedding(Resource):
     @api.expect(comments_model)
     def post(self):
         comment_texts = api.payload.get('comments', [])
-        results = be.extract_features(comment_texts)
+        results = get_embeddings(comment_texts)
         return results, 200
 
 
@@ -122,7 +112,7 @@ class SimilarComments(Resource):
         n = api.payload.get('n', 10)
 
         # get embedding
-        embeddings = be.extract_features(comment_texts)
+        embeddings = get_embeddings(comment_texts)
         results = []
         for embedding in embeddings:
             nn_ids = retriever.get_nearest_for_embedding(embedding)
@@ -130,7 +120,7 @@ class SimilarComments(Resource):
         return results, 200
 
 
-@api.route('/indexing')
+@api.route('/tasks/indexing')
 class IndexComments(Resource):
     def get(self):
 
@@ -166,17 +156,12 @@ class IndexComments(Resource):
 
         return results, 200
 
-@api.route('/embedding')
+@api.route('/tasks/embedding')
 class EmbedComments(Resource):
     def get(self):
 
         i = celery_app.control.inspect()
         running_tasks = i.active()
-
-        # import pdb
-        # pdb.set_trace()
-
-        app.logger.debug(running_tasks)
 
         # check if indexing is already running
         if running_tasks:
@@ -191,26 +176,20 @@ class EmbedComments(Resource):
                         }
                         return results, 200
 
-        # start indexing
         t = embed_comments.delay()
         results = {
             "message" : "Embedding started.",
             "task.id" : t.id
         }
 
-        app.logger.debug(i.active())
-
         return results, 200
 
-@api.route('/running-tasks')
+@api.route('/tasks/running')
 class RunningTasks(Resource):
     def get(self):
 
         i = celery_app.control.inspect()
         running_tasks = i.active()
-
-        # import pdb
-        # pdb.set_trace()
 
         app.logger.debug(running_tasks)
 
@@ -219,51 +198,32 @@ class RunningTasks(Resource):
         return results, 200
 
 
-def make_celery(app):
-    celery = Celery(
-        app.import_name,
-        backend=app.config['CELERY_BACKEND'],
-        broker=app.config['CELERY_BROKER_URL']
-    )
-    celery.conf.update(app.config)
-    taskBase = celery.Task
-    class ContextTask(taskBase):
-        abstract = True
-        def __call__(self, *args, **kwargs):
-            with app.app_context():
-                return taskBase.__call__(self, *args, **kwargs)
-    celery.Task = ContextTask
-    return celery
+@api.route('/tasks/abort')
+class TasksAbort(Resource):
+    @api.expect(tasks_model)
+    def post(self):
+        task_id = api.payload.get('task_id', None)
 
+        i = celery_app.control.inspect()
+        running_tasks = i.active()
 
-# celery config in Flask context
-app.config['CELERY_BROKER_URL'] = config_broker
-app.config['CELERY_BACKEND'] = 'rpc'
-app.config['CELERY_TIMEZONE'] = 'CET'
-celery_app = make_celery(app)
+        results = "There is no running task with id " + task_id
+        if running_tasks:
+            first_worker_id = [k for k in running_tasks.keys()][0]
+            first_worker_tasks = running_tasks[first_worker_id]
+            if first_worker_tasks:
+                for first_worker_task in first_worker_tasks:
+                    if first_worker_task['id'] == task_id:
+                        # abortable_task = AbortableAsyncResult(task_id)
+                        # abortable_task.abort()
+                        celery_app.control.revoke(
+                            task_id,
+                            terminate = True
+                        )
+                        results = "Sent abort signal to task " + task_id
 
+        return results, 200
 
-@celery_app.task
-def index_comments(db_host = "postgres", db_port = 5432):
-
-    # start indexing
-    indexer = CommentIndexer(db_host, db_port)
-    indexer.indexEmbeddings()
-
-    return True
-
-
-@celery_app.task
-def embed_comments():
-
-    ce = CommentEmbedder(embed_all=False, batch_size=8, host=pg_host, port=pg_port)
-    ce.setExtractorModel(be)
-    ce.setLogger(app.logger)
-
-    # start embedding
-    ce.embedComments()
-
-    return True
 
 # run app manually
 if __name__ == "__main__":

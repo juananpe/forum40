@@ -277,3 +277,4 @@ class BertFeatureExtractor(object):
                     be_result.append(sequence_embedding.tolist())
 
         return be_result
+

@@ -4,6 +4,7 @@ import utils
 import psycopg2
 import traceback
 import sys
+import math
 
 # create logger
 logger = logging.getLogger('Embedding logger')
@@ -35,12 +36,25 @@ class CommentEmbedder:
             user=utils.DB_USER,
             password=utils.DB_PASSWORD)
         self.cur = None
+        self.cursor_large = None
         self.embed_all = embed_all
         self.batch_size = batch_size
+        self.batch_i  = 0
+        self.n_batches = 0
+        self.n_commit = 100
         self.logger = logger
 
     def __del__(self):
-        self.conn.close()
+        try:
+            if self.cur:
+                self.cur.close()
+            if self.cursor_large:
+                self.cursor_large.close()
+        finally:
+            self.conn.close()
+
+    def setCommitNumber(self, n_commit):
+        self.n_commit = n_commit
 
     def setLogger(self, logger):
         self.logger = logger
@@ -48,7 +62,7 @@ class CommentEmbedder:
     def setExtractorModel(self, model):
         self.be = model
 
-    def process_batch(self, comment_batch):
+    def processBatch(self, comment_batch):
         comment_texts = [utils.concat(c[1], c[2]) for c in comment_batch if c[1] or c[2]]
         comment_ids = [c[0] for c in comment_batch if c[1] or c[2]]
         comment_embeddings = self.be.extract_features(comment_texts)
@@ -63,12 +77,11 @@ class CommentEmbedder:
                 (comment_embedding, comment_id)
             )
 
-        self.logger.info("Start DB update")
+        # self.logger.info("Start DB update")
         self.cur.executemany(update_statement, batch_update_comments)
-        self.logger.info("DB updated")
+        # self.logger.info("DB updated")
 
-    def embedComments(self):
-
+    def initCursor(self):
         try:
             self.cur = self.conn.cursor()
 
@@ -78,42 +91,56 @@ class CommentEmbedder:
             self.logger.info("Comments in the database: " + str(n_comments))
 
             embed_query = """SELECT id, title, text FROM comments"""
-            n_to_embed = n_comments
+            self.n_to_embed = n_comments
 
             if not self.embed_all:
                 embed_query += " WHERE embedding IS NULL"
                 self.cur.execute("""SELECT COUNT(*) from comments WHERE embedding IS NULL""")
-                n_to_embed = self.cur.fetchone()[0]
+                self.n_to_embed = self.cur.fetchone()[0]
 
-            self.logger.info("Comments to embed: " + str(n_to_embed))
+            self.logger.info("Comments to embed: " + str(self.n_to_embed))
+            self.batch_i = 0
+            self.n_batches = math.ceil(self.n_to_embed / self.batch_size)
 
-            batch_i = 0
-
-            cursor_large = self.conn.cursor(name='fetch_large_result', withhold=True)
-            cursor_large.execute(embed_query)
-
-            while True:
-                records = cursor_large.fetchmany(size=self.batch_size)
-
-                if not records:
-                    break
-
-                batch_i += 1
-                self.logger.info("Batch: " + str(batch_i) + "; comment " + str(batch_i * self.batch_size) + " of " + str(n_to_embed))
-
-                self.process_batch(records)
-
-                if batch_i % 100 == 0:
-                    self.logger.info("Commit to DB ...")
-                    self.conn.commit()
+            self.cursor_large = self.conn.cursor(name='fetch_large_result', withhold=True)
+            self.cursor_large.execute(embed_query)
 
         except Exception as err:
             self.logger.error(err)
             traceback.print_tb(err.__traceback__)
 
-        finally:
-            self.cur.close()
-            cursor_large.close()
+    def closeCursor(self):
+        self.cur.close()
+        self.cursor_large.close()
+
+
+    def embedBatch(self):
+
+        # increase batch counter
+        self.batch_i += 1
+
+        # get records
+        records = self.cursor_large.fetchmany(size=self.batch_size)
+
+        # stop if there are no more records
+        if not records:
+            return False
+
+        # get embeddings
+        self.processBatch(records)
+
+        # commit every n batches
+        if self.batch_i % self.n_commit == 0:
+            self.logger.info("Commit to DB ...")
+            self.conn.commit()
+
+        return True
+
+    def embedComments(self):
+        self.initCursor()
+        while self.embedBatch():
+            self.logger.info("Batch: " + str(self.batch_i) + " of " + str(self.n_batches))
+        self.closeCursor()
 
 
 if __name__ == '__main__':
