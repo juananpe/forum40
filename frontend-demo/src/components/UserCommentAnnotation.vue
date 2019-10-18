@@ -1,27 +1,59 @@
 <template>
   <v-layout>
-    <v-flex v-if="showCheckbox">
-      <v-checkbox
-        class="justify-center"
-        :input-value="checkbox"
-        :color="checkBoxColor"
-        :label="confidence | toPercentage"
-        :disabled="!loggedIn"
-        @change="annotate"
-        hide-details
-      ></v-checkbox>
-    </v-flex>
-    <div v-else-if="loggedIn">
-      <v-layout>
-        <v-flex pr-1>
+    <v-flex xs12 v-if="loggedIn">
+      <div v-if="label != undefined">
+        <v-checkbox
+          class="justify-center"
+          :input-value="label"
+          color="green"
+          :disabled="!loggedIn"
+          @change="annotate"
+          hide-details
+          prepend-icon="person"
+        ></v-checkbox>
+      </div>
+      <div v-else>
+        <v-flex xs5 pr-1>
           <v-icon outline color="success" class="action-left" @click="annotate(true)">check</v-icon>
         </v-flex>
-        <v-flex pl-1>
+        <v-flex xs5 pl-1>
           <v-icon outline color="error" class="action-right" @click="annotate(false)">clear</v-icon>
         </v-flex>
-      </v-layout>
-    </div>
-    <div v-else>Keine Klassifizierung</div>
+      </div>
+    </v-flex>
+
+    <v-flex xs12>
+      <div v-if="majority != undefined">
+        <v-checkbox
+          class="justify-center"
+          :input-value="majority[0]>=majority[1]"
+          color="black"
+          disabled
+          hint="Test"
+          prepend-icon="people"
+        ></v-checkbox>
+      </div>
+      <div v-else>
+        <v-icon>not_interested</v-icon>
+      </div>
+    </v-flex>
+
+    <v-flex xs12>
+      <div v-if="confidence != undefined">
+        <v-checkbox
+          class="justify-center"
+          :input-value="confidence>=0.5"
+          color="grey"
+          :label="confidence | toPercentage"
+          :prepend-icon="svgPath"
+          disabled
+          hide-details
+        ></v-checkbox>
+      </div>
+      <div v-else>
+        <v-icon>not_interested</v-icon>
+      </div>
+    </v-flex>
   </v-layout>
 </template>
 
@@ -29,21 +61,26 @@
 import Service, { Endpoint } from "../api/db";
 import { mapGetters } from "vuex";
 import { Getters } from "../store/const";
+import { mdiRobot } from "@mdi/js";
 
 export default {
   name: "UserCommentAnnotation",
   props: {
     commentId: Number,
     labelId: Number,
-    initialLabel: Boolean,
+    personalLabel: Boolean,
+    majority: Array,
     confidence: Number
   },
   data() {
     return {
-      manualLabel: undefined
+      manualLabel: undefined,
+      svgPath: mdiRobot
     };
   },
-  mounted() {},
+  mounted() {
+    this.personalLabel;
+  },
   filters: {
     toPercentage(value) {
       if (value) return Math.round(value * 100) + "%";
@@ -73,7 +110,7 @@ export default {
     }
   },
   computed: {
-    ...mapGetters([Getters.jwt, Getters.jwtLoggedIn, Getters.jwtUser]),
+    ...mapGetters([Getters.jwt, Getters.jwtLoggedIn]),
     loggedIn() {
       return this[Getters.jwtLoggedIn];
     },
@@ -81,30 +118,7 @@ export default {
       if (this.manualLabel) {
         return this.manualLabel;
       }
-      return this.initialLabel;
-    },
-    labeledManually() {
-      return this.manualLabel != undefined;
-    },
-    checkbox() {
-      if (this.label) {
-        // manual label
-        return this.label;
-      } else {
-        //Classification
-        return this.confidence >= 0.5;
-      }
-
-      return false;
-    },
-    checkBoxColor() {
-      if (this.label != undefined) {
-        return "success";
-      }
-      return "grey";
-    },
-    showCheckbox() {
-      return this.label != undefined || this.confidence != undefined;
+      return this.personalLabel;
     }
   }
 };

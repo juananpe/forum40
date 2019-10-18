@@ -47,9 +47,10 @@
           <td v-for="(label, i) in selectedLabels" :key="props.item.id+i">
             <UserCommentAnnotation
               :commentId="props.item.id"
-              :initialLabel="false"
               :labelId="labels[label]"
-              :confidence="undefined"
+              :personalLabel="Math.random()>0.5"
+              :majority="[Math.floor(Math.random()*10),Math.floor(Math.random()*10)]"
+              :confidence="Math.random()"
             />
           </td>
         </tr>
