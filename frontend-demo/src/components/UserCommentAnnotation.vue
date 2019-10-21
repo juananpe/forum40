@@ -1,60 +1,78 @@
 <template>
-  <v-layout>
-    <v-flex xs12 v-if="loggedIn">
-      <div v-if="label != undefined">
-        <v-checkbox
-          class="justify-center"
-          :input-value="label"
-          color="green"
-          :disabled="!loggedIn"
-          @change="annotate"
-          hide-details
-          prepend-icon="person"
-        ></v-checkbox>
-      </div>
-      <div v-else>
-        <v-flex xs5 pr-1>
+  <div>
+    <v-layout>
+      <v-flex xs12 v-if="loggedIn" class="text-center">
+        <div v-if="label != undefined">
+          <v-tooltip right>
+            <template v-slot:activator="{ on }">
+              <v-checkbox
+                v-on="on"
+                class="justify-center ma-0 pa-1"
+                :input-value="label"
+                color="green"
+                :readonly="!loggedIn"
+                @change="annotate"
+                hide-details
+                prepend-icon="person"
+              ></v-checkbox>
+            </template>
+            <span>Eigene Annotation</span>
+          </v-tooltip>
+        </div>
+        <div v-else>
           <v-icon outline color="success" class="action-left" @click="annotate(true)">check</v-icon>
-        </v-flex>
-        <v-flex xs5 pl-1>
+
           <v-icon outline color="error" class="action-right" @click="annotate(false)">clear</v-icon>
-        </v-flex>
-      </div>
-    </v-flex>
-
-    <v-flex xs12>
-      <div v-if="majority != undefined">
-        <v-checkbox
-          class="justify-center"
-          :input-value="majority[0]>=majority[1]"
-          color="black"
-          disabled
-          hint="Test"
-          prepend-icon="people"
-        ></v-checkbox>
-      </div>
-      <div v-else>
-        <v-icon>not_interested</v-icon>
-      </div>
-    </v-flex>
-
-    <v-flex xs12>
-      <div v-if="confidence != undefined">
-        <v-checkbox
-          class="justify-center"
-          :input-value="confidence>=0.5"
-          color="grey"
-          :label="confidence | toPercentage"
-          :prepend-icon="svgPath"
-          disabled
-          hide-details
-        ></v-checkbox>
-      </div>
-      <div v-else>
-        <v-icon>not_interested</v-icon>
-      </div>
-    </v-flex>
-  </v-layout>
+        </div>
+      </v-flex>
+    </v-layout>
+    <v-layout>
+      <v-flex xs12>
+        <div v-if="majority != undefined">
+          <v-tooltip right>
+            <template v-slot:activator="{ on }">
+              <v-checkbox
+                v-on="on"
+                class="justify-center ma-0 pa-1"
+                :input-value="majority[0]>=majority[1]"
+                color="grey darken-1"
+                readonly
+                hide-details
+                prepend-icon="people"
+              ></v-checkbox>
+            </template>
+            <span>Klassifizierung der Mehrheit ({{majority[0]}} zu {{majority[1]}})</span>
+          </v-tooltip>
+        </div>
+        <div v-else>
+          <v-icon>not_interested</v-icon>
+        </div>
+      </v-flex>
+    </v-layout>
+    <v-layout>
+      <v-flex xs12>
+        <div v-if="confidence != undefined">
+          <v-tooltip right>
+            <template v-slot:activator="{ on }">
+              <v-checkbox
+                v-on="on"
+                class="justify-center ma-0 pa-1"
+                :input-value="confidence>=0.5"
+                color="grey darken-1"
+                :prepend-icon="svgPath"
+                readonly
+                persistent-hint
+              ></v-checkbox>
+            </template>
+            <span>Automatische Klassifizierung ({{1-confidence | toPercentage}} Konfidenz)</span>
+          </v-tooltip>
+        </div>
+        <div v-else>
+          <v-icon>not_interested</v-icon>
+        </div>
+      </v-flex>
+    </v-layout>
+  </div>
 </template>
 
 <script>
@@ -115,7 +133,7 @@ export default {
       return this[Getters.jwtLoggedIn];
     },
     label() {
-      if (this.manualLabel) {
+      if (this.manualLabel != undefined) {
         return this.manualLabel;
       }
       return this.personalLabel;
@@ -125,8 +143,4 @@ export default {
 </script>
 
 <style>
-.v-input__slot {
-  align-items: center;
-  justify-content: center;
-}
 </style>

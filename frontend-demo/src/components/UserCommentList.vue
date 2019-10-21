@@ -90,7 +90,7 @@ export default {
       footerprops: {
         "items-per-page-options": [15, 30]
       },
-      teaserTextLength: 250,
+      teaserTextLength: 500,
       page: 1,
       rowsPerPage: 15,
       basicCommentsTableHeader: [
