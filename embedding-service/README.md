@@ -9,7 +9,14 @@ Provides API and fuinctionality for handling embeddings:
 CPU-intensive tasks (embedding / indexing) are started as 
 celery tasks and can be aborted via the API.
 
-Caution: for some reason, the BERT model does not work 
-with the `prefork` execution pool. Cenelry must be started 
-with `--pool=solo` option.
+
+Known bugs
+----------
+
+For some reason, the BERT model does not work 
+with the `prefork` execution pool. Celery must be started 
+with `--pool=solo` option. Unfortunately, this breaks the
+tasks/abort funtionality of the API since the termination
+signal is not received by the singe-threaded embedding
+process.
 

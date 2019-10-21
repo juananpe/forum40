@@ -22,7 +22,8 @@ celery_app = Celery(
 )
 celery_app.conf.update(
     timezone='Europe/Berlin',
-    enable_utc=True
+    enable_utc=True,
+    broker_heartbeat=0
 )
 
 # pg config
