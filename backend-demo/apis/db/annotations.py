@@ -11,6 +11,8 @@ from psycopg2 import DatabaseError
 
 from jwt_auth.token import token_required
 
+from models.db_models import comments_parser_sl
+
 ns = api.namespace('annotations', description="annotations api")
 
 @ns.route('/count')
@@ -37,6 +39,54 @@ class GetLabel(Resource):
         postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
         try:        
             postgres.execute(f"SELECT label_id, user_id, label FROM Annotations WHERE comment_id = {comment_id}")
+        except DatabaseError:
+            postgres_con.rollback()
+            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+
+        db_return = postgres.fetchall()
+        return db_return
+
+import sys
+
+@ns.route('/group/')
+@api.expect(comments_parser_sl)
+class GetLabelGroup(Resource):
+    def get(self):
+
+        args = comments_parser_sl.parse_args()
+        skip = args["skip"]
+        limit = args["limit"]
+
+        annotations_where_sec = ''
+        if 'label' in args and args['label']:
+            labelIds = ' WHERE label_id IN ({0})'.format(", ".join(i for i in args['label']))
+            annotations_where_sec += labelIds
+
+        comments_where_sec = ''
+        if 'keyword' in args and args['keyword']:
+            searchwords = ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
+            comments_where_sec += 'WHERE ' +  searchwords
+
+
+
+        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+        query = f"""
+        SELECT _.id, array_agg(_.agg) as group_annotation FROM
+        (
+            SELECT c.id, ARRAY[a.label_id, count(a.label or null), count(not a.label or null)] as agg
+                FROM (SELECT * FROM comments {comments_where_sec} LIMIT {limit} OFFSET {skip}) AS c 
+                LEFT OUTER JOIN 
+                (SELECT * FROM annotations {annotations_where_sec}) AS a
+                ON c.id = a.comment_id
+                GROUP BY c.id, a.label_id, c.title, c.text, c.timestamp
+        ) _ 
+        GROUP BY _.id
+        """
+
+        print(query, file=sys.stderr)
+
+        try:        
+            postgres.execute(query)
         except DatabaseError:
             postgres_con.rollback()
             return {'msg' : 'DatabaseError: transaction is aborted'}, 400
