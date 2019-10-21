@@ -14,7 +14,7 @@ RUN pip install -r requirements.txt
 COPY . /app
 EXPOSE 5060
 ENV FLASK_APP app.py
-ENV FLASK_DEBUG 1
+ENV FLASK_DEBUG 0
 
 RUN groupadd -g 999 appuser && useradd -r -u 999 -g appuser appuser
 USER appuser
