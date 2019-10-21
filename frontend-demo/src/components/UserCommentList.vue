@@ -48,7 +48,7 @@
             <UserCommentAnnotation
               :commentId="props.item.id"
               :labelId="labels[label]"
-              :personalLabel="Math.random()>0.5"
+              :personalLabel="undefined"
               :majority="[Math.floor(Math.random()*10),Math.floor(Math.random()*10)]"
               :confidence="Math.random()"
             />
