@@ -46,10 +46,7 @@ class CommentEmbedder:
 
     def __del__(self):
         try:
-            if self.cur:
-                self.cur.close()
-            if self.cursor_large:
-                self.cursor_large.close()
+            self.closeCursor()
         finally:
             self.conn.close()
 
@@ -110,8 +107,10 @@ class CommentEmbedder:
             traceback.print_tb(err.__traceback__)
 
     def closeCursor(self):
-        self.cur.close()
-        self.cursor_large.close()
+        if self.cur:
+            self.cur.close()
+        if self.cursor_large:
+            self.cursor_large.close()
 
 
     def embedBatch(self):

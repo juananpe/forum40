@@ -1,5 +1,7 @@
-import math, re
-import numpy as np
+# configuration
+DB_NAME = "omp"
+DB_USER = "postgres"
+DB_PASSWORD = "postgres"
 
 def concat(title: str, text: str) -> str:
     """
@@ -12,11 +14,3 @@ def concat(title: str, text: str) -> str:
     text = text if text else ''
     return (title + ' ' + text).strip()
 
-
-# do stuff here ...
-def classify(model, ft, texts, CLASSES):
-    prediction = model.predict_generator(EmbeddingGenerator(texts, ft))
-    label_indexes = np.argmax(prediction, axis=1)
-    result_labels = [{'label': CLASSES[index],
-                      'confidence': prediction[i].tolist()} for i, index in enumerate(label_indexes)]
-    return result_labels
