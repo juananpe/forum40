@@ -16,4 +16,5 @@ python update.py --labelname=OffTopic
 Todo
 ----
 
-Save training history (timestamp, training set size, cv result, stability score)
+* app.py: Celery (or other task scheduler)
+* Save training history (timestamp, training set size, cv result, stability score)

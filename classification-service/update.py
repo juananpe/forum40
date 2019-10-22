@@ -5,28 +5,13 @@ from timeit import default_timer as timer
 from classifier import EmbeddingClassifier
 from sklearn.metrics import cohen_kappa_score
 
-# create logger
-logger = logging.getLogger('Classifier update logger')
-logger.setLevel(logging.DEBUG)
-
-# create console handler and set level to debug
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-
-# create formatter
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-# add formatter to ch
-ch.setFormatter(formatter)
-
-# add ch to logger
-logger.addHandler(ch)
-
 
 class LabelUpdater:
     """Functions for collection of training data and prediction on the entire DB"""
 
     def __init__(self, labelname, host="postgres", port=5432):
+
+        self.logger = logging.getLogger('Classifier update logger')
         # db connection
         self.conn = psycopg2.connect(
             host=host,
@@ -46,7 +31,7 @@ class LabelUpdater:
             self.classifier = EmbeddingClassifier()
             self.classifier.load_from_disk(labelname)
         except:
-            logger.error(
+            self.logger.error(
                 "Could not load classifier model for label %s. Run train.py first to create a model" % labelname)
             exit(1)
 
@@ -55,6 +40,9 @@ class LabelUpdater:
             self.close_cursor()
         finally:
             self.conn.close()
+
+    def setLogger(self, logger):
+        self.logger = logger
 
     def init_cursor(self):
 
@@ -86,17 +74,17 @@ class LabelUpdater:
         self.cur = self.conn.cursor()
         self.cur.execute("""SELECT id FROM labels WHERE name=%s""", (self.labelname,))
         self.label_id = self.cur.fetchone()[0]
-        logger.info("Predict new labels for: " + self.labelname + " (" + str(self.label_id) + ")")
+        self.logger.info("Predict new labels for: " + self.labelname + " (" + str(self.label_id) + ")")
 
         # init facts entry for all
-        logger.info("Ensuring a fact entry for each comment for label %s" % (self.labelname,))
+        self.logger.info("Ensuring a fact entry for each comment for label %s" % (self.labelname,))
         facts_query = """INSERT INTO facts (SELECT c.id, %s, false, 0, 0 FROM comments c LEFT JOIN (SELECT * FROM facts WHERE label_id = %s) AS f ON c.id = f.comment_id WHERE f.comment_id IS NULL)"""
         self.cur.execute(
             facts_query,
             (self.label_id, self.label_id))
 
         # Commit updates
-        logger.info("Commit to DB ...")
+        self.logger.info("Commit to DB ...")
         self.conn.commit()
 
 
@@ -152,21 +140,21 @@ class LabelUpdater:
 
         n_total = math.ceil(self.n_facts / self.batch_size)
         while self.process_batch():
-            logger.info("Completed batch %d of %d." % (self.batch_i, n_total))
+            self.logger.info("Completed batch %d of %d." % (self.batch_i, n_total))
 
         self.close_cursor()
 
         # stability
         kappa_score = cohen_kappa_score(self.labels_old, self.labels_new)
         self.stability = kappa_score
-        logger.info("Stability: %.3f" % (kappa_score,))
+        self.logger.info("Stability: %.3f" % (kappa_score,))
 
         # Commit updates
-        logger.info("Commit to DB ...")
+        self.logger.info("Commit to DB ...")
         self.conn.commit()
 
         end = timer()
-        logger.info("%d label updates finished after %.3f seconds." % (self.n_facts, end - start))
+        self.logger.info("%d label updates finished after %.3f seconds." % (self.n_facts, end - start))
 
 
 if __name__ == "__main__":

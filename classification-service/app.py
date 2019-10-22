@@ -2,7 +2,8 @@ from flask import Flask
 from logging.config import dictConfig
 from flask_restplus import Api, Resource, fields
 from core.proxy_wrapper import ReverseProxied
-from updateLabel import *
+from update import LabelUpdater
+from train import ClassifierTrainer
 
 dictConfig({
     'version': 1,
@@ -40,9 +41,16 @@ class ClassifierService(Resource):
     def post(self):
         labelname = api.payload.get('labelname', None)
         if labelname:
+
+            classifierTrainer = ClassifierTrainer(labelname)
+            classifierTrainer.setLogger(app.logger)
+            classifierTrainer.train(optimize=False)
+
             labelUpdater = LabelUpdater(labelname)
+            labelUpdater.setLogger(app.logger)
             labelUpdater.updateLabels()
-            results = {'info' : 'Started update of label ' + labelname}
+
+            results = {'message' : 'Started update of label ' + labelname}
             return results, 200
         else:
             return {'error' : 'Something went wrong.'}, 500

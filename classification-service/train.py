@@ -5,26 +5,11 @@ from collections import Counter
 from timeit import default_timer as timer
 from classifier import EmbeddingClassifier
 
-logger = logging.getLogger('ClassificationTrainer logger')
-logger.setLevel(logging.DEBUG)
-
-# create console handler and set level to debug
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-
-# create formatter
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-# add formatter to ch
-ch.setFormatter(formatter)
-
-# add ch to logger
-logger.addHandler(ch)
-
 
 class ClassifierTrainer:
 
     def __init__(self, labelname, classifier = None, host="postgres", port=5432):
+        self.logger = logging.getLogger('ClassificationTrainer logger')
         # db connection
         self.conn = psycopg2.connect(
             host=host,
@@ -40,6 +25,9 @@ class ClassifierTrainer:
         else:
             self.classifier = EmbeddingClassifier()
 
+    def setLogger(self, logger):
+        self.logger = logger
+
     def get_trainingdata(self):
 
         start = timer()
@@ -52,7 +40,7 @@ class ClassifierTrainer:
             logging.error("Label %s not found" % self.labelname)
             exit(1)
         else:
-            logger.info("Build classifier model for label: " + self.labelname + " (" + str(self.label_id) + ")")
+            self.logger.info("Build classifier model for label: " + self.labelname + " (" + str(self.label_id) + ")")
 
         # count annotations
         self.cur.execute(
@@ -88,8 +76,8 @@ class ClassifierTrainer:
 
         end = timer()
 
-        logger.info("Length of dataset: " + str(len(annotation_dataset)))
-        logger.info("Dataset collection duration (seconds): " + str(end - start))
+        self.logger.info("Length of dataset: " + str(len(annotation_dataset)))
+        self.logger.info("Dataset collection duration (seconds): " + str(end - start))
 
         return annotation_dataset
 
@@ -102,14 +90,14 @@ class ClassifierTrainer:
 
         # find best C parameter
         if (optimize):
-            logger.info("Hyperparameter optimzation started")
+            self.logger.info("Hyperparameter optimzation started")
             start = timer()
             params = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 0.5, 0.7, 1, 3, 10, 100]
             best_C = 0
             best_F1 = 0
             best_acc = 0
             for C in params:
-                logger.info("Testing C = %.3f" % C)
+                self.logger.info("Testing C = %.3f" % C)
                 self.classifier.setC(C)
                 accuracy, f1_score, fit_time, score_time = self.classifier.cross_validation(
                     annotation_dataset
@@ -118,19 +106,19 @@ class ClassifierTrainer:
                     best_F1 = f1_score
                     best_acc = accuracy
                     best_C = C
-            logger.info("Optimal C = %.3f" % best_C)
-            logger.info("Performance: accuracy = %.3f, F1 = %.3f" % (best_acc, best_F1))
+            self.logger.info("Optimal C = %.3f" % best_C)
+            self.logger.info("Performance: accuracy = %.3f, F1 = %.3f" % (best_acc, best_F1))
             # set best C parameter
             self.classifier.setC(C)
             end = timer()
-            logger.info("Hyperparameter optimzation finished after " + str(end - start) + " seconds.")
+            self.logger.info("Hyperparameter optimzation finished after " + str(end - start) + " seconds.")
 
         # train final model
-        logger.info("Training started")
+        self.logger.info("Training started")
         start = timer()
         self.model = self.classifier.train(annotation_dataset, self.labelname)
         end = timer()
-        logger.info("Training finished after " + str(end - start) + " seconds.")
+        self.logger.info("Training finished after " + str(end - start) + " seconds.")
 
 
 
