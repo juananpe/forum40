@@ -5,11 +5,27 @@ from collections import Counter
 from timeit import default_timer as timer
 from classifier import EmbeddingClassifier
 
+# create logger
+logger = logging.getLogger('Classifier logger')
+logger.setLevel(logging.DEBUG)
+
+# create console handler and set level to debug
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+
+# create formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+# add formatter to ch
+ch.setFormatter(formatter)
+
+# add ch to logger
+logger.addHandler(ch)
 
 class ClassifierTrainer:
 
     def __init__(self, labelname, classifier = None, host="postgres", port=5432):
-        self.logger = logging.getLogger('ClassificationTrainer logger')
+        self.logger = logger
         # db connection
         self.conn = psycopg2.connect(
             host=host,
@@ -92,7 +108,7 @@ class ClassifierTrainer:
         if (optimize):
             self.logger.info("Hyperparameter optimzation started")
             start = timer()
-            params = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 0.5, 0.7, 1, 3, 10, 100]
+            params = [0.01, 0.05, 0.1, 0.5, 1, 5, 10]
             best_C = 0
             best_F1 = 0
             best_acc = 0

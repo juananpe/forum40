@@ -5,13 +5,29 @@ from timeit import default_timer as timer
 from classifier import EmbeddingClassifier
 from sklearn.metrics import cohen_kappa_score
 
+# create logger
+logger = logging.getLogger('Classifier logger')
+logger.setLevel(logging.DEBUG)
+
+# create console handler and set level to debug
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+
+# create formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+# add formatter to ch
+ch.setFormatter(formatter)
+
+# add ch to logger
+logger.addHandler(ch)
 
 class LabelUpdater:
     """Functions for collection of training data and prediction on the entire DB"""
 
     def __init__(self, labelname, host="postgres", port=5432):
 
-        self.logger = logging.getLogger('Classifier update logger')
+        self.logger = logger
         # db connection
         self.conn = psycopg2.connect(
             host=host,
