@@ -143,6 +143,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Classifier trainer.')
     parser.add_argument('--labelname', type=str, nargs='?', default='offtopic',
                         help='name of the category to update')
+    parser.add_argument('--optimize', dest='optimize', default=False, action='store_true',
+                        help='Run C parameter optimization (default: False)')
     parser.add_argument('host', type=str, default='localhost', nargs='?',
                         help='DB host')
     parser.add_argument('port', type=int, default=5432, nargs='?',
@@ -152,4 +154,4 @@ if __name__ == "__main__":
 
     classifierTrainer = ClassifierTrainer(labelname, host=args.host, port=args.port)
 
-    print(classifierTrainer.train(optimize=True))
+    print(classifierTrainer.train(optimize=args.optimize))
