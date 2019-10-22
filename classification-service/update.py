@@ -1,8 +1,9 @@
-import argparse, logging, psycopg2
+import argparse, logging, psycopg2, math
 import numpy as np
 import utils
 from timeit import default_timer as timer
 from classifier import EmbeddingClassifier
+from sklearn.metrics import cohen_kappa_score
 
 # create logger
 logger = logging.getLogger('Classifier update logger')
@@ -35,10 +36,15 @@ class LabelUpdater:
             password=utils.DB_PASSWORD)
         self.cur = None
         self.cursor_large = None
+        self.labels_old = None
+        self.labels_new = None
         self.labelname = labelname
-        self.current_labels = {}
+        self.batch_size = 10000
+        self.batch_i = 0
+        self.stability = 0
         try:
-            self.classifier = EmbeddingClassifier.load_from_disk(labelname)
+            self.classifier = EmbeddingClassifier()
+            self.classifier.load_from_disk(labelname)
         except:
             logger.error(
                 "Could not load classifier model for label %s. Run train.py first to create a model" % labelname)
@@ -46,25 +52,27 @@ class LabelUpdater:
 
     def __del__(self):
         try:
-            self.closeCursor()
+            self.close_cursor()
         finally:
             self.conn.close()
 
     def init_cursor(self):
 
-        start = timer()
+        # get number of facts
+        facts_count = """SELECT count(*) FROM comments"""
+        self.cur.execute(facts_count)
+        self.n_facts = self.cur.fetchone()[0]
 
-        # get label id
-        self.cur = self.conn.cursor()
-        self.cur.execute("""SELECT id FROM labels WHERE name=%s""", (self.labelname,))
-        self.label_id = self.cur.fetchone()[0]
-        logger.info("Predict new labels for: " + self.labelname + " (" + str(self.label_id) + ")")
-
-        # get machine labels
-        self.cursor_large = self.conn.cursor(name='fetch_large_result', withhold=True)
+        # init cursor for machine labels from facts table
+        facts_query = """SELECT c.id, c.embedding, f.label, f.confidence FROM comments c JOIN facts f ON c.id = f.comment_id WHERE f.label_id = %s"""
+        self.cursor_large = self.conn.cursor(name='fetch_facts', withhold=True)
         self.cursor_large.execute(
-            """SELECT c.id, c.embedding, f.label, f.confidence FROM comments c JOIN facts f ON c.id=f.comment_id WHERE f.label_id=%s""",
-            (self.labelname,))
+            facts_query,
+            (self.label_id,))
+
+        # init label arrays for stability measure
+        self.labels_old = []
+        self.labels_new = []
 
     def close_cursor(self):
         if self.cur:
@@ -72,98 +80,93 @@ class LabelUpdater:
         if self.cursor_large:
             self.cursor_large.close()
 
-    def process_batch(self, comment_batch):
+    def init_facts(self):
 
-        start = timer()
+        # get label id
+        self.cur = self.conn.cursor()
+        self.cur.execute("""SELECT id FROM labels WHERE name=%s""", (self.labelname,))
+        self.label_id = self.cur.fetchone()[0]
+        logger.info("Predict new labels for: " + self.labelname + " (" + str(self.label_id) + ")")
+
+        # init facts entry for all
+        logger.info("Ensuring a fact entry for each comment for label %s" % (self.labelname,))
+        facts_query = """INSERT INTO facts (SELECT c.id, %s, false, 0, 0 FROM comments c LEFT JOIN (SELECT * FROM facts WHERE label_id = %s) AS f ON c.id = f.comment_id WHERE f.comment_id IS NULL)"""
+        self.cur.execute(
+            facts_query,
+            (self.label_id, self.label_id))
+
+        # Commit updates
+        logger.info("Commit to DB ...")
+        self.conn.commit()
+
+
+    def process_batch(self, update_confidence = True):
+
+        # get records
+        comment_batch = self.cursor_large.fetchmany(size=self.batch_size)
+
+        if not comment_batch:
+            # end of cursor
+            return False
+
+        self.batch_i += 1
+
+        # remove comments without embedding
+        comment_batch = [comment for comment in comment_batch if comment[1] is not None]
+
+        if not comment_batch:
+            # no embeddings in current batch. Go to next one
+            return True
 
         # predict new labels
-        ids, embeddings, labels, confidences = zip(*comment_batch)
-        comment_labels = self.classifier.predict(embeddings)
-
+        ids, embeddings, labels_old, confidences = zip(*comment_batch)
+        labels_new, confidences = self.classifier.predict(embeddings)
 
         # append stability measure
+        for i, label in enumerate(labels_old):
+            if label is not None:
+                self.labels_old.append(label)
+                self.labels_new.append(labels_new[i])
 
         # create bulk update
+        if update_confidence:
+            batch_update_facts = []
+            for i, comment_id in enumerate(ids):
+                bool_label = True if labels_new[i] == 1 else False
+                batch_update_facts.append((bool_label, confidences[i], comment_id, self.label_id))
 
         # run bulk update
+        if batch_update_facts:
+            self.cur.executemany("""UPDATE facts SET label=%s, confidence=%s WHERE comment_id=%s AND label_id=%s""", batch_update_facts)
 
-        comments_object, embeddings = zip(*comment_batch)
-        start = timer()
+        return True
 
-        end = timer()
-        logger.info("Batch took " + str((end - start)) + " seconds of prediction time")
 
-        start = timer()
-        batch_updates = []
-        for i, comment in enumerate(comments_object):
-
-            comment_id = comment["_id"]
-            confidence = comment_labels[i].tolist()
-
-            # initialize labels field for comment
-            if "labels" in comment:
-                labels_object = {"labels": comment["labels"]}
-            else:
-                labels_object = {"labels": []}
-
-            # manipulate machine classification entry
-            target_label_object = None
-            for current_label in labels_object["labels"]:
-                if current_label["labelId"] == self.label_id:
-                    target_label_object = current_label
-
-            # initialize if not present
-            if not target_label_object:
-                target_label_object = {
-                    "labelId": self.label_id
-                }
-                labels_object["labels"].append(target_label_object)
-
-            # set results
-            target_label_object["classified"] = int(np.argmax(confidence))
-            target_label_object["confidence"] = confidence
-
-            # append bulk update
-            batch_updates.append(
-                UpdateOne({"_id": comment_id}, {"$set": labels_object}, upsert=False))
-
-        # update mongo db
-        bulk_results = self.comments.bulk_write(batch_updates)
-
-        end = timer()
-
-        logger.info("Batch took " + str((end - start)) + " seconds of writing time")
-
-        return bulk_results
-
-    # TODO : include the option for hyperparmeterized model for each
     def updateLabels(self):
 
-        # get training data from MongDB
-        super().run_trainer()
-        # db update
-        comment_batch = []
-        i = 0
-        for comment in self.comments.find({},
-                                          {'_id': 1, 'embedding': 1, 'labels': 1},
-                                          cursor_type=pymongo.CursorType.EXHAUST,
-                                          snapshot=True):
+        start = timer()
 
-            if not "embedding" in comment:
-                continue
-            comment_batch.append((comment, comment["embedding"]))
+        self.init_facts()
 
-            i += 1
+        self.init_cursor()
 
-            if i % self.batch_size == 0:
-                self.process_batch(comment_batch)
-                comment_batch = []
-                print("comments_processed " + str(i))
-                break
+        n_total = math.ceil(self.n_facts / self.batch_size)
+        while self.process_batch():
+            logger.info("Completed batch %d of %d." % (self.batch_i, n_total))
 
-        # last batch
-        if comment_batch:
-            self.process_batch(comment_batch)
+        self.close_cursor()
+
+        # stability
+        kappa_score = cohen_kappa_score(self.labels_old, self.labels_new)
+        self.stability = kappa_score
+        logger.info("Stability: %.3f" % (kappa_score,))
+
+        # Commit updates
+        logger.info("Commit to DB ...")
+        self.conn.commit()
+
+        end = timer()
+        logger.info("%d label updates finished after %.3f seconds." % (self.n_facts, end - start))
 
 
 if __name__ == "__main__":

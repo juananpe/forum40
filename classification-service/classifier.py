@@ -94,4 +94,5 @@ class EmbeddingClassifier:
         # predict target confidence
         test_X = np.array(embedlist)
         confidence = self.classifier.predict_proba(test_X)
-        return int(np.argmax(confidence)), confidence
+        labels = [True if label == 1 else False for label in np.argmax(confidence, axis=1).tolist()]
+        return labels, confidence[:,1].tolist()

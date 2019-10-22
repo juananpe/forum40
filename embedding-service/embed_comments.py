@@ -99,7 +99,7 @@ class CommentEmbedder:
             self.batch_i = 0
             self.n_batches = math.ceil(self.n_to_embed / self.batch_size)
 
-            self.cursor_large = self.conn.cursor(name='fetch_large_result', withhold=True)
+            self.cursor_large = self.conn.cursor(name='fetch_embeddings', withhold=True)
             self.cursor_large.execute(embed_query)
 
         except Exception as err:
