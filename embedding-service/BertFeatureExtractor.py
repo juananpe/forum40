@@ -95,6 +95,7 @@ class BertFeatureExtractor(object):
                                                        cache_dir="./model")
 
         self.model = BertModel.from_pretrained(self.bert_model, cache_dir="./model", output_hidden_states=True)
+
         self.model.to(self.device)
         self.model.eval()
 

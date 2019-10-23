@@ -234,4 +234,4 @@ class TasksAbort(Resource):
 
 # run app manually
 if __name__ == "__main__":
-    app.run(threaded = False)
+    app.run(threaded = True)

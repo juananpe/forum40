@@ -7,7 +7,7 @@ from index_comments import CommentIndexer
 from embed_comments import CommentEmbedder
 
 import pdb
-import os,  logging
+import os, logging
 
 logger = logging.getLogger()
 
