@@ -16,6 +16,8 @@ from psycopg2.extras import RealDictCursor
 from datetime import timedelta, date, datetime
 from dateutil.relativedelta import relativedelta
 
+from jwt_auth.token import token_optional
+
 from bson import json_util, ObjectId
 import json
 import sys
@@ -91,11 +93,16 @@ import sys
 @ns.route('/')
 @api.expect(comments_parser_sl)
 class CommentsGet(Resource):
-    def get(self):
+    @token_optional
+    @api.doc(security='apikey')
+    def get(self, data):
         args = comments_parser_sl.parse_args()
         skip = args["skip"]
         limit = args["limit"]
-        user_id = args["user_id"]
+
+        user_id = None
+        if self:
+            user_id = self["user"]
 
         annotations_where_sec = ''
         if 'label' in args and args['label']:
@@ -126,25 +133,20 @@ class CommentsGet(Resource):
         GROUP BY _.id, _.title, _.text, _.timestamp
         """
 
-        user_sec = ''
-        if user_id:
-            where = 'WHERE'
-            user_sec = f"user_id = '{user_id}'"
-
         and_ = ''
         if annotations_where_sec and user_id:
             and_ = 'AND'
 
         user_annotations = []
 
-        if 'user_id' in args and args['user_id']:
+        if user_id:
             query_user = f"""
                 SELECT _.id, array_agg(_.agg) as user_annotation FROM
                 (
                     SELECT c.id, ARRAY[a.label_id, a.label::int] as agg
                         FROM (SELECT * FROM comments {comments_where_sec} LIMIT {limit} OFFSET {skip}) AS c 
                         LEFT OUTER JOIN 
-                        (SELECT * FROM annotations {where} {annotations_where_sec} {and_} {user_sec}) AS a
+                        (SELECT * FROM annotations WHERE {annotations_where_sec} {and_} user_id = '{user_id}') AS a
                         ON c.id = a.comment_id
                         GROUP BY c.id, a.label_id, a.label
                 ) _ 

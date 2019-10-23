@@ -5,7 +5,6 @@ groupByModel.add_argument('label', type=int)
 groupByModel.add_argument('keyword', action='append')
 
 comments_parser_sl = reqparse.RequestParser()
-comments_parser_sl.add_argument('user_id', type=int)
 comments_parser_sl.add_argument('label', action='append')
 comments_parser_sl.add_argument('keyword', action='append')
 comments_parser_sl.add_argument('skip', type=int, default=0, required=True)
