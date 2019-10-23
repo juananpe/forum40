@@ -48,8 +48,8 @@
             <UserCommentAnnotation
               :commentId="props.item.id"
               :labelId="labels[label]"
-              :personalLabel="undefined"
-              :majority="[Math.floor(Math.random()*10),Math.floor(Math.random()*10)]"
+              :personalLabel="getPeronalAnnotation(props.item, labels[label])"
+              :majority="getGroupAnnotation(props.item, labels[label])"
               :confidence="Math.random()"
             />
           </td>
@@ -124,7 +124,8 @@ export default {
       Getters.keywordfilter,
       Getters.selectedLabels,
       Getters.labelParameters,
-      Getters.jwtUser
+      Getters.jwtUser,
+      Getters.jwt
     ]),
     commentsTableHeader() {
       const labelTableHeaders = this[Getters.selectedLabels].map(e => ({
@@ -191,6 +192,21 @@ export default {
       await Promise.all([p1, p2]);
       this.loading = false;
     },
+    getPeronalAnnotation(comment, label_id) {
+      const user_annotation = comment.user_annotation;
+      if (user_annotation === undefined) return undefined; // no user labels
+      const annotation = user_annotation.find(e => e[0] === label_id);
+      if (annotation === undefined) return undefined; // no annotation for this label found
+      return !!annotation[1];
+    },
+    getGroupAnnotation(comment, label_id) {
+      const group_annotaitons = comment.group_annotation;
+      if (group_annotaitons[0][0] === null) return undefined;
+
+      const annotation = group_annotaitons.find(e => e[0] === label_id);
+      if (annotation === undefined) return undefined;
+      return annotation.slice(1);
+    },
     commentText(props) {
       return (props.item.title || "") + " " + props.item.text;
     },
@@ -210,7 +226,8 @@ export default {
     },
     async fetchComments() {
       const { data } = await Service.get(
-        `${Endpoint.COMMENTS}?${this.pageQueryString}`
+        `${Endpoint.COMMENTS}?${this.pageQueryString}`,
+        this[Getters.jwt]
       );
       this.comments = data;
     },
