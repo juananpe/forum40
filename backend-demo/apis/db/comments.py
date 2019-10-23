@@ -64,7 +64,7 @@ def createQuery(args, skip=None, limit=None):
         where_sec = 'WHERE'
 
     and_sec = ''
-    if comments_where_sec:
+    if annotations_where_sec and comments_where_sec:
         and_sec = 'AND'
 
     limit_sec = ''
