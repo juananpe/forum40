@@ -3,7 +3,8 @@ import utils
 
 from collections import Counter
 from timeit import default_timer as timer
-from classifier import EmbeddingClassifier
+from datetime import datetime
+from classifier import EmbeddingClassifier, get_history_path
 
 # create logger
 logger = logging.getLogger('Classifier logger')
@@ -97,7 +98,7 @@ class ClassifierTrainer:
 
         return annotation_dataset
 
-    def train(self, annotation_dataset=None, optimize=False):
+    def train(self, annotation_dataset=None, optimize=False, cv = True):
         if annotation_dataset is None:
             annotation_dataset = self.get_trainingdata()
 
@@ -136,22 +137,39 @@ class ClassifierTrainer:
         end = timer()
         self.logger.info("Training finished after " + str(end - start) + " seconds.")
 
+        # evaluate model
+        if cv:
+            acc, f1, fit_time, _ = self.classifier.cross_validation(annotation_dataset, k=10)
+            with open(get_history_path(self.labelname), 'a', encoding="UTF-8") as f:
+                # append history file: timestamp, task, label, training set size, cv acc, cv f1, stability score, duration
+                f.write("%s;training;%s;%d;%.3f;%.3f;0;%.1f\n" % (
+                    datetime.today().isoformat(),
+                    self.labelname,
+                    len(annotation_dataset),
+                    acc,
+                    f1,
+                    fit_time
+                ))
+
+
 
 
 if __name__ == "__main__":
     # argument parsing
     parser = argparse.ArgumentParser(description='Classifier trainer.')
     parser.add_argument('--labelname', type=str, nargs='?', default='offtopic',
-                        help='name of the category to update')
+                        help='Name of the category for model training')
     parser.add_argument('--optimize', dest='optimize', default=False, action='store_true',
                         help='Run C parameter optimization (default: False)')
+    parser.add_argument('--cv', dest='cv', default=True, action='store_false',
+                        help='Perform cross validation after training (default: True)')
     parser.add_argument('host', type=str, default='localhost', nargs='?',
-                        help='DB host')
+                        help='DB host (default: localhost)')
     parser.add_argument('port', type=int, default=5432, nargs='?',
-                        help='DB port')
+                        help='DB port (default: 5432)')
     args = parser.parse_args()
     labelname = args.labelname
 
     classifierTrainer = ClassifierTrainer(labelname, host=args.host, port=args.port)
 
-    print(classifierTrainer.train(optimize=args.optimize))
+    print(classifierTrainer.train(optimize=args.optimize, cv=args.cv))

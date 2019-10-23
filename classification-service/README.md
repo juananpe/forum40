@@ -17,4 +17,5 @@ Todo
 ----
 
 * app.py: Celery (or other task scheduler)
-* Save training history (timestamp, training set size, cv result, stability score)
+* Save training history (timestamp, task, label, training set size, cv result, stability score)
+* Process to update only specific ids (e.g. the current comments displayed in the UI)

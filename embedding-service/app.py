@@ -4,7 +4,6 @@ from flask_restplus import Api, Resource, fields
 from core.proxy_wrapper import ReverseProxied
 from retrieve_comments import RetrieveComment
 from tasks import celery_app, index_comments, embed_comments, get_embeddings
-from celery.contrib.abortable import AbortableAsyncResult
 
 import os, logging
 
@@ -49,7 +48,11 @@ comments_model = api.model('Comments', {
 })
 sim_comments_model = api.model('SimComments', {
     'comments': fields.List(fields.String),
-    'n' : fields.Integer
+    'n' : fields.Integer(
+        description = "Number of similar comments to retrieve",
+        required = False,
+        example = 10
+    )
 })
 
 # API for comment ids
@@ -58,7 +61,11 @@ id_model = api.model('Id', {
 })
 sim_id_model = api.model('SimId', {
     'ids': fields.List(fields.Integer),
-    'n' : fields.Integer
+    'n' : fields.Integer(
+        description = "Number of similar comments to retrieve",
+        required = False,
+        example = 10
+    )
 })
 
 
