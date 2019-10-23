@@ -9,6 +9,8 @@ models_path = "models"
 
 def get_model_path(label_name):
     return models_path + "/" + "model_" + label_name + ".pkl"
+def get_history_path(label_name):
+    return models_path + "/" + "history_" + label_name + ".csv"
 
 class EmbeddingClassifier:
     """contains the modules for training and predicting functions"""
@@ -27,7 +29,7 @@ class EmbeddingClassifier:
             solver='saga',
             penalty='elasticnet',
             tol=0.0001,
-            max_iter=500,
+            max_iter=100,
             C=1.0,
             l1_ratio=0.5
         )
@@ -60,7 +62,7 @@ class EmbeddingClassifier:
             pickle.dump(self.classifier, file)
         return self.classifier
 
-    def cross_validation(self, dataset, k=10):
+    def cross_validation(self, dataset, k=5):
         train_X = []
         train_Y = []
         for entry in dataset:

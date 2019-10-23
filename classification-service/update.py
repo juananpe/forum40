@@ -2,7 +2,8 @@ import argparse, logging, psycopg2, math
 import numpy as np
 import utils
 from timeit import default_timer as timer
-from classifier import EmbeddingClassifier
+from datetime import datetime
+from classifier import EmbeddingClassifier, get_history_path
 from sklearn.metrics import cohen_kappa_score
 
 # create logger
@@ -25,7 +26,7 @@ logger.addHandler(ch)
 class LabelUpdater:
     """Functions for collection of training data and prediction on the entire DB"""
 
-    def __init__(self, labelname, host="postgres", port=5432):
+    def __init__(self, labelname, host="postgres", port=5432, skip_confidence = False):
 
         self.logger = logger
         # db connection
@@ -40,6 +41,7 @@ class LabelUpdater:
         self.labels_old = None
         self.labels_new = None
         self.labelname = labelname
+        self.skip_confidence = skip_confidence
         self.batch_size = 10000
         self.batch_i = 0
         self.stability = 0
@@ -66,6 +68,8 @@ class LabelUpdater:
         facts_count = """SELECT count(*) FROM comments"""
         self.cur.execute(facts_count)
         self.n_facts = self.cur.fetchone()[0]
+
+        self.logger.info("Preparing cursor for updates ...")
 
         # init cursor for machine labels from facts table
         facts_query = """SELECT c.id, c.embedding, f.label, f.confidence FROM comments c JOIN facts f ON c.id = f.comment_id WHERE f.label_id = %s"""
@@ -104,7 +108,7 @@ class LabelUpdater:
         self.conn.commit()
 
 
-    def process_batch(self, update_confidence = True):
+    def process_batch(self):
 
         # get records
         comment_batch = self.cursor_large.fetchmany(size=self.batch_size)
@@ -133,11 +137,14 @@ class LabelUpdater:
                 self.labels_new.append(labels_new[i])
 
         # create bulk update
-        if update_confidence:
-            batch_update_facts = []
-            for i, comment_id in enumerate(ids):
-                bool_label = True if labels_new[i] == 1 else False
-                batch_update_facts.append((bool_label, confidences[i], comment_id, self.label_id))
+        batch_update_facts = []
+        for i, comment_id in enumerate(ids):
+            bool_label = True if labels_new[i] == 1 else False
+            if self.skip_confidence and bool_label == labels_old[i]:
+                # skip update for unchanged label
+                continue
+            batch_update_facts.append((bool_label, confidences[i], comment_id, self.label_id))
+
 
         # run bulk update
         if batch_update_facts:
@@ -170,20 +177,34 @@ class LabelUpdater:
         self.conn.commit()
 
         end = timer()
-        self.logger.info("%d label updates finished after %.3f seconds." % (self.n_facts, end - start))
+        duration = end - start
+        self.logger.info("%d label updates finished after %.3f seconds." % (self.n_facts, duration))
+
+        # update history
+        with open(get_history_path(self.labelname), 'a', encoding="UTF-8") as f:
+            # append history file: timestamp, task, label, training set size, cv acc, cv f1, stability score, duration
+            f.write("%s;update;%s;%d;0;0;%.3f;%.1f\n" % (
+                datetime.today().isoformat(),
+                self.labelname,
+                self.n_facts,
+                self.stability,
+                duration
+            ))
 
 
 if __name__ == "__main__":
     # argument parsing
     parser = argparse.ArgumentParser(description='Update category labels.')
     parser.add_argument('--labelname', type=str, nargs='?', default='offtopic',
-                        help='name of the category to update')
+                        help='Name of the category to update')
+    parser.add_argument('--skip-confidence', dest='skip_confidence', default=False, action='store_true',
+                        help='Update changing labels only (default: False)')
     parser.add_argument('host', type=str, default='localhost', nargs='?',
-                        help='DB host')
+                        help='DB host (default: localhost)')
     parser.add_argument('port', type=int, default=5432, nargs='?',
-                        help='DB port')
+                        help='DB port (default: 5432)')
     args = parser.parse_args()
     labelname = args.labelname
 
-    labelUpdater = LabelUpdater(labelname, host=args.host, port=args.port)
+    labelUpdater = LabelUpdater(labelname, host=args.host, port=args.port, skip_confidence=args.skip_confidence)
     labelUpdater.updateLabels()
