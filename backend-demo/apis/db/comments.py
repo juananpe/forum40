@@ -86,6 +86,7 @@ def createQuery(args, skip=None, limit=None):
     """
     return query
 
+import sys
 
 @ns.route('/')
 @api.expect(comments_parser_sl)
@@ -94,22 +95,108 @@ class CommentsGet(Resource):
         args = comments_parser_sl.parse_args()
         skip = args["skip"]
         limit = args["limit"]
+        user_id = args["user_id"]
 
-        query = createQuery(args, skip, limit)
+        annotations_where_sec = ''
+        if 'label' in args and args['label']:
+            labelIds = ' label_id IN ({0})'.format(", ".join(i for i in args['label']))
+            annotations_where_sec += labelIds
+
+        where = ''
+        if annotations_where_sec:
+            where = 'WHERE'
+
+        comments_where_sec = ''
+        if 'keyword' in args and args['keyword']:
+            searchwords = ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
+            comments_where_sec += 'WHERE ' +  searchwords
+
 
         postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+        query = f"""
+        SELECT _.id, _.title, _.text, _.timestamp, array_agg(_.agg) as group_annotation FROM
+        (
+            SELECT c.id, c.title, c.text, c.timestamp, ARRAY[a.label_id, count(a.label or null), count(not a.label or null)] as agg
+                FROM (SELECT * FROM comments {comments_where_sec} LIMIT {limit} OFFSET {skip}) AS c 
+                LEFT OUTER JOIN 
+                (SELECT * FROM annotations {where} {annotations_where_sec}) AS a
+                ON c.id = a.comment_id
+                GROUP BY c.id, a.label_id, c.title, c.text, c.timestamp
+        ) _ 
+        GROUP BY _.id, _.title, _.text, _.timestamp
+        """
+
+        user_sec = ''
+        if user_id:
+            where = 'WHERE'
+            user_sec = f"user_id = '{user_id}'"
+
+        and_ = ''
+        if annotations_where_sec and user_id:
+            and_ = 'AND'
+
+        user_annotations = []
+
+        if 'user_id' in args and args['user_id']:
+            query_user = f"""
+                SELECT _.id, array_agg(_.agg) as user_annotation FROM
+                (
+                    SELECT c.id, ARRAY[a.label_id, a.label::int] as agg
+                        FROM (SELECT * FROM comments {comments_where_sec} LIMIT {limit} OFFSET {skip}) AS c 
+                        LEFT OUTER JOIN 
+                        (SELECT * FROM annotations {where} {annotations_where_sec} {and_} {user_sec}) AS a
+                        ON c.id = a.comment_id
+                        GROUP BY c.id, a.label_id, a.label
+                ) _ 
+                GROUP BY _.id
+            """
+
+            try:
+                postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+                postgres.execute(query_user)
+            except DatabaseError:
+                postgres_con.rollback()
+                return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+
+            user_annotations = postgres.fetchall()
+
 
         try:        
+            postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
             postgres.execute(query)
         except DatabaseError:
             postgres_con.rollback()
             return {'msg' : 'DatabaseError: transaction is aborted'}, 400
 
         comments = postgres.fetchall()
-        for c in comments:
-            c['timestamp'] = c['timestamp'].isoformat()
+
+        for i in range(0, len(comments)):
+            print(query_user, file=sys.stderr)
+            print(user_annotations, file=sys.stderr)
+            comments[i]['timestamp'] = comments[i]['timestamp'].isoformat()
+            if user_annotations:
+                comments[i]['user_annotations'] = user_annotations[i]['user_annotation']
 
         return comments
+#        args = comments_parser_sl.parse_args()
+#        skip = args["skip"]
+#        limit = args["limit"]
+#
+#        query = createQuery(args, skip, limit)
+#
+#        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+#
+#        try:        
+#            postgres.execute(query)
+#        except DatabaseError:
+#            postgres_con.rollback()
+#            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+#
+#        comments = postgres.fetchall()
+#        for c in comments:
+#            c['timestamp'] = c['timestamp'].isoformat()
+#
+#        return comments
 
 
 @ns.route('/count')
