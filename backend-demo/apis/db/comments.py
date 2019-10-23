@@ -171,8 +171,6 @@ class CommentsGet(Resource):
         comments = postgres.fetchall()
 
         for i in range(0, len(comments)):
-            print(query_user, file=sys.stderr)
-            print(user_annotations, file=sys.stderr)
             comments[i]['timestamp'] = comments[i]['timestamp'].isoformat()
             if user_annotations:
                 comments[i]['user_annotation'] = user_annotations[i]['user_annotation']
