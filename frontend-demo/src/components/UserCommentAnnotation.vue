@@ -27,7 +27,7 @@
       </v-flex>
     </v-layout>
     <v-layout>
-      <v-flex xs12>
+      <v-flex xs12 class="text-center">
         <div v-if="majority != undefined">
           <v-tooltip right>
             <template v-slot:activator="{ on }">
@@ -45,12 +45,18 @@
           </v-tooltip>
         </div>
         <div v-else>
-          <v-icon>not_interested</v-icon>
+          <v-icon>people</v-icon>
+          <v-tooltip right>
+            <template #activator="{ on }">
+              <v-icon v-on="on" class="mr-1 ml-1">not_interested</v-icon>
+            </template>
+            <span>Keine weiteren Labels vorhanden</span>
+          </v-tooltip>
         </div>
       </v-flex>
     </v-layout>
     <v-layout>
-      <v-flex xs12>
+      <v-flex xs12 class="text-center">
         <div v-if="confidence != undefined">
           <v-tooltip right>
             <template v-slot:activator="{ on }">
@@ -64,11 +70,17 @@
                 persistent-hint
               ></v-checkbox>
             </template>
-            <span>Automatische Klassifizierung ({{1-confidence | toPercentage}} Konfidenz)</span>
+            <span>Automatische Klassifizierung ({{confidence | toPercentage}} Konfidenz)</span>
           </v-tooltip>
         </div>
         <div v-else>
-          <v-icon>not_interested</v-icon>
+          <v-icon>{{svgPath}}</v-icon>
+          <v-tooltip right>
+            <template #activator="{ on }">
+              <v-icon v-on="on" class="ml-1">not_interested</v-icon>
+            </template>
+            <span>Keine Klassifizierung vorhanden</span>
+          </v-tooltip>
         </div>
       </v-flex>
     </v-layout>
