@@ -175,7 +175,7 @@ class CommentsGet(Resource):
             print(user_annotations, file=sys.stderr)
             comments[i]['timestamp'] = comments[i]['timestamp'].isoformat()
             if user_annotations:
-                comments[i]['user_annotations'] = user_annotations[i]['user_annotation']
+                comments[i]['user_annotation'] = user_annotations[i]['user_annotation']
 
         return comments
 #        args = comments_parser_sl.parse_args()
