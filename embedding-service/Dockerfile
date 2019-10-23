@@ -16,8 +16,8 @@ EXPOSE 5060
 ENV FLASK_APP app.py
 ENV FLASK_DEBUG 0
 
-RUN groupadd -g 999 appuser && useradd -r -u 999 -g appuser appuser
-RUN chmod 777 .
-USER appuser
+# RUN groupadd -g 999 appuser && useradd -r -u 999 -g appuser appuser
+# RUN chmod 777 .
+# USER appuser
 
 CMD ["/usr/bin/supervisord"]
