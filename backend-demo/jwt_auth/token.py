@@ -61,3 +61,16 @@ def token_required(func):
         return func(data, *args, **kwargs)
 
     return decorated
+
+
+def token_optional(func):
+    @wraps(func)
+    def decorated(*args, **kwargs):
+        token = request.headers['x-access-token'] if 'x-access-token' in request.headers else None
+        data = None
+
+        success, data = checkIfTokenIsValidAndGetData(token)
+
+        return func(data, *args, **kwargs)
+
+    return decorated
