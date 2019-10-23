@@ -19,4 +19,6 @@ ENV FLASK_DEBUG 0
 RUN groupadd -g 999 appuser && useradd -r -u 999 -g appuser appuser
 USER appuser
 
+RUN touch supervisord.log
+
 CMD ["/usr/bin/supervisord"]
