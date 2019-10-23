@@ -113,16 +113,16 @@ class GetLabelGroup(Resource):
 
         postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
         query = f"""
-        SELECT _.id, array_agg(_.agg) as group_annotation FROM
+        SELECT _.id, _.title, _.text, _.timestamp, array_agg(_.agg) as group_annotation FROM
         (
-            SELECT c.id, ARRAY[a.label_id, count(a.label or null), count(not a.label or null)] as agg
+            SELECT c.id, c.title, c.text, c.timestamp, ARRAY[a.label_id, count(a.label or null), count(not a.label or null)] as agg
                 FROM (SELECT * FROM comments {comments_where_sec} LIMIT {limit} OFFSET {skip}) AS c 
                 LEFT OUTER JOIN 
                 (SELECT * FROM annotations {annotations_where_sec}) AS a
                 ON c.id = a.comment_id
                 GROUP BY c.id, a.label_id, c.title, c.text, c.timestamp
         ) _ 
-        GROUP BY _.id
+        GROUP BY _.id, _.title, _.text, _.timestamp
         """
 
         try:        

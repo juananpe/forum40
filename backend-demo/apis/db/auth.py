@@ -11,7 +11,7 @@ from bson import ObjectId
 
 from psycopg2.extras import RealDictCursor
 
-from jwt_auth.token import token_required
+from jwt_auth.token import token_required, token_optional
 
 import jwt
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -60,3 +60,18 @@ class AuthRefresh(Resource):
             globalSecret) # TODO hide pwd
 
         return jsonify({'token' : token.decode('UTF-8'), 'user' : user})
+
+import sys
+
+@ns.route('/test/optional/')
+class AuthRefreshs(Resource):
+    @token_optional
+    @api.doc(security='apikey')
+    def get(self, data):
+        user = None
+        if self:
+            user = self["user"]
+
+        print(data, file=sys.stderr)
+
+        return {'User': user}
