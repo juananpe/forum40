@@ -5,7 +5,7 @@ from core.proxy_wrapper import ReverseProxied
 
 import fastText
 import keras
-from utils import concat, classify, EmbeddingGenerator, twitter_tokenizer
+from forum import concat, classify
 
 dictConfig({
     'version': 1,

@@ -34,12 +34,6 @@ services:
             - ./metacomment-service:/app
         links:      
             - postgres
-#    mongo:
-#        image: mongo:4.2.0
-#        volumes:
-#            - mongodb:/data/db
-#        ports:
-#            - 27017:27017
     postgres:
         image: "postgres:11.5"
         volumes:
@@ -50,18 +44,6 @@ services:
             POSTGRES_PASSWORD: postgres
         ports:
             - 5432:5432
-#    offlang:
-#        build:
-#            context: ./offlang-service
-#            dockerfile: Dockerfile
-#        volumes:
-#            - ./offlang-service:/app
-#        links:
-#            - mongo
-    rabbitmq:
-        image: rabbitmq
-        ports:
-        - 5672:5672
     classification:
         build:
             context: ./classification-service
@@ -71,7 +53,6 @@ services:
             - ./classification-service/models:/app/models
         depends_on:
             - postgres
-            - rabbitmq
     embedding:
         build:
             context: ./embedding-service
@@ -81,14 +62,5 @@ services:
             - ./embedding-service/model:/app/model
         depends_on:
             - postgres
-            - rabbitmq
-#    worker:
-#        build:
-#            context: ./embedding-service
-#            dockerfile: Dockerfile
-#        command: celery -A tasks worker --loglevel=info
-#        depends_on:
-#            - rabbitmq
-#            - embedding
 volumes:
     postgres:

@@ -1,5 +1,5 @@
 import pymongo, keras, fastText
-from utils import concat, classify, EmbeddingGenerator, twitter_tokenizer
+from forum import concat, classify
 import numpy as np
 
 def process_batch(comment_batch):

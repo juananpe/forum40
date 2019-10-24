@@ -1,66 +1,31 @@
-import argparse, logging
-from BertFeatureExtractor import BertFeatureExtractor
-import utils
-import psycopg2
+import argparse
 import traceback
-import sys
 import math
 
-# create logger
-logger = logging.getLogger('Embedding logger')
-logger.setLevel(logging.INFO)
+from BertFeatureExtractor import BertFeatureExtractor
 
-# create console handler and set level to info
-ch = logging.StreamHandler(sys.stdout)
-ch.setLevel(logging.INFO)
+from utils.tasks import ForumProcessor, concat
 
-# create formatter
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-# add formatter to ch
-ch.setFormatter(formatter)
-
-# add ch to logger
-logger.addHandler(ch)
-
-update_statement = """UPDATE comments SET embedding=%s WHERE id=%s"""
-
-class CommentEmbedder:
+class CommentEmbedder(ForumProcessor):
 
     def __init__(self, embed_all=False, batch_size=8, host="postgres", port=5432):
-        # Connect to DB
-        self.conn = psycopg2.connect(
-            host=host,
-            port=port,
-            dbname=utils.DB_NAME,
-            user=utils.DB_USER,
-            password=utils.DB_PASSWORD)
-        self.cur = None
+        super().__init__("embedding", host=host, port=port)
         self.cursor_large = None
         self.embed_all = embed_all
         self.batch_size = batch_size
         self.batch_i  = 0
         self.n_batches = 0
         self.n_commit = 100
-        self.logger = logger
 
-    def __del__(self):
-        try:
-            self.closeCursor()
-        finally:
-            self.conn.close()
-
-    def setCommitNumber(self, n_commit):
+    def set_commit_number(self, n_commit):
         self.n_commit = n_commit
 
-    def setLogger(self, logger):
-        self.logger = logger
-
-    def setExtractorModel(self, model):
+    def set_extractor_model(self, model):
         self.be = model
 
-    def processBatch(self, comment_batch):
-        comment_texts = [utils.concat(c[1], c[2]) for c in comment_batch if c[1] or c[2]]
+    def process_batch(self, comment_batch):
+        comment_texts = [concat(c[1], c[2]) for c in comment_batch if c[1] or c[2]]
         comment_ids = [c[0] for c in comment_batch if c[1] or c[2]]
         comment_embeddings = self.be.extract_features(comment_texts)
 
@@ -74,16 +39,14 @@ class CommentEmbedder:
                 (comment_embedding, comment_id)
             )
 
-        # self.logger.info("Start DB update")
-        self.cur.executemany(update_statement, batch_update_comments)
-        # self.logger.info("DB updated")
+        # write to db
+        self.cursor.executemany("""UPDATE comments SET embedding=%s WHERE id=%s""", batch_update_comments)
 
-    def initCursor(self):
+    def init_cursor(self):
         try:
-            self.cur = self.conn.cursor()
 
-            self.cur.execute("""SELECT COUNT(*) from comments""")
-            n_comments = self.cur.fetchone()[0]
+            self.cursor.execute("""SELECT COUNT(*) from comments""")
+            n_comments = self.cursor.fetchone()[0]
 
             self.logger.info("Comments in the database: " + str(n_comments))
 
@@ -92,12 +55,13 @@ class CommentEmbedder:
 
             if not self.embed_all:
                 embed_query += " WHERE embedding IS NULL"
-                self.cur.execute("""SELECT COUNT(*) from comments WHERE embedding IS NULL""")
-                self.n_to_embed = self.cur.fetchone()[0]
+                self.cursor.execute("""SELECT COUNT(*) from comments WHERE embedding IS NULL""")
+                self.n_to_embed = self.cursor.fetchone()[0]
 
             self.logger.info("Comments to embed: " + str(self.n_to_embed))
             self.batch_i = 0
             self.n_batches = math.ceil(self.n_to_embed / self.batch_size)
+            self.set_total(self.n_batches)
 
             self.cursor_large = self.conn.cursor(name='fetch_embeddings', withhold=True)
             self.cursor_large.execute(embed_query)
@@ -106,14 +70,14 @@ class CommentEmbedder:
             self.logger.error(err)
             traceback.print_tb(err.__traceback__)
 
-    def closeCursor(self):
-        if self.cur:
-            self.cur.close()
+    def close_cursor(self):
+        if self.cursor:
+            self.cursor.close()
         if self.cursor_large:
             self.cursor_large.close()
 
 
-    def embedBatch(self):
+    def embed_batch(self):
 
         # increase batch counter
         self.batch_i += 1
@@ -126,7 +90,7 @@ class CommentEmbedder:
             return False
 
         # get embeddings
-        self.processBatch(records)
+        self.process_batch(records)
 
         # commit every n batches
         if self.batch_i % self.n_commit == 0:
@@ -135,11 +99,14 @@ class CommentEmbedder:
 
         return True
 
-    def embedComments(self):
-        self.initCursor()
-        while self.embedBatch():
-            self.logger.info("Batch: " + str(self.batch_i) + " of " + str(self.n_batches))
-        self.closeCursor()
+    def process(self):
+        self.init_cursor()
+        while self.embed_batch():
+            message = "Batch: " + str(self.batch_i) + " of " + str(self.n_batches)
+            self.logger.info(message)
+            if self.batch_i % 10 == 0:
+                self.update_state(self.batch_i, message)
+        self.close_cursor()
 
 
 if __name__ == '__main__':
@@ -164,9 +131,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    logger.info(args)
-
-    print("Loading BERT model")
     be = BertFeatureExtractor(
         batch_size=args.batch_size,
         device=args.device,
@@ -176,9 +140,9 @@ if __name__ == '__main__':
     )
 
     ce = CommentEmbedder(embed_all=args.all, batch_size=args.batch_size, host=args.host, port=args.port)
-    ce.setExtractorModel(be)
+    ce.set_extractor_model(be)
 
     # start embedding
-    ce.embedComments()
+    ce.process()
 
 

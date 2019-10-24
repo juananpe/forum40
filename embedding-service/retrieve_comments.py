@@ -1,31 +1,12 @@
-import pprint, logging
-import nmslib, pickle
-import utils
+import pprint
+import nmslib
 import argparse
-import psycopg2
+from utils.tasks import ForumTask, concat
 
-logger = logging.getLogger('Comments Retrieval')
-logger.setLevel(logging.DEBUG)
-
-# create console handler and set level to debug
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-
-# create formatter
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-# add formatter to ch
-ch.setFormatter(formatter)
-
-# add ch to logger
-logger.addHandler(ch)
-
-
-class RetrieveComment:
+class RetrieveComment(ForumTask):
 
     def __init__(self, host="localhost", port=5432):
-        self.client = psycopg2.connect(host = host, port = port, dbname=utils.DB_NAME, user=utils.DB_USER, password=utils.DB_PASSWORD)
-        self.cursor = self.client.cursor()
+        super().__init__("retrieving", host=host, port=port)
         self.index = nmslib.init()
         self.comment_id_mapping = {}
         self.id_comment_mapping = {}
@@ -33,15 +14,11 @@ class RetrieveComment:
 
     def load_index(self):
         try:
-            logger.info("Loading index")
+            self.logger.info("Loading index")
             self.index.loadIndex("model/comment_vectors.index", load_data=False)
-            logger.info("Loaded index with %d entries" % len(self.index))
-            #logger.info("Loading comment vectors")
-            #self.comment_id_mapping = pickle.load(open("model/comment_vectors.mapping", "rb"))
-            ## reverse mapping
-            #self.id_comment_mapping = {v: k for k, v in self.comment_id_mapping.items()}
+            self.logger.info("Loaded index with %d entries" % len(self.index))
         except:
-            logger.error("No index of embeddings found in ./model directory.")
+            self.logger.error("No index of embeddings found in ./model directory.")
 
     def get_embedding(self, id):
         if type(id) != int:
@@ -72,7 +49,7 @@ class RetrieveComment:
             id = int(id)
         self.cursor.execute("""SELECT title, text FROM comments WHERE id = %s""", (id,))
         comment = self.cursor.fetchone()
-        return utils.concat(comment[0], comment[1])
+        return concat(comment[0], comment[1])
 
 
 if __name__ == "__main__":
@@ -95,11 +72,10 @@ if __name__ == "__main__":
     comment_id = positional_id
     embeddings = retriever.get_embedding(comment_id)
 
-
-    logger.info("Length of the embedding: " + str(len(embeddings)))
+    retriever.logger.info("Length of the embedding: " + str(len(embeddings)))
     nn_ids = retriever.get_nearest_for_id(comment_id, args.n)
 
-    print(retriever.get_comment_text(comment_id))
-    logger.info("Nearest neighbour ids for " + str(comment_id))
+    retriever.logger.info("Selected sentence: " + retriever.get_comment_text(comment_id))
+    retriever.logger.info("Nearest neighbour ids for " + str(comment_id))
     pprint.pprint(nn_ids)
     pprint.pprint([retriever.get_comment_text(id) for id in nn_ids])

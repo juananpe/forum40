@@ -1,5 +1,5 @@
 import argparse, logging, psycopg2
-import utils
+import forum
 
 from collections import Counter
 from timeit import default_timer as timer
@@ -31,9 +31,9 @@ class ClassifierTrainer:
         self.conn = psycopg2.connect(
             host=host,
             port=port,
-            dbname=utils.DB_NAME,
-            user=utils.DB_USER,
-            password=utils.DB_PASSWORD)
+            dbname=forum.DB_NAME,
+            user=forum.DB_USER,
+            password=forum.DB_PASSWORD)
         self.cur = None
         self.labelname = labelname
         self.label_id = None

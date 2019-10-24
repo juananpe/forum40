@@ -3,13 +3,17 @@ from logging.config import dictConfig
 from flask_restplus import Api, Resource, fields
 from core.proxy_wrapper import ReverseProxied
 from retrieve_comments import RetrieveComment
-from tasks import celery_app, index_comments, embed_comments, get_embeddings
+from tasks import get_embeddings
 
 import os, logging
 
+from utils.tasks import SingleProcessManager
+
 # pg config
 pg_host = os.getenv('PG_HOST', 'postgres')
-pg_port = os.getenv('PG_PORT', 5432)
+pg_port = os.getenv('PG_PORT', '5432')
+
+process_manager = SingleProcessManager(pg_host, pg_port)
 
 dictConfig({
     'version': 1,
@@ -31,12 +35,12 @@ app = Flask(__name__)
 app.wsgi_app = ReverseProxied(app.wsgi_app)
 app.logger.setLevel(logging.INFO)
 
-
 # db connection
 try:
     retriever = RetrieveComment(pg_host, pg_port)
 except:
     app.logger.error('DB connection failed.')
+    exit(1)
 
 # define API
 api = Api(app, version='0.1', title='Embedding API',
@@ -44,35 +48,57 @@ api = Api(app, version='0.1', title='Embedding API',
 
 # API for comments
 comments_model = api.model('Comments', {
-    'comments': fields.List(fields.String)
+    'comments': fields.List(
+        fields.String,
+        example=[
+            'Ich bin darüber hocherfreut. Weiter so!',
+            'Nie wieder! Das was absolut schrecklich.'
+        ],
+        required=True
+    ),
 })
 sim_comments_model = api.model('SimComments', {
-    'comments': fields.List(fields.String),
-    'n' : fields.Integer(
-        description = "Number of similar comments to retrieve",
-        required = False,
-        example = 10
+    'comments': fields.List(
+        fields.String,
+        example=[
+            'Ich bin darüber hocherfreut. Weiter so!',
+            'Nie wieder! Das was absolut schrecklich.'
+        ],
+        required=True
+    ),
+    'n': fields.Integer(
+        description="Number of similar comments to retrieve",
+        required=False,
+        example=10
     )
 })
 
 # API for comment ids
 id_model = api.model('Id', {
-    'ids': fields.List(fields.Integer)
-})
-sim_id_model = api.model('SimId', {
-    'ids': fields.List(fields.Integer),
-    'n' : fields.Integer(
-        description = "Number of similar comments to retrieve",
-        required = False,
-        example = 10
+    'ids': fields.List(
+        fields.Integer,
+        required=True,
+        example=[200]
     )
 })
-
+sim_id_model = api.model('SimId', {
+    'ids': fields.List(
+        fields.Integer,
+        required=True,
+        example=[200]
+    ),
+    'n': fields.Integer(
+        description="Number of similar comments to retrieve",
+        required=False,
+        example=10
+    )
+})
 
 # API for task ids
 tasks_model = api.model('TaskId', {
     'task_id': fields.String
 })
+
 
 @api.route('/comment')
 class CommentsEmbedding(Resource):
@@ -104,9 +130,9 @@ class SimilarIds(Resource):
         n = api.payload.get('n', 10)
         if n == 0:
             n = 1
-        results =[]
+        results = []
         for _id in comments_ids:
-            ids = retriever.get_nearest_for_id(_id, n = n)
+            ids = retriever.get_nearest_for_id(_id, n=n)
             results.append(ids)
         return results, 200
 
@@ -127,111 +153,40 @@ class SimilarComments(Resource):
         return results, 200
 
 
-@api.route('/tasks/indexing')
-class IndexComments(Resource):
+@api.route('/tasks')
+class Tasks(Resource):
     def get(self):
-
-        i = celery_app.control.inspect()
-        running_tasks = i.active()
-
-        # import pdb
-        # pdb.set_trace()
-
-        app.logger.debug(running_tasks)
-
-        # check if indexing is already running
-        if running_tasks:
-            first_worker_id = [k for k in running_tasks.keys()][0]
-            first_worker_tasks = running_tasks[first_worker_id]
-            if first_worker_tasks:
-                for first_worker_task in first_worker_tasks:
-                    if first_worker_task['name'].endswith('index_comments'):
-                        results = {
-                            "message" : "Indexing is already running",
-                            "details" : first_worker_task
-                        }
-                        return results, 200
-
-        # start indexing
-        t = index_comments.delay(pg_host, pg_port)
-        results = {
-            "message" : "Indexing started.",
-            "task.id" : t.id
-        }
-
-        app.logger.debug(i.active())
-
-        return results, 200
-
-@api.route('/tasks/embedding')
-class EmbedComments(Resource):
-    def get(self):
-
-        i = celery_app.control.inspect()
-        running_tasks = i.active()
-
-        # check if indexing is already running
-        if running_tasks:
-            first_worker_id = [k for k in running_tasks.keys()][0]
-            first_worker_tasks = running_tasks[first_worker_id]
-            if first_worker_tasks:
-                for first_worker_task in first_worker_tasks:
-                    if first_worker_task['name'].endswith('embed_comments'):
-                        results = {
-                            "message" : "Embedding is already running",
-                            "details" : first_worker_task
-                        }
-                        return results, 200
-
-        t = embed_comments.delay()
-        results = {
-            "message" : "Embedding started.",
-            "task.id" : t.id
-        }
-
-        return results, 200
-
-@api.route('/tasks/running')
-class RunningTasks(Resource):
-    def get(self):
-
-        i = celery_app.control.inspect()
-        running_tasks = i.active()
-
-        app.logger.debug(running_tasks)
-
-        results = running_tasks
-
+        results = process_manager.tasks()
         return results, 200
 
 
-@api.route('/tasks/abort')
-class TasksAbort(Resource):
-    @api.expect(tasks_model)
-    def post(self):
-        task_id = api.payload.get('task_id', None)
+@api.route('/tasks/<taskname>')
+class TaskStatus(Resource):
+    def get(self, taskname):
+        results = process_manager.status(taskname)
+        return results, 200
 
-        i = celery_app.control.inspect()
-        running_tasks = i.active()
 
-        results = "There is no running task with id " + task_id
-        if running_tasks:
-            first_worker_id = [k for k in running_tasks.keys()][0]
-            first_worker_tasks = running_tasks[first_worker_id]
-            if first_worker_tasks:
-                for first_worker_task in first_worker_tasks:
-                    if first_worker_task['id'] == task_id:
-                        # abortable_task = AbortableAsyncResult(task_id)
-                        # abortable_task.abort()
-                        celery_app.control.revoke(
-                            task_id,
-                            terminate = True
-                        )
-                        results = "Sent abort signal to task " + task_id
+@api.route('/tasks/<taskname>/invoke')
+class TaskInvoke(Resource):
+    def get(self, taskname):
+        results = process_manager.invoke(taskname)
+        return results, 200
 
+
+@api.route('/tasks/<taskname>/abort')
+class TaskAbort(Resource):
+    def get(self, taskname):
+        results = process_manager.abort(taskname)
+        return results, 200
+
+@api.route('/tasks/clear')
+class Tasks(Resource):
+    def get(self):
+        results = process_manager.clear()
         return results, 200
 
 
 # run app manually
 if __name__ == "__main__":
-    app.run(threaded = True)
+    app.run(threaded=True)

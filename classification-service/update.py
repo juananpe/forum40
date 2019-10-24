@@ -1,6 +1,5 @@
 import argparse, logging, psycopg2, math
-import numpy as np
-import utils
+import forum
 from timeit import default_timer as timer
 from datetime import datetime
 from classifier import EmbeddingClassifier, get_history_path
@@ -33,9 +32,9 @@ class LabelUpdater:
         self.conn = psycopg2.connect(
             host=host,
             port=port,
-            dbname=utils.DB_NAME,
-            user=utils.DB_USER,
-            password=utils.DB_PASSWORD)
+            dbname=forum.DB_NAME,
+            user=forum.DB_USER,
+            password=forum.DB_PASSWORD)
         self.cur = None
         self.cursor_large = None
         self.labels_old = None
