@@ -61,9 +61,9 @@ def createQuery(args, skip=None, limit=None):
         searchwords = ' OR '.join("c.text LIKE '%{0}%'".format(x) for x in args['keyword'])
         comments_where_sec += searchwords
 
-    where_sec = ''
+    and_sec_0 = ''
     if annotations_where_sec or comments_where_sec:
-        where_sec = 'WHERE'
+        and_sec_0 = 'AND'
 
     and_sec = ''
     if annotations_where_sec and comments_where_sec:
@@ -81,7 +81,7 @@ def createQuery(args, skip=None, limit=None):
     SELECT c.id, c.title, c.text, c.timestamp, array_agg(a.label_id) as labels
     FROM "comments" as c LEFT OUTER JOIN "annotations" AS a
     ON c.id = a.comment_id
-    {where_sec} {annotations_where_sec} {and_sec} {comments_where_sec}
+    WHERE a.label = True {and_sec_0} {annotations_where_sec} {and_sec} {comments_where_sec}
     GROUP BY c.id
     {limit_sec}
     {offset_sec}
@@ -279,7 +279,7 @@ class CommentsGroupByDay(Resource):
 
         annotations_sub_query = ''
         if 'label' in args and args['label']:
-            labelIds = ' WHERE ' + 'label_id IN ({0})'.format(args['label'])
+            labelIds = ' WHERE label = True AND label_id IN ({0})'.format(args['label'])
             annotations_sub_query += labelIds
 
         comments_sub_query = ''
@@ -310,7 +310,7 @@ class CommentsGroupByMonth(Resource):
 
         annotations_sub_query = ''
         if 'label' in args and args['label']:
-            labelIds = ' WHERE ' + 'label_id IN ({0})'.format(args['label'])
+            labelIds = ' WHERE label = True AND label_id IN ({0})'.format(args['label'])
             annotations_sub_query += labelIds
 
         comments_sub_query = ''
@@ -341,7 +341,7 @@ class CommentsGroupByYear(Resource):
 
         annotations_sub_query = ''
         if 'label' in args and args['label']:
-            labelIds = ' WHERE ' + 'label_id IN ({0})'.format(args['label'])
+            labelIds = ' WHERE label = True AND label_id IN ({0})'.format(args['label'])
             annotations_sub_query += labelIds
 
         comments_sub_query = ''
