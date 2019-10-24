@@ -75,6 +75,7 @@ import Service, { Endpoint } from "../api/db";
 import { State, Getters, Mutations } from "../store/const";
 import { mapState, mapGetters, mapMutations } from "vuex";
 import moment from "moment";
+import { EventBus, Events } from "../event-bus";
 import UserCommentAnnotation from "./UserCommentAnnotation";
 
 export default {
@@ -164,6 +165,7 @@ export default {
   },
   async mounted() {
     this.loadTable();
+    EventBus.$on(Events.loggedIn, this.fetchComments);
   },
   watch: {
     [Getters.selectedLabels]: function() {
