@@ -56,15 +56,7 @@
         </tr>
       </template>
       <template v-slot:expanded-item="{ item, headers }">
-        <td :colspan="headers.length" class="elevation-1">
-          <v-btn
-            outlined
-            small
-            color="primary"
-            text
-            @click="loadSimilarComments(item)"
-          >Ähnliche Kommentare anzeigen</v-btn>
-        </td>
+        <UserCommentSimilar :comment="item" />
       </template>
     </v-data-table>
   </div>
@@ -77,6 +69,7 @@ import { mapState, mapGetters, mapMutations } from "vuex";
 import moment from "moment";
 import { EventBus, Events } from "../event-bus";
 import UserCommentAnnotation from "./UserCommentAnnotation";
+import UserCommentSimilar from "./UserCommentSimilar";
 
 export default {
   name: "UserCommentList",
@@ -252,11 +245,11 @@ export default {
     },
     keywordChanged() {
       //this.loadTable();
-    },
-    loadSimilarComments(item) {}
+    }
   },
   components: {
-    UserCommentAnnotation
+    UserCommentAnnotation,
+    UserCommentSimilar
   }
 };
 </script>
