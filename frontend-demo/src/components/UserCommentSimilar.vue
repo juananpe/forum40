@@ -9,7 +9,7 @@
       @click="loadSimilarComments()"
     >Ähnliche Kommentare anzeigen</v-btn>
 
-    <v-container fluid>
+    <v-container fluid v-if="similar_texts.length>0">
       <v-row dense>
         <v-card
           v-for="(comment, i) in similar_texts.slice(0,MAX_COMMENTS)"
@@ -40,6 +40,14 @@ export default {
       MAX_COMMENTS: 3
     };
   },
+  mounted() {
+    this.similar_texts = [];
+  },
+  watch: {
+    comment: function() {
+      this.similar_texts = [];
+    }
+  },
   methods: {
     async loadSimilarComments() {
       const payload = {
@@ -49,7 +57,6 @@ export default {
       try {
         const { data } = await Service.post(Endpoint.COMMENTS_SIMILAR, payload);
         this.similar_texts = data[0];
-        console.log(data[0]);
       } catch (e) {
         console.error("Could not load similar comments!");
       }
