@@ -88,6 +88,12 @@ class StatusService(Resource):
         return results, 200
 
 
+@api.route('/abort')
+class AbortService(Resource):
+    def get(self):
+        results = process_manager.abort("update")
+        return results, 200
+
 @api.route('/history')
 class HistoryService(Resource):
     @api.expect(history_model)
