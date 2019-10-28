@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask
 from logging.config import dictConfig
 from flask_restplus import Api, Resource, fields
@@ -5,6 +7,15 @@ from core.proxy_wrapper import ReverseProxied
 from update import LabelUpdater
 from train import ClassifierTrainer
 from classifier import get_history_path
+
+from utils.tasks import SingleProcessManager
+
+# pg config
+pg_host = os.getenv('PG_HOST', 'postgres')
+pg_port = os.getenv('PG_PORT', '5432')
+
+process_manager = SingleProcessManager(pg_host, pg_port)
+
 
 dictConfig({
     'version': 1,
@@ -63,21 +74,18 @@ class ClassifierService(Resource):
     @api.expect(update_model)
     def post(self):
         labelname = api.payload.get('labelname', None)
-        optimize = api.payload.get('optimize', False)
         if labelname:
-
-            classifierTrainer = ClassifierTrainer(labelname)
-            classifierTrainer.setLogger(app.logger)
-            classifierTrainer.train(optimize=optimize)
-
-            labelUpdater = LabelUpdater(labelname)
-            labelUpdater.setLogger(app.logger)
-            labelUpdater.updateLabels()
-
-            results = {'message' : 'Started update of label ' + labelname}
+            results = process_manager.invoke("update", ["--labelname", labelname])
             return results, 200
         else:
             return {'error' : 'Something went wrong.'}, 500
+
+
+@api.route('/status')
+class StatusService(Resource):
+    def get(self):
+        results = process_manager.status("update")
+        return results, 200
 
 
 @api.route('/history')

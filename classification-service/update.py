@@ -1,41 +1,18 @@
 import argparse, logging, psycopg2, math
-import forum
+
 from timeit import default_timer as timer
 from datetime import datetime
 from classifier import EmbeddingClassifier, get_history_path
+from train import ClassifierTrainer
 from sklearn.metrics import cohen_kappa_score
 
-# create logger
-logger = logging.getLogger('Classifier logger')
-logger.setLevel(logging.DEBUG)
+from utils.tasks import ForumProcessor
 
-# create console handler and set level to debug
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-
-# create formatter
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-# add formatter to ch
-ch.setFormatter(formatter)
-
-# add ch to logger
-logger.addHandler(ch)
-
-class LabelUpdater:
+class LabelUpdater(ForumProcessor):
     """Functions for collection of training data and prediction on the entire DB"""
 
     def __init__(self, labelname, host="postgres", port=5432, skip_confidence = False):
-
-        self.logger = logger
-        # db connection
-        self.conn = psycopg2.connect(
-            host=host,
-            port=port,
-            dbname=forum.DB_NAME,
-            user=forum.DB_USER,
-            password=forum.DB_PASSWORD)
-        self.cur = None
+        super().__init__("classification", host=host, port=port)
         self.cursor_large = None
         self.labels_old = None
         self.labels_new = None
@@ -52,21 +29,13 @@ class LabelUpdater:
                 "Could not load classifier model for label %s. Run train.py first to create a model" % labelname)
             exit(1)
 
-    def __del__(self):
-        try:
-            self.close_cursor()
-        finally:
-            self.conn.close()
-
-    def setLogger(self, logger):
-        self.logger = logger
 
     def init_cursor(self):
 
         # get number of facts
         facts_count = """SELECT count(*) FROM comments"""
-        self.cur.execute(facts_count)
-        self.n_facts = self.cur.fetchone()[0]
+        self.cursor.execute(facts_count)
+        self.n_facts = self.cursor.fetchone()[0]
 
         self.logger.info("Preparing cursor for updates ...")
 
@@ -82,23 +51,20 @@ class LabelUpdater:
         self.labels_new = []
 
     def close_cursor(self):
-        if self.cur:
-            self.cur.close()
         if self.cursor_large:
             self.cursor_large.close()
 
     def init_facts(self):
 
         # get label id
-        self.cur = self.conn.cursor()
-        self.cur.execute("""SELECT id FROM labels WHERE name=%s""", (self.labelname,))
-        self.label_id = self.cur.fetchone()[0]
+        self.cursor.execute("""SELECT id FROM labels WHERE name=%s""", (self.labelname,))
+        self.label_id = self.cursor.fetchone()[0]
         self.logger.info("Predict new labels for: " + self.labelname + " (" + str(self.label_id) + ")")
 
         # init facts entry for all
         self.logger.info("Ensuring a fact entry for each comment for label %s" % (self.labelname,))
         facts_query = """INSERT INTO facts (SELECT c.id, %s, false, 0, 0 FROM comments c LEFT JOIN (SELECT * FROM facts WHERE label_id = %s) AS f ON c.id = f.comment_id WHERE f.comment_id IS NULL)"""
-        self.cur.execute(
+        self.cursor.execute(
             facts_query,
             (self.label_id, self.label_id))
 
@@ -147,7 +113,7 @@ class LabelUpdater:
 
         # run bulk update
         if batch_update_facts:
-            self.cur.executemany("""UPDATE facts SET label=%s, confidence=%s WHERE comment_id=%s AND label_id=%s""", batch_update_facts)
+            self.cursor.executemany("""UPDATE facts SET label=%s, confidence=%s WHERE comment_id=%s AND label_id=%s""", batch_update_facts)
 
         return True
 
@@ -161,23 +127,32 @@ class LabelUpdater:
         self.init_cursor()
 
         n_total = math.ceil(self.n_facts / self.batch_size)
+        self.set_total(n_total + 3) # 3 additional steps: stability, commit, finished
         while self.process_batch():
-            self.logger.info("Completed batch %d of %d." % (self.batch_i, n_total))
+            message = "Completed batch %d of %d." % (self.batch_i, n_total)
+            self.logger.info(message)
+            self.update_state(self.batch_i, message)
 
         self.close_cursor()
 
         # stability
         kappa_score = cohen_kappa_score(self.labels_old, self.labels_new)
         self.stability = kappa_score
-        self.logger.info("Stability: %.3f" % (kappa_score,))
+        message = "Stability: %.3f" % (kappa_score,)
+        self.logger.info(message)
+        self.update_state(self.batch_i + 1, message)
 
         # Commit updates
-        self.logger.info("Commit to DB ...")
+        message = "Commit to DB ..."
+        self.logger.info(message)
+        self.update_state(self.batch_i + 2, message)
         self.conn.commit()
 
         end = timer()
         duration = end - start
-        self.logger.info("%d label updates finished after %.3f seconds." % (self.n_facts, duration))
+        message = "%d label updates finished after %.3f seconds." % (self.n_facts, duration)
+        self.logger.info(message)
+        self.update_state(self.batch_i + 3, message)
 
         # update history
         with open(get_history_path(self.labelname), 'a', encoding="UTF-8") as f:
@@ -205,5 +180,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     labelname = args.labelname
 
+    # train model
+    classifierTrainer = ClassifierTrainer(labelname, host=args.host, port=args.port)
+    classifierTrainer.train(optimize=False, cv=True)
+
+    # update predictions
     labelUpdater = LabelUpdater(labelname, host=args.host, port=args.port, skip_confidence=args.skip_confidence)
     labelUpdater.updateLabels()

@@ -1,40 +1,16 @@
 import argparse, logging, psycopg2
-import forum
 
 from collections import Counter
 from timeit import default_timer as timer
 from datetime import datetime
 from classifier import EmbeddingClassifier, get_history_path
 
-# create logger
-logger = logging.getLogger('Classifier logger')
-logger.setLevel(logging.DEBUG)
+from utils.tasks import ForumProcessor
 
-# create console handler and set level to debug
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-
-# create formatter
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-# add formatter to ch
-ch.setFormatter(formatter)
-
-# add ch to logger
-logger.addHandler(ch)
-
-class ClassifierTrainer:
+class ClassifierTrainer(ForumProcessor):
 
     def __init__(self, labelname, classifier = None, host="postgres", port=5432):
-        self.logger = logger
-        # db connection
-        self.conn = psycopg2.connect(
-            host=host,
-            port=port,
-            dbname=forum.DB_NAME,
-            user=forum.DB_USER,
-            password=forum.DB_PASSWORD)
-        self.cur = None
+        super().__init__("classification", host=host, port=port)
         self.labelname = labelname
         self.label_id = None
         if classifier:
@@ -42,17 +18,14 @@ class ClassifierTrainer:
         else:
             self.classifier = EmbeddingClassifier()
 
-    def setLogger(self, logger):
-        self.logger = logger
-
     def get_trainingdata(self):
 
         start = timer()
 
         # get label id
-        self.cur = self.conn.cursor()
-        self.cur.execute("""SELECT id FROM labels WHERE name=%s""", (self.labelname,))
-        self.label_id = self.cur.fetchone()[0]
+        self.cursor = self.conn.cursor()
+        self.cursor.execute("""SELECT id FROM labels WHERE name=%s""", (self.labelname,))
+        self.label_id = self.cursor.fetchone()[0]
         if self.label_id is None:
             logging.error("Label %s not found" % self.labelname)
             exit(1)
@@ -60,10 +33,10 @@ class ClassifierTrainer:
             self.logger.info("Build classifier model for label: " + self.labelname + " (" + str(self.label_id) + ")")
 
         # count annotations
-        self.cur.execute(
+        self.cursor.execute(
             """SELECT count(*) FROM comments c JOIN annotations a ON c.id=a.comment_id WHERE a.label_id=%s""",
             (self.label_id,))
-        n_annotations = self.cur.fetchone()
+        n_annotations = self.cursor.fetchone()
 
         if not n_annotations:
             logging.info("No comments for training found.")
@@ -72,14 +45,14 @@ class ClassifierTrainer:
             logging.info("Found %d comments for training." % n_annotations)
 
         # select annotations
-        self.cur.execute(
+        self.cursor.execute(
             """SELECT c.id, c.embedding, a.label, a.user_id FROM comments c JOIN annotations a ON c.id=a.comment_id WHERE a.label_id=%s""",
             (self.label_id,))
 
         # training data compilation
         annotation_dataset = []
         annotation_counts = Counter()
-        annotations = self.cur.fetchall()
+        annotations = self.cursor.fetchall()
         for annotation in annotations:
             comment_id = annotation[0]
             embedding = annotation[1]
@@ -102,8 +75,10 @@ class ClassifierTrainer:
         if annotation_dataset is None:
             annotation_dataset = self.get_trainingdata()
 
-        # import pdb
-        # pdb.set_trace()
+        self.set_total(1)
+        if cv:
+            self.total_steps += 1
+        step = 0
 
         # find best C parameter
         if (optimize):
@@ -113,8 +88,11 @@ class ClassifierTrainer:
             best_C = 0
             best_F1 = 0
             best_acc = 0
-            for C in params:
-                self.logger.info("Testing C = %.3f" % C)
+            self.set_total(1 + len(params))
+            for step, C in enumerate(params):
+                message = "Testing C = %.3f" % C
+                self.update_state(step + 1, message)
+                self.logger.info(message)
                 self.classifier.setC(C)
                 accuracy, f1_score, fit_time, score_time = self.classifier.cross_validation(
                     annotation_dataset
@@ -131,25 +109,37 @@ class ClassifierTrainer:
             self.logger.info("Hyperparameter optimzation finished after " + str(end - start) + " seconds.")
 
         # train final model
-        self.logger.info("Training started")
+        step += 1
+        message = "Training started"
+        self.update_state(step, message)
+        self.logger.info(message)
         start = timer()
         self.model = self.classifier.train(annotation_dataset, self.labelname)
         end = timer()
-        self.logger.info("Training finished after " + str(end - start) + " seconds.")
+        message = "Training finished after " + str(end - start) + " seconds."
+        self.logger.info(message)
+        self.update_state(step, message)
 
         # evaluate model
         if cv:
+            step += 1
+            message = "Cross-validating performance."
+            self.logger.info(message)
+            self.update_state(step, message)
             acc, f1, fit_time, _ = self.classifier.cross_validation(annotation_dataset, k=10)
             with open(get_history_path(self.labelname), 'a', encoding="UTF-8") as f:
                 # append history file: timestamp, task, label, training set size, cv acc, cv f1, stability score, duration
-                f.write("%s;training;%s;%d;%.3f;%.3f;0;%.1f\n" % (
+                result_string = "%s;training;%s;%d;%.3f;%.3f;0;%.1f" % (
                     datetime.today().isoformat(),
                     self.labelname,
                     len(annotation_dataset),
                     acc,
                     f1,
                     fit_time
-                ))
+                )
+                f.write(result_string + "\n")
+                self.logger.info(result_string)
+                self.update_state(step, result_string)
 
 
 
@@ -161,8 +151,8 @@ if __name__ == "__main__":
                         help='Name of the category for model training')
     parser.add_argument('--optimize', dest='optimize', default=False, action='store_true',
                         help='Run C parameter optimization (default: False)')
-    parser.add_argument('--cv', dest='cv', default=True, action='store_false',
-                        help='Perform cross validation after training (default: True)')
+    parser.add_argument('--cv', dest='cv', default=False, action='store_true',
+                        help='Perform cross validation after training (default: False)')
     parser.add_argument('host', type=str, default='localhost', nargs='?',
                         help='DB host (default: localhost)')
     parser.add_argument('port', type=int, default=5432, nargs='?',
@@ -172,4 +162,4 @@ if __name__ == "__main__":
 
     classifierTrainer = ClassifierTrainer(labelname, host=args.host, port=args.port)
 
-    print(classifierTrainer.train(optimize=args.optimize, cv=args.cv))
+    classifierTrainer.train(optimize=args.optimize, cv=args.cv)
