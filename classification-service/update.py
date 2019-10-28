@@ -18,7 +18,7 @@ class LabelUpdater(ForumProcessor):
         self.labels_new = None
         self.labelname = labelname
         self.skip_confidence = skip_confidence
-        self.batch_size = 10000
+        self.batch_size = 2000
         self.batch_i = 0
         self.stability = 0
         try:
