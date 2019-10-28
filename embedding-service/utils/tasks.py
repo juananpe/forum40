@@ -34,6 +34,7 @@ class ForumTask:
         self.host = host
         self.port = port
         self.conn = None
+        self.cursor = None
         try:
             self.conn = psycopg2.connect(
                 host=host,
@@ -50,8 +51,10 @@ class ForumTask:
 
 
     def __del__(self):
-        self.cursor.close()
-        self.conn.close()
+        if self.cursor:
+            self.cursor.close()
+        if self.conn:
+            self.conn.close()
 
     def set_logger(self, logger):
         self.logger = logger
