@@ -16,7 +16,9 @@
                 prepend-icon="person"
               ></v-checkbox>
             </template>
-            <span>Eigene Annotation</span>
+            <span
+              v-if="majority !== undefined"
+            >Klassifizierung der Mehrheit ({{majority[0]}} zu {{majority[1]}})</span>
           </v-tooltip>
         </div>
         <div v-else>
@@ -27,7 +29,7 @@
       </v-flex>
     </v-layout>
     <v-layout>
-      <v-flex xs12 class="text-center">
+      <v-flex v-if="!loggedIn" xs12 class="text-center">
         <div v-if="majority != undefined">
           <v-tooltip right>
             <template v-slot:activator="{ on }">
@@ -62,15 +64,15 @@
             <template v-slot:activator="{ on }">
               <v-checkbox
                 v-on="on"
-                class="justify-center ma-0 pa-1"
+                class="justify-center ma-0 pa-0"
                 :input-value="confidence>=0.5"
                 color="grey darken-1"
                 :prepend-icon="svgPath"
                 readonly
-                persistent-hint
+                hide-details
               ></v-checkbox>
             </template>
-            <span>Automatische Klassifizierung ({{confidence | toPercentage}} Konfidenz)</span>
+            <span>Automatische Klassifizierung ({{1-confidence | toPercentage}} Konfidenz)</span>
           </v-tooltip>
         </div>
         <div v-else>
