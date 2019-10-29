@@ -137,7 +137,7 @@ class SingleProcessManager:
 
         # check arguments (only 2 allowed of max length 32 characters)
         arg_lengths = [len(arg) for arg in arguments]
-        if arguments and (len(arguments) > 2 or max(arg_lengths) > 32):
+        if arguments and (len(arguments) > 6 or max(arg_lengths) > 32):
             raise ValueError("Invalid arguments passed.")
 
         # invoke task

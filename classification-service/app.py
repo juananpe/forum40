@@ -52,6 +52,10 @@ update_model = api.model('update', {
         description = 'Perform hyperparameter optimization',
         example = False,
         required = False
+    ),
+    'fast' : fields.Boolean(
+        description = 'Fast version only updates changing labels, but not confidence scores',
+        example = True
     )
 })
 
@@ -74,8 +78,12 @@ class ClassifierService(Resource):
     @api.expect(update_model)
     def post(self):
         labelname = api.payload.get('labelname', None)
+        fast_run = api.payload.get('fast', True)
         if labelname:
-            results = process_manager.invoke("update", ["--labelname", labelname])
+            args = ["--labelname", labelname]
+            if fast_run:
+                args.append("--skip-confidence")
+            results = process_manager.invoke("update", args)
             return results, 200
         else:
             return {'error' : 'Something went wrong.'}, 500
