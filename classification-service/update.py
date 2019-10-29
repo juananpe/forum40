@@ -5,6 +5,7 @@ from datetime import datetime
 from classifier import EmbeddingClassifier, get_history_path
 from train import ClassifierTrainer
 from sklearn.metrics import cohen_kappa_score
+from io import StringIO
 
 from utils.tasks import ForumProcessor
 
@@ -18,9 +19,10 @@ class LabelUpdater(ForumProcessor):
         self.labels_new = None
         self.labelname = labelname
         self.skip_confidence = skip_confidence
-        self.batch_size = 2000
+        self.batch_size = 5000
         self.batch_i = 0
         self.stability = 0
+        self.buffer = StringIO()
         try:
             self.classifier = EmbeddingClassifier()
             self.classifier.load_from_disk(labelname)
@@ -108,13 +110,9 @@ class LabelUpdater(ForumProcessor):
             if self.skip_confidence and bool_label == labels_old[i]:
                 # skip update for unchanged label
                 continue
-            batch_update_facts.append((bool_label, confidences[i], comment_id, self.label_id))
+            self.buffer.write(str(comment_id) + "\t" + str(self.label_id) + "\t" + str(bool_label) + "\t" + str(confidences[i]))
 
-
-        # run bulk update
-        if batch_update_facts:
-            self.cursor.executemany("""UPDATE facts SET label=%s, confidence=%s WHERE comment_id=%s AND label_id=%s""", batch_update_facts)
-
+        # look at next batch
         return True
 
 
@@ -134,6 +132,13 @@ class LabelUpdater(ForumProcessor):
             self.update_state(self.batch_i, message)
 
         self.close_cursor()
+
+        # copy postgres
+        self.cursor.execute("CREATE TEMP TABLE tmp_facts (comment_id int8 NOT NULL, label_id int8 NOT NULL, label bool NULL DEFAULT false, confidence float8 NULL DEFAULT 0, CONSTRAINT tmp_facts_pk PRIMARY KEY (comment_id, label_id));")
+        self.cursor.copy_from(self.buffer, 'tmp_facts')
+        self.cursor.execute("UPDATE facts f SET label=t.label, confidence=t.confidence FROM tmp_facts t WHERE f.comment_id=t.comment_id AND f.label_id=t.label_id;")
+        self.cursor.execute("COMMIT; TRUNCATE TABLE tmp_facts;")
+        self.cursor.execute("VACUUM FULL ANALYZE facts;")
 
         # stability
         kappa_score = cohen_kappa_score(self.labels_old, self.labels_new)
