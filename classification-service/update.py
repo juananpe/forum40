@@ -41,7 +41,7 @@ class LabelUpdater(ForumProcessor):
 
         # init cursor for machine labels from facts table
         facts_query = """SELECT c.id, c.embedding, f.label, f.confidence FROM comments c JOIN facts f ON c.id = f.comment_id WHERE f.label_id = %s"""
-        self.cursor_large = self.conn.cursor(name='fetch_facts', withhold=True)
+        self.cursor_large = self.conn.cursor(name='fetch_facts_' + self.labelname, withhold=True)
         self.cursor_large.execute(
             facts_query,
             (self.label_id,))
