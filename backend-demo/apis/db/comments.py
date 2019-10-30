@@ -106,62 +106,65 @@ class CommentsGet(Resource):
 
         annotations_where_sec = ''
         if 'label' in args and args['label']:
-            labelIds = ' label_id IN ({0})'.format(", ".join(i for i in args['label']))
+            labelIds = 'AND label_id IN ({0})'.format(", ".join(i for i in args['label']))
             annotations_where_sec += labelIds
 
-        where = ''
-        if annotations_where_sec:
-            where = 'WHERE'
 
         comments_where_sec = ''
         if 'keyword' in args and args['keyword']:
             searchwords = ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
             comments_where_sec += 'WHERE ' +  searchwords
 
+        user_query = ''
+        if user_id:
+
+            user_query = f"""
+            left outer join 
+                (
+                    SELECT ua.id, array_agg(ua.agg) as user_annotation FROM
+                    (
+                        SELECT c.id, ARRAY[a.label_id, a.label::int] as agg
+                            FROM (SELECT * FROM comments {comments_where_sec} LIMIT {limit} OFFSET {skip}) AS c 
+                            LEFT OUTER JOIN 
+                            (SELECT * FROM annotations WHERE user_id = '{user_id}') AS a
+                            ON c.id = a.comment_id
+                    ) ua
+                    GROUP BY ua.id
+                ) as ua_agg
+                on aia_agg.id = ua_agg.id
+            """
 
         postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
         query = f"""
-        SELECT _.id, _.title, _.text, _.timestamp, array_agg(_.agg) as group_annotation FROM
+        select * FROM 
         (
-            SELECT c.id, c.title, c.text, c.timestamp, ARRAY[a.label_id, count(a.label or null), count(not a.label or null)] as agg
-                FROM (SELECT * FROM comments {comments_where_sec} LIMIT {limit} OFFSET {skip}) AS c 
-                LEFT OUTER JOIN 
-                (SELECT * FROM annotations {where} {annotations_where_sec}) AS a
-                ON c.id = a.comment_id
-                GROUP BY c.id, a.label_id, c.title, c.text, c.timestamp
-        ) _ 
-        GROUP BY _.id, _.title, _.text, _.timestamp
-        """
-
-        and_ = ''
-        if annotations_where_sec and user_id:
-            and_ = 'AND'
-
-        user_annotations = []
-
-        if user_id:
-            query_user = f"""
-                SELECT _.id, array_agg(_.agg) as user_annotation FROM
+            SELECT aia.id, aia.title, aia.text, aia.timestamp, array_agg(aia.agg) as ai_annotation FROM
                 (
-                    SELECT c.id, ARRAY[a.label_id, a.label::int] as agg
+                    SELECT c.id, c.title, c.text, c.timestamp, ARRAY[f.label_id, f.label::int, f.confidence] as agg
                         FROM (SELECT * FROM comments {comments_where_sec} LIMIT {limit} OFFSET {skip}) AS c 
                         LEFT OUTER JOIN 
-                        (SELECT * FROM annotations WHERE {annotations_where_sec} {and_} user_id = '{user_id}') AS a
-                        ON c.id = a.comment_id
-                        GROUP BY c.id, a.label_id, a.label
-                ) _ 
-                GROUP BY _.id
-            """
-
-            try:
-                postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
-                postgres.execute(query_user)
-            except DatabaseError:
-                postgres_con.rollback()
-                return {'msg' : 'DatabaseError: transaction is aborted'}, 400
-
-            user_annotations = postgres.fetchall()
-
+                        (SELECT * from facts WHERE label = True {annotations_where_sec}) AS f
+                        ON c.id = f.comment_id
+                ) aia 
+                GROUP BY aia.id, aia.title, aia.text, aia.timestamp
+        ) as aia_agg
+        left outer join
+        (
+            SELECT ga.id, array_agg(ga.agg) as group_annotation FROM
+                (
+                    SELECT c.id, c.title, c.text, c.timestamp, ARRAY[a.label_id, count(a.label or null), count(not a.label or null)] as agg
+                    FROM (SELECT * FROM comments {comments_where_sec} LIMIT {limit} OFFSET {skip}) AS c 
+                    LEFT OUTER JOIN 
+                    (SELECT * FROM annotations WHERE label = True {annotations_where_sec}) AS a
+                    ON c.id = a.comment_id
+                    GROUP BY c.id, a.label_id, c.title, c.text, c.timestamp
+                ) ga
+            GROUP BY ga.id, ga.title, ga.text, ga.timestamp
+        ) as ga_agg
+        on aia_agg.id = ga_agg.id
+        {user_query}
+        ORDER BY aia_agg.id
+        """
 
         try:        
             postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
@@ -174,8 +177,6 @@ class CommentsGet(Resource):
 
         for i in range(0, len(comments)):
             comments[i]['timestamp'] = comments[i]['timestamp'].isoformat()
-            if user_annotations:
-                comments[i]['user_annotation'] = user_annotations[i]['user_annotation']
 
         return comments
 #        args = comments_parser_sl.parse_args()
