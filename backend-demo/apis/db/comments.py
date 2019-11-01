@@ -114,56 +114,59 @@ class CommentsGet(Resource):
         if 'keyword' in args and args['keyword']:
             searchwords = ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
             comments_where_sec += 'WHERE ' +  searchwords
-
+        user_args = ''
         user_query = ''
         if user_id:
+            user_args = ', user_annotations.user_annotation'
 
             user_query = f"""
-            left outer join 
-                (
-                    SELECT ua.id, array_agg(ua.agg) as user_annotation FROM
-                    (
-                        SELECT c.id, ARRAY[a.label_id, a.label::int] as agg
-                            FROM (SELECT * FROM comments {comments_where_sec} LIMIT {limit} OFFSET {skip}) AS c 
-                            LEFT OUTER JOIN 
-                            (SELECT * FROM annotations WHERE user_id = '{user_id}') AS a
-                            ON c.id = a.comment_id
-                    ) ua
-                    GROUP BY ua.id
-                ) as ua_agg
-                on aia_agg.id = ua_agg.id
+            left outer join
+            (
+            select ua.id, array_agg(ua.agg) as user_annotation from
+            (
+                select c.id, array[a.label_id, a.label::int] as agg
+                from (select * from comments {comments_where_sec}) AS c 
+                left outer join 
+                (SELECT * FROM annotations WHERE label = True and user_id = '{user_id}' {annotations_where_sec}) as a
+                on c.id = a.comment_id
+            ) ua
+            group by ua.id
+            limit {limit} offset {skip}
+            ) user_annotations
+            on user_annotations.id = group_annotations.id
             """
 
         postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
         query = f"""
-        select * FROM 
+        select group_annotations.id, group_annotations.title, group_annotations.text, group_annotations.timestamp, group_annotations.group_annotation, ai_annotations.ai_annotation {user_args} from 
         (
-            SELECT aia.id, aia.title, aia.text, aia.timestamp, array_agg(aia.agg) as ai_annotation FROM
-                (
-                    SELECT c.id, c.title, c.text, c.timestamp, ARRAY[f.label_id, f.label::int, f.confidence] as agg
-                        FROM (SELECT * FROM comments {comments_where_sec} LIMIT {limit} OFFSET {skip}) AS c 
-                        LEFT OUTER JOIN 
-                        (SELECT * from facts WHERE label = True {annotations_where_sec}) AS f
-                        ON c.id = f.comment_id
-                ) aia 
-                GROUP BY aia.id, aia.title, aia.text, aia.timestamp
-        ) as aia_agg
+            select _.id, _.title, _.text, _.timestamp, array_agg(_.agg) as group_annotation
+            from (
+                select c.id, c.title, c.text, c.timestamp,  array[a.label_id, count(a.label or null), count(not a.label or null)] as agg
+                from (select * from comments {comments_where_sec}) AS c 
+                join 
+                (select * from annotations where label = True {annotations_where_sec}) AS a
+                on c.id = a.comment_id
+                group by c.id, a.label_id, a.label, c.title, c.text, c.timestamp
+            ) _
+            group by _.id, _.title, _.text, _.timestamp
+            limit {limit} offset {skip}
+        ) group_annotations
         left outer join
         (
-            SELECT ga.id, array_agg(ga.agg) as group_annotation FROM
-                (
-                    SELECT c.id, c.title, c.text, c.timestamp, ARRAY[a.label_id, count(a.label or null), count(not a.label or null)] as agg
-                    FROM (SELECT * FROM comments {comments_where_sec} LIMIT {limit} OFFSET {skip}) AS c 
-                    LEFT OUTER JOIN 
-                    (SELECT * FROM annotations WHERE label = True {annotations_where_sec}) AS a
-                    ON c.id = a.comment_id
-                    GROUP BY c.id, a.label_id, c.title, c.text, c.timestamp
-                ) ga
-            GROUP BY ga.id, ga.title, ga.text, ga.timestamp
-        ) as ga_agg
-        on aia_agg.id = ga_agg.id
+            select aia.id, array_agg(aia.agg) as ai_annotation 
+            from (
+                select c.id, c.text,  array[f.label_id, f.label::int, f.confidence] as agg
+                from (select * from facts where label = True {annotations_where_sec}) as f
+                left outer join 
+                (select * from comments {comments_where_sec}) as c 
+                on c.id = f.comment_id
+            ) aia 
+            group by aia.id, aia.text
+            limit {limit} offset {skip}
+        ) ai_annotations
+        on group_annotations.id = ai_annotations.id
         {user_query}
-        ORDER BY aia_agg.id
         """
 
         try:        
