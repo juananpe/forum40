@@ -106,14 +106,19 @@ class CommentsGet(Resource):
 
         annotations_where_sec = ''
         if 'label' in args and args['label']:
-            labelIds = 'AND label_id IN ({0})'.format(", ".join(i for i in args['label']))
-            annotations_where_sec += labelIds
+            labelIds = 'label_id IN ({0})'.format(", ".join(i for i in args['label']))
+            annotations_where_sec += ' where ' + labelIds
 
+        and_xor = ''
+        if annotations_where_sec:
+            and_xor = ' and '
+        else:
+            and_xor = ' where '
 
         comments_where_sec = ''
         if 'keyword' in args and args['keyword']:
             searchwords = ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
-            comments_where_sec += 'WHERE ' +  searchwords
+            comments_where_sec += ' where ' +  searchwords
         user_args = ''
         user_query = ''
         if user_id:
@@ -127,7 +132,7 @@ class CommentsGet(Resource):
                 select c.id, array[a.label_id, a.label::int] as agg
                 from (select * from comments {comments_where_sec}) AS c 
                 left outer join 
-                (SELECT * FROM annotations WHERE label = True and user_id = '{user_id}' {annotations_where_sec}) as a
+                (SELECT * FROM annotations {annotations_where_sec} {and_xor} user_id = '{user_id}') as a
                 on c.id = a.comment_id
             ) ua
             group by ua.id
@@ -145,9 +150,9 @@ class CommentsGet(Resource):
                 select c.id, c.title, c.text, c.timestamp,  array[a.label_id, count(a.label or null), count(not a.label or null)] as agg
                 from (select * from comments {comments_where_sec}) AS c 
                 join 
-                (select * from annotations where label = True {annotations_where_sec}) AS a
+                (select * from annotations {annotations_where_sec}) AS a
                 on c.id = a.comment_id
-                group by c.id, a.label_id, a.label, c.title, c.text, c.timestamp
+                group by c.id, c.title, c.text, c.timestamp, a.label_id
             ) _
             group by _.id, _.title, _.text, _.timestamp
             limit {limit} offset {skip}
@@ -157,7 +162,7 @@ class CommentsGet(Resource):
             select aia.id, array_agg(aia.agg) as ai_annotation 
             from (
                 select c.id, c.text,  array[f.label_id, f.label::int, f.confidence] as agg
-                from (select * from facts where label = True {annotations_where_sec}) as f
+                from (select * from facts {annotations_where_sec}) as f
                 left outer join 
                 (select * from comments {comments_where_sec}) as c 
                 on c.id = f.comment_id
