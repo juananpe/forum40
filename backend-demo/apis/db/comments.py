@@ -156,7 +156,7 @@ class CommentsGet2(Resource):
         print(query_comments, file=sys.stderr)
 
         try:        
-            postgres = postgres_con.cursor()
+            postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
             postgres.execute(query_comments)
         except DatabaseError:
             postgres_con.rollback()
