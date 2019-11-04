@@ -90,6 +90,83 @@ def createQuery(args, skip=None, limit=None):
 
 import sys
 
+@ns.route('/2')
+@api.expect(comments_parser_sl)
+class CommentsGet2(Resource):
+    @token_optional
+    @api.doc(security='apikey')
+    def get(self, data):
+        args = comments_parser_sl.parse_args()
+        skip = args["skip"]
+        limit = args["limit"]
+
+        user_id = None
+        if self:
+            user_id = self["user"]
+
+        annotations_where_sec = ''
+        if 'label' in args and args['label']:
+            labelIds = 'label_id IN ({0})'.format(", ".join(i for i in args['label']))
+            annotations_where_sec += ' where ' + labelIds
+
+        and_ = ''
+        if annotations_where_sec:
+            and_ = ' and '
+
+        comments_where_sec = ''
+        if 'keyword' in args and args['keyword']:
+            searchwords = ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
+            comments_where_sec += ' where ' +  searchwords
+        user_args = ''
+        user_query = ''
+
+        query_getIds = f"""
+        select * from 
+            (select id, title, text, timestamp from comments {comments_where_sec}) as c
+            right join
+            (select distinct comment_id from annotations {annotations_where_sec} ) as a
+            on c.id = a.comment_id
+        order by id
+        limit {limit} offset {skip}
+        """
+
+        try:        
+            postgres = postgres_con.cursor()
+            postgres.execute(query_getIds)
+        except DatabaseError:
+            postgres_con.rollback()
+            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+
+        ids = [ str(i[0]) for i in postgres.fetchall()]
+
+        str_ = ', '.join(ids)
+
+        query_comments = f"""
+        select a.comment_id, a.label_id, a.count_true as group_true, a.count_false as group_false, f.label as ai_annotation, f.confidence as ai_conf from 
+            (select comment_id, label_id, count(label or null) as count_true, count(not label or null) as count_false
+            from annotations 
+            {annotations_where_sec} {and_} comment_id in ({str_}) 
+            group by comment_id, label_id
+            ) a
+            left join facts f
+            ON a.comment_id = f.comment_id and a.label_id = f.label_id
+        order by a.comment_id, a.label_id
+        """
+
+        print(query_comments, file=sys.stderr)
+
+        try:        
+            postgres = postgres_con.cursor()
+            postgres.execute(query_comments)
+        except DatabaseError:
+            postgres_con.rollback()
+            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+
+        comments = postgres.fetchall()
+
+        return comments
+
+
 @ns.route('/')
 @api.expect(comments_parser_sl)
 class CommentsGet(Resource):
