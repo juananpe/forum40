@@ -50,7 +50,7 @@
               :labelId="labels[label]"
               :personalLabel="getPeronalAnnotation(props.item, labels[label])"
               :majority="getGroupAnnotation(props.item, labels[label])"
-              :confidence="Math.random()"
+              :confidence="getConfidence(props.item, labels[label])"
             />
           </td>
         </tr>
@@ -189,18 +189,25 @@ export default {
     },
     getPeronalAnnotation(comment, label_id) {
       const user_annotation = comment.user_annotation;
-      if (user_annotation === undefined) return undefined; // no user labels
+      if (user_annotation == null) return undefined; // no user labels
       const annotation = user_annotation.find(e => e[0] === label_id);
       if (annotation === undefined) return undefined; // no annotation for this label found
       return !!annotation[1];
     },
     getGroupAnnotation(comment, label_id) {
       const group_annotaitons = comment.group_annotation;
-      if (group_annotaitons[0][0] === null) return undefined;
+      if (group_annotaitons == null) return undefined;
 
       const annotation = group_annotaitons.find(e => e[0] === label_id);
       if (annotation === undefined) return undefined;
       return annotation.slice(1);
+    },
+    getConfidence(comment, label_id) {
+      const classifications = comment.ai_annotation;
+      if (classifications == null) return undefined;
+      const classification = classifications.find(e => e[0] === label_id);
+      if (classification === undefined) return undefined;
+      return classification[2];
     },
     commentText(props) {
       return (props.item.title || "") + " " + props.item.text;
