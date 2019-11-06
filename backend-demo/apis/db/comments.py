@@ -109,13 +109,10 @@ class CommentsGet2(Resource):
             labelIds = 'label_id IN ({0})'.format(", ".join(i for i in args['label']))
             annotations_where_sec += ' where ' + labelIds
 
-
         comments_where_sec = ''
         if 'keyword' in args and args['keyword']:
             searchwords = ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
             comments_where_sec += ' where ' +  searchwords
-        user_args = ''
-        user_query = ''
 
         query_getIds = f"""
         select * from 
@@ -143,8 +140,18 @@ class CommentsGet2(Resource):
         if annotations_where_sec:
             comments_sec = f' and  comment_id in ({str_})'
 
+        user_sec = ''
+        user_select = ''
+        if user_id:
+            user_select = ', a2.label as user_label'
+
+            user_sec = f"""
+                left join annotations a2
+                on a.comment_id = a2.comment_id and a.label_id = a2.label_id and user_id = '{user_id}'
+            """
+
         query_comments = f"""
-        select a.comment_id, a.label_id, a.count_true as group_true, a.count_false as group_false, f.label as ai_annotation, f.confidence as ai_conf from 
+        select a.comment_id, a.label_id, a.count_true as group_true, a.count_false as group_false, f.label as ai_annotation, f.confidence as ai_conf {user_select} from 
             (select comment_id, label_id, count(label or null) as count_true, count(not label or null) as count_false
             from annotations 
             {annotations_where_sec} {comments_sec} 
@@ -152,6 +159,7 @@ class CommentsGet2(Resource):
             ) a
             left join facts f
             ON a.comment_id = f.comment_id and a.label_id = f.label_id
+            {user_sec}
         order by a.comment_id, a.label_id
         """
 
@@ -163,6 +171,7 @@ class CommentsGet2(Resource):
             return {'msg' : 'DatabaseError: transaction is aborted'}, 400
 
         annotations = postgres.fetchall()
+
 
         dic = {}
         for i in annotations:
