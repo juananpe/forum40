@@ -190,17 +190,17 @@ export default {
     getPeronalAnnotation(annotations, label_id) {
       const annotation = annotations.find(e => e.label_id === label_id);
       if (annotation === undefined) return undefined; // no annotation for this label found
-      return !!annotation.user_label;
+      return !!annotation.user;
     },
     getGroupAnnotation(annotations, label_id) {      
       const annotation = annotations.find(e => e.label_id === label_id);
       if (annotation === undefined) return undefined;
-      return [annotation.group_true, annotation.group_false];
+      return [annotation.group_count_true, annotation.group_count_false];
     },
     getConfidence(annotations, label_id) {
       const classification = annotations.find(e => e.label_id === label_id);
       if (classification === undefined) return undefined;
-      return classification.ai_conf;
+      return classification.ai_pred;
     },
     commentText(props) {
       return (props.item.title || "") + " " + props.item.text;
