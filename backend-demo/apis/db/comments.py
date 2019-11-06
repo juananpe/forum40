@@ -120,6 +120,7 @@ class CommentsGet2(Resource):
             right join
             (select distinct comment_id from annotations {annotations_where_sec} ) as a
             on c.id = a.comment_id
+        where id IS NOT NULL
         order by id
         limit {limit} offset {skip}
         """
