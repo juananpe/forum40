@@ -18,7 +18,7 @@
             </template>
             <span
               v-if="majority !== undefined"
-            >Klassifizierung der Mehrheit ({{majority[0]}} zu {{majority[1]}})</span>
+            >Klassifizierung der Mehrheit ({{majority[0]}} von {{majority[0]+majority[1]}})</span>
           </v-tooltip>
         </div>
         <div v-else>
