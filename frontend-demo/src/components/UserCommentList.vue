@@ -48,9 +48,9 @@
             <UserCommentAnnotation
               :commentId="props.item.id"
               :labelId="labels[label]"
-              :personalLabel="getPeronalAnnotation(props.item, labels[label])"
-              :majority="getGroupAnnotation(props.item, labels[label])"
-              :confidence="getConfidence(props.item, labels[label])"
+              :personalLabel="getPeronalAnnotation(props.item.annotations, labels[label])"
+              :majority="getGroupAnnotation(props.item.annotations, labels[label])"
+              :confidence="getConfidence(props.item.annotations, labels[label])"
             />
           </td>
         </tr>
@@ -187,27 +187,20 @@ export default {
       await Promise.all([p1, p2]);
       this.loading = false;
     },
-    getPeronalAnnotation(comment, label_id) {
-      const user_annotation = comment.user_annotation;
-      if (user_annotation == null) return undefined; // no user labels
-      const annotation = user_annotation.find(e => e[0] === label_id);
+    getPeronalAnnotation(annotations, label_id) {
+      const annotation = annotations.find(e => e.label_id === label_id);
       if (annotation === undefined) return undefined; // no annotation for this label found
-      return !!annotation[1];
+      return !!annotation.user_label;
     },
-    getGroupAnnotation(comment, label_id) {
-      const group_annotaitons = comment.group_annotation;
-      if (group_annotaitons == null) return undefined;
-
-      const annotation = group_annotaitons.find(e => e[0] === label_id);
+    getGroupAnnotation(annotations, label_id) {      
+      const annotation = annotations.find(e => e.label_id === label_id);
       if (annotation === undefined) return undefined;
-      return annotation.slice(1);
+      return [annotation.group_true, annotation.group_false];
     },
-    getConfidence(comment, label_id) {
-      const classifications = comment.ai_annotation;
-      if (classifications == null) return undefined;
-      const classification = classifications.find(e => e[0] === label_id);
+    getConfidence(annotations, label_id) {
+      const classification = annotations.find(e => e.label_id === label_id);
       if (classification === undefined) return undefined;
-      return classification[2];
+      return classification.ai_conf;
     },
     commentText(props) {
       return (props.item.title || "") + " " + props.item.text;
