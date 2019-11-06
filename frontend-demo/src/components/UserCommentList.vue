@@ -46,6 +46,7 @@
           <td class="text-right">{{ props.item.timestamp | moment}}</td>
           <td v-for="(label, i) in selectedLabels" :key="props.item.id+i">
             <UserCommentAnnotation
+              v-if="props.item.annotations !== undefined"
               :commentId="props.item.id"
               :labelId="labels[label]"
               :personalLabel="getPeronalAnnotation(props.item.annotations, labels[label])"
@@ -192,7 +193,7 @@ export default {
       if (annotation === undefined) return undefined; // no annotation for this label found
       return !!annotation.user;
     },
-    getGroupAnnotation(annotations, label_id) {      
+    getGroupAnnotation(annotations, label_id) {
       const annotation = annotations.find(e => e.label_id === label_id);
       if (annotation === undefined) return undefined;
       return [annotation.group_count_true, annotation.group_count_false];
