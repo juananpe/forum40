@@ -33,6 +33,24 @@ class SourcesCount(Resource):
         
         return {"msg": "Error"}, 400
 
+@ns.route('/count_facts/')
+class SourcesCountF(Resource):
+    def get(self):
+        postgres = postgres_con.cursor()
+
+        try:        
+            postgres.execute('SELECT COUNT(*) FROM facts')
+        except DatabaseError:
+            postgres_con.rollback()
+            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+
+        db_return = postgres.fetchone()
+
+        if db_return:
+             return {'count': db_return[0]}, 200
+        
+        return {"msg": "Error"}, 400
+
 @ns.route('/<int:comment_id>')
 class GetLabel(Resource):
     def get(self, comment_id):
