@@ -137,55 +137,57 @@ class CommentsGet2(Resource):
 
         str_ = ', '.join(ids)
 
+        annotations = []
         comments_sec = ''
         if annotations_where_sec:
             comments_sec = f' and  comment_id in ({str_})'
 
-        user_sec = ''
-        user_select = ''
-        if user_id:
-            user_select = ', a2.label as user'
+            user_sec = ''
+            user_select = ''
+            if user_id:
+                user_select = ', a2.label as user'
 
-            user_sec = f"""
-                left join annotations a2
-                on a.comment_id = a2.comment_id and a.label_id = a2.label_id and user_id = '{user_id}'
+                user_sec = f"""
+                    left join annotations a2
+                    on a.comment_id = a2.comment_id and a.label_id = a2.label_id and user_id = '{user_id}'
+                """
+
+            query_comments = f"""
+            select a.comment_id, a.label_id, a.count_true as group_count_true, a.count_false as group_count_false, f.label as ai, f.confidence as ai_pred {user_select} from 
+                (select comment_id, label_id, count(label or null) as count_true, count(not label or null) as count_false
+                from annotations 
+                {annotations_where_sec} {comments_sec} 
+                group by comment_id, label_id
+                ) a
+                left join facts f
+                ON a.comment_id = f.comment_id and a.label_id = f.label_id
+                {user_sec}
+            order by a.comment_id, a.label_id
             """
 
-        query_comments = f"""
-        select a.comment_id, a.label_id, a.count_true as group_count_true, a.count_false as group_count_false, f.label as ai, f.confidence as ai_pred {user_select} from 
-            (select comment_id, label_id, count(label or null) as count_true, count(not label or null) as count_false
-            from annotations 
-            {annotations_where_sec} {comments_sec} 
-            group by comment_id, label_id
-            ) a
-            left join facts f
-            ON a.comment_id = f.comment_id and a.label_id = f.label_id
-            {user_sec}
-        order by a.comment_id, a.label_id
-        """
+            try:        
+                postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+                postgres.execute(query_comments)
+            except DatabaseError:
+                postgres_con.rollback()
+                return {'msg' : 'DatabaseError: transaction is aborted'}, 400
 
-        try:        
-            postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
-            postgres.execute(query_comments)
-        except DatabaseError:
-            postgres_con.rollback()
-            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
-
-        annotations = postgres.fetchall()
+            annotations = postgres.fetchall()
 
 
-        dic = {}
-        for i in annotations:
-            index = i['comment_id']
-            if index in dic:
-                dic[index].append(i)
-            else:
-                dic[index] = list()
-                dic[index].append(i)
+            dic = {}
+            for i in annotations:
+                index = i['comment_id']
+                if index in dic:
+                    dic[index].append(i)
+                else:
+                    dic[index] = list()
+                    dic[index].append(i)
 
         for i in range(0, len(comments)):
             comments[i]['timestamp'] = comments[i]['timestamp'].isoformat()
-            comments[i]['annotations'] = dic[comments[i]['id']]
+            if annotations:
+                comments[i]['annotations'] = dic[comments[i]['id']]
 
         return comments
 
