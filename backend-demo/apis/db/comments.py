@@ -90,7 +90,7 @@ def createQuery(args, skip=None, limit=None):
 
 import sys
 
-@ns.route('/2')
+@ns.route('/')
 @api.expect(comments_parser_sl)
 class CommentsGet2(Resource):
     @token_optional
@@ -144,7 +144,7 @@ class CommentsGet2(Resource):
         user_sec = ''
         user_select = ''
         if user_id:
-            user_select = ', a2.label as user_label'
+            user_select = ', a2.label as user'
 
             user_sec = f"""
                 left join annotations a2
@@ -152,7 +152,7 @@ class CommentsGet2(Resource):
             """
 
         query_comments = f"""
-        select a.comment_id, a.label_id, a.count_true as group_true, a.count_false as group_false, f.label as ai_annotation, f.confidence as ai_conf {user_select} from 
+        select a.comment_id, a.label_id, a.count_true as group_count_true, a.count_false as group_count_false, f.label as ai, f.confidence as ai_pred {user_select} from 
             (select comment_id, label_id, count(label or null) as count_true, count(not label or null) as count_false
             from annotations 
             {annotations_where_sec} {comments_sec} 
@@ -190,7 +190,7 @@ class CommentsGet2(Resource):
         return comments
 
 
-@ns.route('/')
+@ns.route('/old')
 @api.expect(comments_parser_sl)
 class CommentsGet(Resource):
     @token_optional
