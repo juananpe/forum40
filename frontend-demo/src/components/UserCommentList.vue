@@ -71,7 +71,38 @@
         </tr>
       </template>
       <template v-slot:expanded-item="{ item, headers }">
-        <UserCommentSimilar :comment="item" />
+        <tr v-if="!similar_comments.length">
+          <td></td>
+          <td>
+            <v-btn
+              outlined
+              small
+              color="primary"
+              text
+              @click="loadSimilarComments(item)"
+            >Ähnliche Kommentare anzeigen</v-btn>
+          </td>
+          <td></td>
+        </tr>
+        <tr
+          class="elevation-1"
+          v-for="(comment, i) in similar_comments.slice(0,MAX_COMMENTS)"
+          :key="i"
+        >
+          <td v-if="similar_comments.length>0"></td>
+          <td v-if="similar_comments.length>0">{{comment.title}} {{comment.text}}</td>
+          <td v-if="similar_comments.length>0" class="text-right">{{ comment.timestamp | moment}}</td>
+
+          <td v-for="(label, i) in selectedLabels" :key="comment.id+i">
+            <UserCommentAnnotation
+              :commentId="comment.id"
+              :labelId="labels[label]"
+              :personalLabel="true"
+              :majority="[3,4]"
+              :confidence="Math.random()"
+            />
+          </td>
+        </tr>
       </template>
     </v-data-table>
   </div>
@@ -84,7 +115,6 @@ import { mapState, mapGetters, mapMutations } from "vuex";
 import moment from "moment";
 import { EventBus, Events } from "../event-bus";
 import UserCommentAnnotation from "./UserCommentAnnotation";
-import UserCommentSimilar from "./UserCommentSimilar";
 import { mdiRobot } from "@mdi/js";
 
 export default {
@@ -120,7 +150,9 @@ export default {
           width: "15%"
         }
       ],
-      svgPath: mdiRobot
+      svgPath: mdiRobot,
+      similar_comments: [],
+      MAX_COMMENTS: 3
     };
   },
   filters: {
@@ -180,6 +212,7 @@ export default {
     }
   },
   async mounted() {
+    this.similar_comments = [];
     this.loadTable();
     EventBus.$on(Events.loggedIn, this.fetchComments);
   },
@@ -259,6 +292,7 @@ export default {
       this.totalItems = data.count.count;
     },
     commentClicked(props) {
+      this.similar_comments = [];
       props.expand(!props.isExpanded);
 
       if (!props.isExpanded) {
@@ -271,11 +305,29 @@ export default {
     },
     keywordChanged() {
       //this.loadTable();
+    },
+    async loadSimilarComments(comment) {
+      const payload = {
+        comments: [comment.comment_id],
+        n: 3
+      };
+      try {
+        const { data } = await Service.post(Endpoint.COMMENTS_SIMILAR, payload);
+        let comment_ids = data[0];
+        // comment_ids = [1, 2, 3]; // for test purposes
+        if (comment_ids !== undefined) {
+          const comments = await Promise.all(
+            comment_ids.map(id => Service.get(Endpoint.COMMENT_ID(id)))
+          );
+          this.similar_comments = comments.map(response => response["data"]);
+        }
+      } catch (e) {
+        console.error(`Could not load similar comments: ${e}`);
+      }
     }
   },
   components: {
-    UserCommentAnnotation,
-    UserCommentSimilar
+    UserCommentAnnotation
   }
 };
 </script>
