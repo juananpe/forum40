@@ -412,3 +412,22 @@ class CommentsParentRec(Resource):
             "size": len(comments)
         }
         return response
+
+@ns.route('/<int:comment_id>/')
+class Comment(Resource):
+    def get(self, comment_id):
+        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+
+        query = "select * from comments where id = %s"
+        try:
+            postgres.execute(query, (comment_id,))
+        except DatabaseError:
+            postgres_con.rollback()
+            return {'msg': 'DatabaseError: transaction is aborted'}, 400
+
+        comment = postgres.fetchone()
+        if comment:
+            comment['timestamp'] = comment['timestamp'].isoformat()
+            return comment
+
+        return {}
