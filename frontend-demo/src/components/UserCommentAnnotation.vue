@@ -1,99 +1,79 @@
 <template>
-  <div>
-    <v-layout>
-      <v-flex xs12 v-if="loggedIn" class="text-center">
-        <div v-if="label != undefined">
-          <v-tooltip right>
+  <v-layout>
+    <v-flex xs12 class="text-center" style="display:inline-flex; justify-content: center;">
+      <span v-if="loggedIn" class="text-center">
+        <span v-if="label != undefined">
+          <v-tooltip top>
             <template v-slot:activator="{ on }">
-              <v-checkbox
-                v-on="on"
-                class="justify-center ma-0 pa-1"
-                :input-value="label"
-                color="green"
-                :readonly="!loggedIn"
-                @change="annotate"
-                hide-details
-                prepend-icon="person"
-              ></v-checkbox>
+              <v-icon v-if="label" @click="annotate(false)" v-on="on">{{svgCheckbox}}</v-icon>
+
+              <v-icon v-else @click="annotate(true)" v-on="on">{{svgRectangle}}</v-icon>
             </template>
             <span
               v-if="majority !== undefined"
             >Klassifizierung der Mehrheit ({{majority[0]}} von {{majority[0]+majority[1]}})</span>
           </v-tooltip>
-        </div>
-        <div v-else>
-          <v-icon outline color="success" class="action-left" @click="annotate(true)">check</v-icon>
+        </span>
 
-          <v-icon outline color="error" class="action-right" @click="annotate(false)">clear</v-icon>
-        </div>
-      </v-flex>
-    </v-layout>
-    <v-layout>
-      <v-flex v-if="!loggedIn" xs12 class="text-center">
-        <div v-if="majority != undefined">
-          <v-tooltip right>
+        <span v-else>
+          <div>
+            <v-icon outline color="success" class="action-left" @click="annotate(true)">check</v-icon>
+          </div>
+
+          <div>
+            <v-icon outline color="error" class="action-right" @click="annotate(false)">clear</v-icon>
+          </div>
+        </span>
+      </span>
+
+      <span v-if="!loggedIn">
+        <span v-if="majority != undefined">
+          <v-tooltip top>
             <template v-slot:activator="{ on }">
-              <v-checkbox
-                v-on="on"
-                class="justify-center ma-0 pa-1"
-                :input-value="majority[0]>=majority[1]"
-                color="grey darken-1"
-                readonly
-                hide-details
-                prepend-icon="people"
-              ></v-checkbox>
+              <v-icon v-if="majority[0]>=majority[1]" v-on="on">{{svgCheckbox}}</v-icon>
+              <v-icon v-else v-on="on">{{svgRectangle}}</v-icon>
             </template>
-            <span>Klassifizierung der Mehrheit ({{majority[0]}} zu {{majority[1]}})</span>
+            <span>Klassifizierung der Mehrheit ({{majority[0]}} von {{majority[0]+majority[1]}})</span>
           </v-tooltip>
-        </div>
-        <div v-else>
-          <v-icon>people</v-icon>
-          <v-tooltip right>
+        </span>
+        <span v-else>
+          <v-tooltip top>
             <template #activator="{ on }">
-              <v-icon v-on="on" class="mr-1 ml-1">not_interested</v-icon>
+              <v-icon v-on="on" class="mr-0 ml-0">not_interested</v-icon>
             </template>
             <span>Keine weiteren Labels vorhanden</span>
           </v-tooltip>
-        </div>
-      </v-flex>
-    </v-layout>
-    <v-layout>
-      <v-flex xs12 class="text-center">
-        <div v-if="confidence != undefined">
-          <v-tooltip right>
+        </span>
+      </span>
+
+      <span :class="{centerClassificationIcon:label===undefined && loggedIn}">
+        <span v-if="confidence != undefined">
+          <v-tooltip top>
             <template v-slot:activator="{ on }">
-              <v-checkbox
-                v-on="on"
-                class="justify-center ma-0 pa-0"
-                :input-value="confidence>=0.5"
-                color="grey darken-1"
-                :prepend-icon="svgPath"
-                readonly
-                hide-details
-              ></v-checkbox>
+              <v-icon v-if="confidence>=0.5" v-on="on" class="ml-1">{{svgCheckbox}}</v-icon>
+              <v-icon v-else v-on="on" class="ml-1">{{svgRectangle}}</v-icon>
             </template>
             <span>Automatische Klassifizierung ({{1-confidence | toPercentage}} Konfidenz)</span>
           </v-tooltip>
-        </div>
-        <div v-else>
-          <v-icon>{{svgPath}}</v-icon>
-          <v-tooltip right>
+        </span>
+        <span v-else>
+          <v-tooltip top>
             <template #activator="{ on }">
               <v-icon v-on="on" class="ml-1">not_interested</v-icon>
             </template>
             <span>Keine Klassifizierung vorhanden</span>
           </v-tooltip>
-        </div>
-      </v-flex>
-    </v-layout>
-  </div>
+        </span>
+      </span>
+    </v-flex>
+  </v-layout>
 </template>
 
 <script>
 import Service, { Endpoint } from "../api/db";
 import { mapGetters } from "vuex";
 import { Getters } from "../store/const";
-import { mdiRobot } from "@mdi/js";
+import { mdiCropSquare, mdiCheckBoxOutline } from "@mdi/js";
 
 export default {
   name: "UserCommentAnnotation",
@@ -107,7 +87,8 @@ export default {
   data() {
     return {
       manualLabel: undefined,
-      svgPath: mdiRobot
+      svgRectangle: mdiCropSquare,
+      svgCheckbox: mdiCheckBoxOutline
     };
   },
   mounted() {
@@ -157,4 +138,8 @@ export default {
 </script>
 
 <style>
+.centerClassificationIcon {
+  position: relative;
+  top: 25%;
+}
 </style>

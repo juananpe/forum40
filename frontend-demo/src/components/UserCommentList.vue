@@ -27,6 +27,20 @@
       single-expand
       show-expand
     >
+      <template
+        v-for="(header, i) in commentsTableHeader"
+        v-slot:[getHeaderSlotname(header.value)]="{header}"
+      >
+        <div :key="i">
+          <div class="mb-1 columnTitle">{{header.text}}</div>
+          <div v-if="header.labelColumn" :key="i" class="tableColumn">
+            <v-icon v-if="loggedIn">person</v-icon>
+            <v-icon v-if="!loggedIn">people</v-icon>
+            <v-icon class="ml-1">{{svgPath}}</v-icon>
+          </div>
+        </div>
+      </template>
+
       <template v-slot:item="props">
         <tr class="mb-2">
           <td @click="commentClicked(props)">
@@ -71,11 +85,13 @@ import moment from "moment";
 import { EventBus, Events } from "../event-bus";
 import UserCommentAnnotation from "./UserCommentAnnotation";
 import UserCommentSimilar from "./UserCommentSimilar";
+import { mdiRobot } from "@mdi/js";
 
 export default {
   name: "UserCommentList",
   data() {
     return {
+      headerPrefix: "header.",
       comments: [],
       expanded: [],
       loading: false,
@@ -103,7 +119,8 @@ export default {
           value: "timestamp",
           width: "15%"
         }
-      ]
+      ],
+      svgPath: mdiRobot
     };
   },
   filters: {
@@ -120,15 +137,20 @@ export default {
       Getters.selectedLabels,
       Getters.labelParameters,
       Getters.jwtUser,
-      Getters.jwt
+      Getters.jwt,
+      Getters.jwtLoggedIn
     ]),
+    loggedIn() {
+      return this[Getters.jwtLoggedIn];
+    },
     commentsTableHeader() {
       const labelTableHeaders = this[Getters.selectedLabels].map(e => ({
         text: e,
         align: "center",
         sortable: false,
         value: "text",
-        width: "15%"
+        width: "15%",
+        labelColumn: true
       }));
 
       return this.basicCommentsTableHeader.concat(labelTableHeaders);
@@ -187,6 +209,9 @@ export default {
       const p2 = this.fetchComments();
       await Promise.all([p1, p2]);
       this.loading = false;
+    },
+    getHeaderSlotname(header) {
+      return this.headerPrefix + header;
     },
     getPeronalAnnotation(annotations, label_id) {
       const annotation = annotations.find(e => e.label_id === label_id);
@@ -259,5 +284,13 @@ export default {
 <style scoped>
 .commenttext >>> .highlight {
   background-color: yellow;
+}
+
+.columnTitle {
+  font-size: 12pt;
+}
+
+.tableColumn {
+  min-width: 60px;
 }
 </style>
