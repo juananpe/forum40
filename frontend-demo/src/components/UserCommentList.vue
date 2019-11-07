@@ -308,7 +308,7 @@ export default {
     },
     async loadSimilarComments(comment) {
       const payload = {
-        comments: [comment.comment_id],
+        ids: [comment.comment_id],
         n: 3
       };
       try {
