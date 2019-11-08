@@ -10,6 +10,7 @@ export const Endpoint = {
     COMMENTS_GROUP_BY_DAY: "db/comments/groupByDay",
     COMMENTS_GROUP_BY_MONTH: "db/comments/groupByMonth",
     COMMENTS_GROUP_BY_YEAR: "db/comments/groupByYear",
+    SOURCES: "db/sources/",
     ADD_ANNOTATION_TO_COMMENT: (comment_id, label_id, label) => `db/annotations/${comment_id}/${label_id}/${label}`,
     COMMENTS_COUNT: 'db/comments/count',
     COMMENTS_PARENTS: (commentId) => `db/comments/parent_recursive/${commentId}`,

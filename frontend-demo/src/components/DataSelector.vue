@@ -1,7 +1,16 @@
 <template>
   <v-layout align-center>
-    <v-flex :xs10="loggedIn" :xs12="!loggedIn" pr-2>
-      <v-select v-model="selection" :items="Object.keys(labels)" chips clearable multiple>
+    <v-flex xs2 pr-2>
+      <v-select
+          :items="sources.map(e=>e['name'])"
+          label="Datenquelle"
+          chips
+        ></v-select>
+    </v-flex>
+
+    <v-flex :xs8="loggedIn" :xs10="!loggedIn" pr-2>
+      <v-select v-model="selection" :items="Object.keys(labels)" chips clearable multiple
+      label="Labels">
         <template v-slot:selection="data">
           <v-chip :input-value="data.selected" close @click:close="remove(data.item)">
             <strong>{{ data.item }}</strong>
@@ -55,6 +64,7 @@ export default {
   name: "DataSelector",
 
   data: () => ({
+    sources: [],
     dialog: false,
     newLabel: "",
     error: false,
@@ -62,6 +72,11 @@ export default {
   }),
   methods: {
     ...mapMutations([Mutations.setSelectedLabels, Mutations.setLabels]),
+    async fetchSources() {
+      const { data } = await Service.get(Endpoint.SOURCES);
+      this.sources = data;
+      
+    },
     async fetchLabels() {
       const { data } = await Service.get(Endpoint.LABELS);
       const labels = {};
@@ -94,6 +109,7 @@ export default {
     }
   },
   mounted() {
+    this.fetchSources();
     this.fetchLabels();
   },
   computed: {
