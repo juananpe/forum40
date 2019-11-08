@@ -6,7 +6,7 @@ export const Endpoint = {
     LABELS: "db/labels/",
     ADD_LABEL: (description) => `db/labels/binary/${description}`,
     COMMENTS: 'db/comments/',
-    COMMENT_ID: (comment_id) => `db/comments/${comment_id}`,
+    COMMENT_ID: (comment_id, labels) => `db/comments/${comment_id}?${labels}`,
     COMMENTS_GROUP_BY_DAY: "db/comments/groupByDay",
     COMMENTS_GROUP_BY_MONTH: "db/comments/groupByMonth",
     COMMENTS_GROUP_BY_YEAR: "db/comments/groupByYear",

@@ -2,7 +2,7 @@ from flask import Response
 from flask_restplus import Resource, reqparse
 
 from apis.db import api
-from models.db_models import comments_parser, comments_parser_sl, groupByModel
+from models.db_models import comments_parser, comments_parser_sl, groupByModel, comment_parser
 
 #from db import postgres
 #from db import postgres_json
@@ -38,27 +38,30 @@ def convertCursorToJSonResponse(cursor):
 
 def getLabelIdByName(name):
     postgres = postgres_con.cursor()
-    try:        
+    try:
         postgres.execute(SELECT_ID_FROM_LABELS_BY_NAME(name))
     except DatabaseError:
         postgres_con.rollback()
-        return {'msg' : 'DatabaseError: transaction is aborted'}, 400
-    
+        return {'msg': 'DatabaseError: transaction is aborted'}, 400
+
     db_return = postgres.fetchone()
     if db_return:
         return db_return[0]
     return -1
 
+
 def createQuery(args, skip=None, limit=None):
 
     annotations_where_sec = ''
     if 'label' in args and args['label']:
-        labelIds = 'a.label_id IN ({0})'.format(", ".join(i for i in args['label']))
+        labelIds = 'a.label_id IN ({0})'.format(
+            ", ".join(i for i in args['label']))
         annotations_where_sec += labelIds
 
     comments_where_sec = ''
     if 'keyword' in args and args['keyword']:
-        searchwords = ' OR '.join("c.text LIKE '%{0}%'".format(x) for x in args['keyword'])
+        searchwords = ' OR '.join(
+            "c.text LIKE '%{0}%'".format(x) for x in args['keyword'])
         comments_where_sec += searchwords
 
     and_sec_0 = ''
@@ -88,7 +91,6 @@ def createQuery(args, skip=None, limit=None):
     """
     return query
 
-import sys
 
 @ns.route('/')
 @api.expect(comments_parser_sl)
@@ -106,13 +108,15 @@ class CommentsGet2(Resource):
 
         annotations_where_sec = ''
         if 'label' in args and args['label']:
-            labelIds = 'label_id IN ({0})'.format(", ".join(i for i in args['label']))
+            labelIds = 'label_id IN ({0})'.format(
+                ", ".join(i for i in args['label']))
             annotations_where_sec += ' where ' + labelIds
 
         comments_where_sec = ''
         if 'keyword' in args and args['keyword']:
-            searchwords = ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
-            comments_where_sec += ' where ' +  searchwords
+            searchwords = ' OR '.join(
+                "text LIKE '%{0}%'".format(x) for x in args['keyword'])
+            comments_where_sec += ' where ' + searchwords
 
         query_getIds = f"""
         select * from 
@@ -125,15 +129,15 @@ class CommentsGet2(Resource):
         limit {limit} offset {skip}
         """
 
-        try:        
+        try:
             postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
             postgres.execute(query_getIds)
         except DatabaseError:
             postgres_con.rollback()
-            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+            return {'msg': 'DatabaseError: transaction is aborted'}, 400
 
         comments = postgres.fetchall()
-        ids = [ str(i['id']) for i in comments]
+        ids = [str(i['id']) for i in comments]
 
         str_ = ', '.join(ids)
 
@@ -165,15 +169,14 @@ class CommentsGet2(Resource):
             order by a.comment_id, a.label_id
             """
 
-            try:        
+            try:
                 postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
                 postgres.execute(query_comments)
             except DatabaseError:
                 postgres_con.rollback()
-                return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+                return {'msg': 'DatabaseError: transaction is aborted'}, 400
 
             annotations = postgres.fetchall()
-
 
             dic = {}
             for i in annotations:
@@ -272,7 +275,8 @@ class CommentsGroupByDay(Resource):
 
         annotations_sub_query = ''
         if 'label' in args and args['label']:
-            labelIds = ' WHERE label = True AND label_id IN ({0})'.format(args['label'])
+            labelIds = ' WHERE label = True AND label_id IN ({0})'.format(
+                args['label'])
             annotations_sub_query += labelIds
 
         comments_sub_query = ''
@@ -284,11 +288,12 @@ class CommentsGroupByDay(Resource):
 
         postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
 
-        try:        
-            postgres.execute(GROUP_COMMENTS_BY_DAY(annotations_sub_query, comments_sub_query))
+        try:
+            postgres.execute(GROUP_COMMENTS_BY_DAY(
+                annotations_sub_query, comments_sub_query))
         except DatabaseError:
             postgres_con.rollback()
-            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+            return {'msg': 'DatabaseError: transaction is aborted'}, 400
 
         db_result = postgres.fetchall()
 
@@ -303,7 +308,8 @@ class CommentsGroupByMonth(Resource):
 
         annotations_sub_query = ''
         if 'label' in args and args['label']:
-            labelIds = ' WHERE label = True AND label_id IN ({0})'.format(args['label'])
+            labelIds = ' WHERE label = True AND label_id IN ({0})'.format(
+                args['label'])
             annotations_sub_query += labelIds
 
         comments_sub_query = ''
@@ -315,13 +321,13 @@ class CommentsGroupByMonth(Resource):
 
         postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
 
-        try:        
+        try:
             postgres.execute(GROUP_COMMENTS_BY_MONTH(
-            annotations_sub_query, comments_sub_query))
+                annotations_sub_query, comments_sub_query))
         except DatabaseError:
             postgres_con.rollback()
-            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
-        
+            return {'msg': 'DatabaseError: transaction is aborted'}, 400
+
         db_result = postgres.fetchall()
         return prepareForVisualisation(addMissingMonths(db_result), lambda d: "{}.{}".format(d['month'], d['year']))
 
@@ -334,7 +340,8 @@ class CommentsGroupByYear(Resource):
 
         annotations_sub_query = ''
         if 'label' in args and args['label']:
-            labelIds = ' WHERE label = True AND label_id IN ({0})'.format(args['label'])
+            labelIds = ' WHERE label = True AND label_id IN ({0})'.format(
+                args['label'])
             annotations_sub_query += labelIds
 
         comments_sub_query = ''
@@ -345,14 +352,13 @@ class CommentsGroupByYear(Resource):
             comments_sub_query += searchwords
 
         postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
-        try:        
+        try:
             postgres.execute(GROUP_COMMENTS_BY_YEAR(
-            annotations_sub_query, comments_sub_query))
+                annotations_sub_query, comments_sub_query))
         except DatabaseError:
             postgres_con.rollback()
-            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+            return {'msg': 'DatabaseError: transaction is aborted'}, 400
 
-        
         db_result = postgres.fetchall()
         return prepareForVisualisation(addMissingYears(db_result), lambda d: "{}".format(d['year']))
 
@@ -363,13 +369,13 @@ class CommentsParent(Resource):
 
         # TODO externalize str
         postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
-        try:        
+        try:
             postgres.execute(
-            'SELECT id, text, title, user_id, year, month, day FROM comments p, (SELECT parent_comment_id FROM comments c WHERE id = {}) as c WHERE p.id = c.parent_comment_id;'.format(id))
+                'SELECT id, text, title, user_id, year, month, day FROM comments p, (SELECT parent_comment_id FROM comments c WHERE id = {}) as c WHERE p.id = c.parent_comment_id;'.format(id))
         except DatabaseError:
             postgres_con.rollback()
-            return {'msg' : 'DatabaseError: transaction is aborted'}
-        
+            return {'msg': 'DatabaseError: transaction is aborted'}
+
         db_result = postgres.fetchone()
         if not db_result:
             return {'msg': "Error: No such Comment"}
@@ -383,12 +389,12 @@ class CommentsParentRec(Resource):
 
         postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
         # TODO externalize str
-        try:        
+        try:
             postgres.execute(
-            'SELECT id, parent_comment_id, user_id, title, text, timestamp FROM comments WHERE id = {0};'.format(id))
+                'SELECT id, parent_comment_id, user_id, title, text, timestamp FROM comments WHERE id = {0};'.format(id))
         except DatabaseError:
             postgres_con.rollback()
-            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+            return {'msg': 'DatabaseError: transaction is aborted'}, 400
 
         db_response = postgres.fetchone()
         db_response['timestamp'] = db_response['timestamp'].isoformat()
@@ -413,12 +419,20 @@ class CommentsParentRec(Resource):
         }
         return response
 
+
 @ns.route('/<int:comment_id>/')
+@api.expect(comment_parser)
 class Comment(Resource):
-    def get(self, comment_id):
+    @token_optional
+    @api.doc(security='apikey')
+    def get(self, request, comment_id):
+        args = comment_parser.parse_args()
+        label = args["label"]
+
         postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
 
         query = "select * from comments where id = %s"
+
         try:
             postgres.execute(query, (comment_id,))
         except DatabaseError:
@@ -428,6 +442,36 @@ class Comment(Resource):
         comment = postgres.fetchone()
         if comment:
             comment['timestamp'] = comment['timestamp'].isoformat()
+
+            if self and 'user' in self and label:
+                user_id = self["user"]
+                if user_id:
+                    annotation_query = """
+                    select coalesce(a.comment_id, f.comment_id) as comment_id, coalesce(a.label_id, f.label_id) as label_id, a.count_true as group_count_true, a.count_false as group_count_false, f.label as ai, f.confidence as ai_pred , a2.label as user from 
+                    (select comment_id, label_id, count(label or null) as count_true, count(not label or null) as count_false
+                    from annotations 
+                    where label_id in %s and comment_id = %s
+                    group by comment_id, label_id
+                    ) a
+                    full outer join 
+                    (select * from facts where label_id in %s and comment_id = %s) f
+                    ON a.comment_id = f.comment_id and a.label_id = f.label_id
+                    left join annotations a2
+                    on a.comment_id = a2.comment_id and a.label_id = a2.label_id and user_id = %s
+                    order by a.comment_id, a.label_id
+                    """
+
+                    try:
+                        postgres.execute(annotation_query, (tuple(
+                            label), comment_id, tuple(label), comment_id,  user_id))
+                    except DatabaseError:
+                        postgres_con.rollback()
+                        return {'msg': 'DatabaseError: transaction is aborted. Error when fetching annotations'}, 400
+
+                    annotations = postgres.fetchall()
+                    if annotations:
+                        comment['annotations'] = annotations
+
             return comment
 
         return {}

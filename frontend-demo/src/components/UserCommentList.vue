@@ -97,9 +97,9 @@
             <UserCommentAnnotation
               :commentId="comment.id"
               :labelId="labels[label]"
-              :personalLabel="true"
-              :majority="[3,4]"
-              :confidence="Math.random()"
+              :personalLabel="getPeronalAnnotation(comment.annotations, labels[label])"
+              :majority="getGroupAnnotation(comment.annotations, labels[label])"
+              :confidence="getConfidence(comment.annotations, labels[label])"
             />
           </td>
         </tr>
@@ -218,6 +218,7 @@ export default {
   },
   watch: {
     [Getters.selectedLabels]: function() {
+      this.similar_comments = [];
       this.setSelectedComment({});
       this.loadTable();
     },
@@ -317,7 +318,12 @@ export default {
         // comment_ids = [1, 2, 3]; // for test purposes
         if (comment_ids !== undefined) {
           const comments = await Promise.all(
-            comment_ids.map(id => Service.get(Endpoint.COMMENT_ID(id)))
+            comment_ids.map(id =>
+              Service.get(
+                Endpoint.COMMENT_ID(id, this[Getters.labelParameters]),
+                this[Getters.jwt]
+              )
+            )
           );
           this.similar_comments = comments.map(response => response["data"]);
         }
