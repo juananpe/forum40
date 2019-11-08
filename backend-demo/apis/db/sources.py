@@ -5,6 +5,7 @@ from apis.db import api
 from db import postgres_con
 from db.queries import COUNT_SOURCES
 from models.db_models import source_parser
+from jwt_auth.token import token_required
 from psycopg2 import DatabaseError
 from psycopg2.extras import RealDictCursor
 
@@ -29,7 +30,9 @@ class Sources(Resource):
         return sources, 200
 
     @api.expect(source_parser)
-    def post(self):
+    @token_required
+    @api.doc(security='apikey')
+    def post(self, data):
         args = source_parser.parse_args()
         name = args['name']
         domain = args['domain']
