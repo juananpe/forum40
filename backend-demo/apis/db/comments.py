@@ -91,6 +91,7 @@ def createQuery(args, skip=None, limit=None):
     """
     return query
 
+import sys
 
 @ns.route('/')
 @api.expect(comments_parser_sl)
@@ -108,36 +109,38 @@ class CommentsGet2(Resource):
 
         annotations_where_sec = ''
         if 'label' in args and args['label']:
-            labelIds = 'label_id IN ({0})'.format(
-                ", ".join(i for i in args['label']))
+            labelIds = 'label_id IN ({0})'.format(", ".join(i for i in args['label']))
             annotations_where_sec += ' where ' + labelIds
 
         comments_where_sec = ''
         if 'keyword' in args and args['keyword']:
-            searchwords = ' OR '.join(
-                "text LIKE '%{0}%'".format(x) for x in args['keyword'])
-            comments_where_sec += ' where ' + searchwords
+            searchwords = ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
+            comments_where_sec += ' where ' +  searchwords
 
         query_getIds = f"""
-        select * from 
-            (select id, title, text, timestamp from comments {comments_where_sec}) as c
-            right join
-            (select distinct comment_id from annotations {annotations_where_sec} ) as a
-            on c.id = a.comment_id
-        where id IS NOT NULL
-        order by id
-        limit {limit} offset {skip}
+        select c.id, c.title, c.text, c.timestamp from
+        (
+            select distinct coalesce(a.comment_id, f.comment_id) as id from 
+                (select distinct comment_id, label_id from facts {annotations_where_sec} ) as a
+                full outer join
+                (select distinct comment_id, label_id from annotations {annotations_where_sec}  ) as f
+                on a.comment_id = f.comment_id and a.label_id = f.label_id
+                order by id
+                limit {limit} offset {skip}
+        ) a,
+        (select * from comments {comments_where_sec}) as c
+        where a.id = c.id
         """
 
-        try:
+        try:        
             postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
             postgres.execute(query_getIds)
         except DatabaseError:
             postgres_con.rollback()
-            return {'msg': 'DatabaseError: transaction is aborted'}, 400
+            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
 
         comments = postgres.fetchall()
-        ids = [str(i['id']) for i in comments]
+        ids = [ str(i['id']) for i in comments]
 
         str_ = ', '.join(ids)
 
@@ -157,26 +160,32 @@ class CommentsGet2(Resource):
                 """
 
             query_comments = f"""
-            select a.comment_id, a.label_id, a.count_true as group_count_true, a.count_false as group_count_false, f.label as ai, f.confidence as ai_pred {user_select} from 
-                (select comment_id, label_id, count(label or null) as count_true, count(not label or null) as count_false
-                from annotations 
-                {annotations_where_sec} {comments_sec} 
-                group by comment_id, label_id
-                ) a
-                left join facts f
-                ON a.comment_id = f.comment_id and a.label_id = f.label_id
-                {user_sec}
+            select coalesce(a.comment_id, f.comment_id) as comment_id, coalesce(a.label_id, f.label_id) as label_id, a.count_true as group_count_true, a.count_false as group_count_false, f.label as ai, f.confidence as ai_pred {user_select} from 
+            (select comment_id, label_id, count(label or null) as count_true, count(not label or null) as count_false
+            from annotations 
+            {annotations_where_sec} {comments_sec} 
+            group by comment_id, label_id
+            ) a
+            full outer join 
+            (select * from facts {annotations_where_sec} {comments_sec} ) f
+            ON a.comment_id = f.comment_id and a.label_id = f.label_id
+            {user_sec}
             order by a.comment_id, a.label_id
             """
 
-            try:
+            try:        
                 postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
                 postgres.execute(query_comments)
             except DatabaseError:
                 postgres_con.rollback()
-                return {'msg': 'DatabaseError: transaction is aborted'}, 400
+                return {'msg' : 'DatabaseError: transaction is aborted'}, 400
 
             annotations = postgres.fetchall()
+
+
+            print(comments, sys.stderr)
+            print(annotations, sys.stderr)
+
 
             dic = {}
             for i in annotations:
@@ -193,6 +202,7 @@ class CommentsGet2(Resource):
                 comments[i]['annotations'] = dic[comments[i]['id']]
 
         return comments
+        
 
 
 @ns.route('/count')
