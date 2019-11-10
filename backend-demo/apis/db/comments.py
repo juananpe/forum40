@@ -206,7 +206,28 @@ class CommentsCount(Resource):
     def get(self):
         args = comments_parser.parse_args()
 
-        query = f'SELECT COUNT(*) FROM ({createQuery(args)}) as foo'
+        annotations_where_sec = ''
+        if 'label' in args and args['label']:
+            labelIds = 'label = True and label_id IN ({0})'.format(", ".join(i for i in args['label']))
+            annotations_where_sec += ' where ' + labelIds
+
+        comments_where_sec = ''
+        if 'keyword' in args and args['keyword']:
+            searchwords = ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
+            comments_where_sec += ' where ' +  searchwords
+
+        query = f"""
+        select count(*) from
+        (select * from comments {comments_where_sec}) as c
+        inner join 
+        (select coalesce(l.cid_a, l.cid_f) as comment_id from 
+        ((select distinct comment_id as cid_a from annotations {annotations_where_sec}) as a
+        full outer join
+        (select distinct comment_id as cid_f from facts {annotations_where_sec} ) as f
+        on a.cid_a = f.cid_f) as l
+        order by comment_id) _ 
+        on c.id = _.comment_id
+"""
 
         postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
         postgres.execute(query)
