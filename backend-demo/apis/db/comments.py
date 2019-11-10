@@ -182,11 +182,6 @@ class CommentsGet2(Resource):
 
             annotations = postgres.fetchall()
 
-
-            print(comments, sys.stderr)
-            print(annotations, sys.stderr)
-
-
             dic = {}
             for i in annotations:
                 index = i['comment_id']
