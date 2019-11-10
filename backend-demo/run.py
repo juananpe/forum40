@@ -9,6 +9,7 @@ from core.proxy_wrapper import ReverseProxied
 
 from apis.db import blueprint as db_blueprint
 from apis.service import blueprint as service_blueprint
+from apis.draft1 import blueprint as draft1_blueprint
 
 app = Flask(__name__)
 
@@ -34,6 +35,7 @@ def hello():
 # add blueprints
 app.register_blueprint(db_blueprint, url_prefix='/db')
 app.register_blueprint(service_blueprint, url_prefix='/service')
+app.register_blueprint(draft1_blueprint, url_prefix='/draft1')
 
 # add extensions
 app.wsgi_app = ReverseProxied(app.wsgi_app)
