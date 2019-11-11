@@ -1,16 +1,18 @@
 <template>
   <v-layout align-center>
     <v-flex xs2 pr-2>
-      <v-select
-          :items="sources.map(e=>e['name'])"
-          label="Datenquelle"
-          chips
-        ></v-select>
+      <v-select :items="sources.map(e=>e['name'])" v-model="source" label="Datenquelle" chips></v-select>
     </v-flex>
 
     <v-flex :xs8="loggedIn" :xs10="!loggedIn" pr-2>
-      <v-select v-model="selection" :items="Object.keys(labels)" chips clearable multiple
-      label="Labels">
+      <v-select
+        v-model="selection"
+        :items="Object.keys(labels)"
+        chips
+        clearable
+        multiple
+        label="Labels"
+      >
         <template v-slot:selection="data">
           <v-chip :input-value="data.selected" close @click:close="remove(data.item)">
             <strong>{{ data.item }}</strong>
@@ -21,7 +23,13 @@
     <v-flex xs2 v-if="loggedIn">
       <v-dialog v-model="dialog" width="300" @keydown.enter.prevent="addLabel">
         <template v-slot:activator="{ on }">
-          <v-btn small outlined color="success" v-on="on">Label erstellen</v-btn>
+          <v-btn
+            small
+            :disabled="selectedSource===undefined"
+            outlined
+            color="success"
+            v-on="on"
+          >Label erstellen</v-btn>
         </template>
 
         <v-card>
@@ -45,7 +53,7 @@
           <v-divider></v-divider>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="primary" flat @click="addLabel">Erstellen</v-btn>
+            <v-btn color="primary" text @click="addLabel">Erstellen</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -64,6 +72,7 @@ export default {
   name: "DataSelector",
 
   data: () => ({
+    source: undefined,
     sources: [],
     dialog: false,
     newLabel: "",
@@ -75,7 +84,6 @@ export default {
     async fetchSources() {
       const { data } = await Service.get(Endpoint.SOURCES);
       this.sources = data;
-      
     },
     async fetchLabels() {
       const { data } = await Service.get(Endpoint.LABELS);
@@ -90,10 +98,11 @@ export default {
       this.selection = [...this.selection];
     },
     async addLabel() {
+      if (this.selectedSource === undefined) return;
       this.dialog = false;
       try {
         await Service.put(
-          Endpoint.ADD_LABEL(this.newLabel),
+          Endpoint.ADD_LABEL(this.newLabel, this.selectedSource.id),
           {},
           this[Getters.jwt]
         );
@@ -129,6 +138,9 @@ export default {
       get() {
         return this[Getters.selectedLabels];
       }
+    },
+    selectedSource() {
+      return this.sources.find(e => e["name"] === this.source);
     }
   }
 };

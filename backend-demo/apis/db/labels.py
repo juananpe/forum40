@@ -53,11 +53,11 @@ class LabelsId(Resource):
             return {"msg": f"Label: '{name}' does not exists!"}, 400 
 
 
-@ns.route('/binary/<string:label_name>')
+@ns.route('/binary/<string:label_name>/<int:source_id>')
 class AddLabel(Resource):
     @token_required
     @api.doc(security='apikey')
-    def put(self, data, label_name):
+    def put(self, data, label_name, source_id):
         postgres = postgres_con.cursor()
         postgres.execute(COUNT_LABELS_BY_NAME(label_name))
         db_result = postgres.fetchone()
@@ -69,7 +69,7 @@ class AddLabel(Resource):
         postgres.execute(SELECT_MAX_LABELID)
         max_id = postgres.fetchone()[0]
 
-        postgres.execute(INSERT_LABEL(max_id+1 , 'classification', label_name))
+        postgres.execute(INSERT_LABEL(max_id+1, 'classification', label_name, source_id))
         postgres_con.commit()
         
         return "ok", 200 

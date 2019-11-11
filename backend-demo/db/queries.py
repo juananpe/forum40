@@ -25,7 +25,7 @@ SELECT_IDS_FROM_LABES = "SELECT id FROM labels"
 SELECT_ID_FROM_LABELS_BY_NAME = lambda x : f"SELECT id FROM labels WHERE name = '{x}';"
 SELECT_MAX_LABELID = "SELECT MAX(id) FROM labels"
 
-INSERT_LABEL = lambda id_, type_, name : f"INSERT INTO labels (id, type, name) VALUES({id_}, '{type_}', '{name}')" 
+INSERT_LABEL = lambda id_, type_, name, source_id : f"INSERT INTO labels (id, type, name, source_id) VALUES({id_}, '{type_}', '{name}', {source_id})" 
 
 ## Auth
 SELECT_PASSWORD_BY_NAME = lambda x: f"SELECT password FROM users WHERE name = '{x}';"

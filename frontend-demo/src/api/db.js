@@ -4,7 +4,7 @@ const API_URL = process.env.VUE_APP_ROOT_API
 
 export const Endpoint = {
     LABELS: "db/labels/",
-    ADD_LABEL: (description) => `db/labels/binary/${description}`,
+    ADD_LABEL: (name, source_id) => `db/labels/binary/${name}/${source_id}`,
     COMMENTS: 'db/comments/',
     COMMENT_ID: (comment_id, labels) => `db/comments/${comment_id}?${labels}`,
     COMMENTS_GROUP_BY_DAY: "db/comments/groupByDay",
