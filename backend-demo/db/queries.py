@@ -20,8 +20,8 @@ COUNT_LABELS = "SELECT COUNT(*) FROM labels"
 COUNT_LABELS_BY_NAME = lambda x: f"SELECT COUNT(*) FROM labels WHERE name = '{x}';"
 
 SELECT_LABEL_BY_ID = lambda x: f"SELECT id FROM labels WHERE id = {x} fetch first 1 rows only;"
-SELECT_NAMES_FROM_LABES = "SELECT name FROM labels"
-SELECT_IDS_FROM_LABES = "SELECT id FROM labels"
+SELECT_NAMES_FROM_LABES = lambda source_id: f"SELECT name FROM labels where labels.source_id = {source_id}"
+SELECT_IDS_FROM_LABES = lambda source_id: f"SELECT id FROM labels where labels.source_id = {source_id}"
 SELECT_ID_FROM_LABELS_BY_NAME = lambda x : f"SELECT id FROM labels WHERE name = '{x}';"
 SELECT_MAX_LABELID = "SELECT MAX(id) FROM labels"
 

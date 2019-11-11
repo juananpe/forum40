@@ -62,7 +62,7 @@ export default {
   },
   methods: {
     initChart: async function() {
-      const { data } = await Service.get(Endpoint.LABELS);
+      const { data } = await Service.get(Endpoint.LABELS(1));
       data.labels.push("Gesamtheit");
 
       data.labels.forEach(labelName => {

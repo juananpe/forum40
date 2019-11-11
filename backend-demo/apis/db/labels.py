@@ -14,14 +14,14 @@ from jwt_auth.token import token_required
 
 ns = api.namespace('labels', description="labels api")
 
-@ns.route('/')
+@ns.route('/<int:source_id>')
 class LabelsGetAll(Resource):
-    def get(self):
+    def get(self, source_id):
         postgres = postgres_con.cursor()
-        postgres.execute(SELECT_NAMES_FROM_LABES)
+        postgres.execute(SELECT_NAMES_FROM_LABES(source_id))
         d_list = [t[0] for t in postgres.fetchall()]
 
-        postgres.execute(SELECT_IDS_FROM_LABES)
+        postgres.execute(SELECT_IDS_FROM_LABES(source_id))
         i_list = [t[0] for t in postgres.fetchall()]
 
         return { 

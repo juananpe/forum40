@@ -1,7 +1,13 @@
 <template>
   <v-layout align-center>
     <v-flex xs2 pr-2>
-      <v-select :items="sources.map(e=>e['name'])" v-model="source" label="Datenquelle" chips></v-select>
+      <v-select
+        :items="sources.map(e=>e['name'])"
+        v-on:change="sourceChanged"
+        v-model="source"
+        label="Datenquelle"
+        chips
+      ></v-select>
     </v-flex>
 
     <v-flex :xs8="loggedIn" :xs10="!loggedIn" pr-2>
@@ -84,9 +90,15 @@ export default {
     async fetchSources() {
       const { data } = await Service.get(Endpoint.SOURCES);
       this.sources = data;
+      if (this.sources.length > 0) {
+        this.source = this.sources[0].name;
+        this.fetchLabels();
+      }
     },
     async fetchLabels() {
-      const { data } = await Service.get(Endpoint.LABELS);
+      const { data } = await Service.get(
+        Endpoint.LABELS(this.selectedSource.id)
+      );
       const labels = {};
       const labels_names = data.labels;
       const label_ids = data.ids;
@@ -115,11 +127,14 @@ export default {
         }
       }
       this.newLabel = "";
+    },
+    sourceChanged(value) {
+      this.selection = [];
+      this.fetchLabels();
     }
   },
   mounted() {
     this.fetchSources();
-    this.fetchLabels();
   },
   computed: {
     ...mapState([State.labels]),
