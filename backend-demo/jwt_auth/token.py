@@ -2,7 +2,6 @@ from functools import wraps
 from flask import request
 import jwt
 
-from db import mongo
 from db import postgres_con
 
 globalSecret = "eh9Df9G27gahgHJ7g2oGQz6Ug5he6ud5shd" # TODO hide

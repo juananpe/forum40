@@ -2,7 +2,7 @@ from flask_pymongo import PyMongo
 import psycopg2
 
 ## Mongo DB
-mongo = PyMongo()
+mongo = PyMongo() # TODO remove offlang service
 
 ## PostgSQL
 PG_HOST = 'postgres'

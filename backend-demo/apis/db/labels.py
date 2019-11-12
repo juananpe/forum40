@@ -5,8 +5,6 @@ from apis.db import api
 from db import postgres_con
 from db.queries import *
 
-from db import mongo
-
 from bson import json_util
 import json
 
