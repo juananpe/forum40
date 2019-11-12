@@ -49,48 +49,6 @@ def getLabelIdByName(name):
         return db_return[0]
     return -1
 
-
-def createQuery(args, skip=None, limit=None):
-
-    annotations_where_sec = ''
-    if 'label' in args and args['label']:
-        labelIds = 'a.label_id IN ({0})'.format(
-            ", ".join(i for i in args['label']))
-        annotations_where_sec += labelIds
-
-    comments_where_sec = ''
-    if 'keyword' in args and args['keyword']:
-        searchwords = ' OR '.join(
-            "c.text LIKE '%{0}%'".format(x) for x in args['keyword'])
-        comments_where_sec += searchwords
-
-    and_sec_0 = ''
-    if annotations_where_sec or comments_where_sec:
-        and_sec_0 = 'AND'
-
-    and_sec = ''
-    if annotations_where_sec and comments_where_sec:
-        and_sec = 'AND'
-
-    limit_sec = ''
-    if limit:
-        limit_sec = " LIMIT " + str(limit)
-
-    offset_sec = ''
-    if skip:
-        offset_sec = " OFFSET " + str(skip)
-
-    query = f"""
-    SELECT c.id, c.title, c.text, c.timestamp, array_agg(a.label_id) as labels
-    FROM "comments" as c LEFT OUTER JOIN "annotations" AS a
-    ON c.id = a.comment_id
-    WHERE a.label = True {and_sec_0} {annotations_where_sec} {and_sec} {comments_where_sec}
-    GROUP BY c.id
-    {limit_sec}
-    {offset_sec}
-    """
-    return query
-
 import sys
 
 @ns.route('/')
