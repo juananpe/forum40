@@ -121,33 +121,21 @@ class CommentsCount(Resource):
     def get(self):
         args = comments_parser.parse_args()
 
-        annotations_where_sec = ''
-        if 'label' in args and args['label']:
-            labelIds = 'label = True and label_id IN ({0})'.format(", ".join(i for i in args['label']))
-            annotations_where_sec += ' where ' + labelIds
+        labels = args['label'] if 'label' in args else None
+        keywords = args['keyword'] if 'keyword' in args else None
 
-        comments_where_sec = ''
-        if 'keyword' in args and args['keyword']:
-            searchwords = ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
-            comments_where_sec += ' where ' +  searchwords
+        query = COUNT_COMMENTS_BY_FILTER(labels, keywords)
 
-        query = f"""
-        select count(*) from
-        (select * from comments {comments_where_sec}) as c
-        inner join 
-        (select coalesce(l.cid_a, l.cid_f) as comment_id from 
-        ((select distinct comment_id as cid_a from annotations {annotations_where_sec}) as a
-        full outer join
-        (select distinct comment_id as cid_f from facts {annotations_where_sec} ) as f
-        on a.cid_a = f.cid_f) as l
-        order by comment_id) _ 
-        on c.id = _.comment_id
-"""
+        try:        
+            postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+            postgres.execute(query)
+        except DatabaseError:
+            postgres_con.rollback()
+            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
 
-        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
-        postgres.execute(query)
-        comments_count = postgres.fetchone()
-        return {"count": comments_count}
+        count = postgres.fetchone()
+
+        return {'count': count}
 
 
 def addMissingDays(data):

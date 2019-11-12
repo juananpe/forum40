@@ -77,8 +77,7 @@ GET_ANNOTATIONS_BY_FILTER = lambda ids, labels, user_id: f"""
             a.count_false as group_count_false, f.label as ai, f.confidence as ai_pred {opt_user_sec_head(user_id)} from 
             (
                 select comment_id, label_id, count(label or null) as count_true, count(not label or null) as count_false
-                from annotations 
-                {opt_label_selection(labels)} {opt_and(ids)} {opt_comments_section(ids)} 
+                from annotations {opt_label_selection(labels)} {opt_and(ids)} {opt_comments_section(ids)} 
                 group by comment_id, label_id
             ) a
             full outer join 
@@ -90,6 +89,27 @@ GET_ANNOTATIONS_BY_FILTER = lambda ids, labels, user_id: f"""
             order by a.comment_id, a.label_id
             """
 
+COUNT_COMMENTS_BY_FILTER = lambda labels, keywords: f"""
+            select count(*) from
+            (
+                select * from comments {opt_keyword_section(keywords)}
+            ) as c
+            inner join 
+            (
+                select coalesce(l.cid_a, l.cid_f) as comment_id from 
+                (
+                    (
+                        select distinct comment_id as cid_a from annotations {opt_label_selection(labels)}
+                    ) as a
+                    full outer join
+                    (
+                        select distinct comment_id as cid_f from facts {opt_label_selection(labels)}
+                    ) as f on a.cid_a = f.cid_f
+                ) as l
+                order by comment_id
+            ) _ 
+            on c.id = _.comment_id
+            """
 
 ### utility
 
