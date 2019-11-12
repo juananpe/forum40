@@ -78,7 +78,7 @@ class CommentsGet2(Resource):
             return {'msg' : 'DatabaseError: transaction is aborted'}, 400
 
         comments = postgres.fetchall()
-        ids = [ i['id'] for i in comments]
+        ids = [ str(i['id']) for i in comments]
 
         # get all annotations + facts for selection (ids)
         annotations = []
@@ -319,7 +319,7 @@ class CommentsParentRec(Resource):
         return response
 
 
-@ns.route('/<string:comment_id>/')
+@ns.route('/<int:comment_id>/')
 @api.expect(comment_parser)
 class Comment(Resource):
     @token_optional
@@ -328,6 +328,7 @@ class Comment(Resource):
         args = comment_parser.parse_args()
 
         label_ids = args['label'] if 'label' in args else None
+        comment_id = str(comment_id)
 
         user_id = None
         if self:
