@@ -32,26 +32,26 @@ SELECT_PASSWORD_BY_NAME = lambda x: f"SELECT password FROM users WHERE name = '{
 
 ## Comments
 SELECT_COMMENT_BY_ID =  lambda x: f"SELECT * FROM comments WHERE id = {x} fetch first 1 rows only"
-GROUP_COMMENTS_BY_DAY = lambda sub_a, sub_c: f"""
+GROUP_COMMENTS_BY_DAY = lambda label, keywords: f"""
             SELECT day, month, year, Count(*) FROM 
-                (SELECT DISTINCT comment_id FROM annotations {sub_a}) AS a, 
-                (SELECT id AS comment_id, year, month, day FROM comments {sub_c}) AS c 
+                (SELECT DISTINCT comment_id FROM annotations {opt_label_selection_single(label)} {opt_and_label_eq_true(label)}) AS a, 
+                (SELECT id AS comment_id, year, month, day FROM comments {opt_keyword_section(keywords)}) AS c 
             WHERE a.comment_id = c.comment_id
             GROUP BY year, month, day
             ORDER BY year
             """
-GROUP_COMMENTS_BY_MONTH = lambda sub_a, sub_c: f"""
+GROUP_COMMENTS_BY_MONTH = lambda label, keywords: f"""
             SELECT month, year, Count(*) FROM 
-                (SELECT DISTINCT comment_id FROM annotations {sub_a}) AS a, 
-                (SELECT id AS comment_id, year, month FROM comments {sub_c}) AS c 
+                (SELECT DISTINCT comment_id FROM annotations {opt_label_selection_single(label)} {opt_and_label_eq_true(label)}) AS a, 
+                (SELECT id AS comment_id, year, month FROM comments {opt_keyword_section(keywords)}) AS c 
             WHERE a.comment_id = c.comment_id
             GROUP BY year, month
             ORDER BY year
             """
-GROUP_COMMENTS_BY_YEAR = lambda sub_a, sub_c: f"""
+GROUP_COMMENTS_BY_YEAR = lambda label, keywords: f"""
             SELECT year, Count(*) FROM 
-                (SELECT DISTINCT comment_id FROM annotations {sub_a}) AS a, 
-                (SELECT id AS comment_id, year FROM comments {sub_c}) AS c 
+                (SELECT DISTINCT comment_id FROM annotations {opt_label_selection_single(label)} {opt_and_label_eq_true(label)}) AS a, 
+                (SELECT id AS comment_id, year FROM comments {opt_keyword_section(keywords)}) AS c 
             WHERE a.comment_id = c.comment_id
             GROUP BY year
             ORDER BY year
@@ -127,6 +127,12 @@ def opt_comments_section(ids):
 
 def opt_label_selection(labels):
     return f'where label_id IN ({", ".join(i for i in labels)})' if labels else ''
+
+def opt_label_selection_single(label):
+    return f'where label_id = {label}' if label else ''
+
+def opt_and_label_eq_true(labels):
+    return 'and label = True' if labels else ''
 
 def opt_keyword_section(keywords):
     return ' where ' + ' OR '.join(f"text LIKE '%{x}%'" for x in keywords) if keywords else ''

@@ -202,24 +202,14 @@ class CommentsGroupByDay(Resource):
     def get(self):
         args = groupByModel.parse_args()
 
-        annotations_sub_query = ''
-        if 'label' in args and args['label']:
-            labelIds = ' WHERE label = True AND label_id IN ({0})'.format(
-                args['label'])
-            annotations_sub_query += labelIds
+        labels = args['label'] if 'label' in args else None
+        keywords = args['keyword'] if 'keyword' in args else None
 
-        comments_sub_query = ''
-        if 'keyword' in args and args['keyword']:
-            searchwords = ' WHERE ' + \
-                ' OR '.join("text LIKE '%{0}%'".format(x)
-                            for x in args['keyword'])
-            comments_sub_query += searchwords
-
-        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+        query = GROUP_COMMENTS_BY_DAY(labels, keywords)
 
         try:
-            postgres.execute(GROUP_COMMENTS_BY_DAY(
-                annotations_sub_query, comments_sub_query))
+            postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+            postgres.execute(query)
         except DatabaseError:
             postgres_con.rollback()
             return {'msg': 'DatabaseError: transaction is aborted'}, 400
@@ -235,24 +225,14 @@ class CommentsGroupByMonth(Resource):
     def get(self):
         args = groupByModel.parse_args()
 
-        annotations_sub_query = ''
-        if 'label' in args and args['label']:
-            labelIds = ' WHERE label = True AND label_id IN ({0})'.format(
-                args['label'])
-            annotations_sub_query += labelIds
+        labels = args['label'] if 'label' in args else None
+        keywords = args['keyword'] if 'keyword' in args else None
 
-        comments_sub_query = ''
-        if 'keyword' in args and args['keyword']:
-            searchwords = ' WHERE ' + \
-                ' OR '.join("text LIKE '%{0}%'".format(x)
-                            for x in args['keyword'])
-            comments_sub_query += searchwords
-
-        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+        query = GROUP_COMMENTS_BY_MONTH(labels, keywords)
 
         try:
-            postgres.execute(GROUP_COMMENTS_BY_MONTH(
-                annotations_sub_query, comments_sub_query))
+            postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+            postgres.execute(query)
         except DatabaseError:
             postgres_con.rollback()
             return {'msg': 'DatabaseError: transaction is aborted'}, 400
@@ -267,23 +247,14 @@ class CommentsGroupByYear(Resource):
     def get(self):
         args = groupByModel.parse_args()
 
-        annotations_sub_query = ''
-        if 'label' in args and args['label']:
-            labelIds = ' WHERE label = True AND label_id IN ({0})'.format(
-                args['label'])
-            annotations_sub_query += labelIds
+        labels = args['label'] if 'label' in args else None
+        keywords = args['keyword'] if 'keyword' in args else None
 
-        comments_sub_query = ''
-        if 'keyword' in args and args['keyword']:
-            searchwords = ' WHERE ' + \
-                ' OR '.join("text LIKE '%{0}%'".format(x)
-                            for x in args['keyword'])
-            comments_sub_query += searchwords
+        query = GROUP_COMMENTS_BY_YEAR(labels, keywords)
 
-        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
         try:
-            postgres.execute(GROUP_COMMENTS_BY_YEAR(
-                annotations_sub_query, comments_sub_query))
+            postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+            postgres.execute(query)
         except DatabaseError:
             postgres_con.rollback()
             return {'msg': 'DatabaseError: transaction is aborted'}, 400
