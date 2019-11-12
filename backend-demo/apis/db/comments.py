@@ -57,38 +57,18 @@ class CommentsGet2(Resource):
     @token_optional
     @api.doc(security='apikey')
     def get(self, data):
+        # get args
         args = comments_parser_sl.parse_args()
         skip = args["skip"]
         limit = args["limit"]
-
+        label_ids = args.get('label', None)
+        keywords = args.get('keyword', None)
         user_id = None
         if self:
             user_id = self["user"]
 
-        annotations_where_sec = ''
-        if 'label' in args and args['label']:
-            labelIds = 'label_id IN ({0})'.format(", ".join(i for i in args['label']))
-            annotations_where_sec += ' where ' + labelIds
-
-        comments_where_sec = ''
-        if 'keyword' in args and args['keyword']:
-            searchwords = ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
-            comments_where_sec += ' where ' +  searchwords
-
-        query_getIds = f"""
-        select c.id, c.title, c.text, c.timestamp from
-        (
-            select distinct coalesce(a.comment_id, f.comment_id) as id from 
-                (select distinct comment_id, label_id from facts {annotations_where_sec} ) as a
-                full outer join
-                (select distinct comment_id, label_id from annotations {annotations_where_sec}  ) as f
-                on a.comment_id = f.comment_id and a.label_id = f.label_id
-                order by id
-                limit {limit} offset {skip}
-        ) a,
-        (select * from comments {comments_where_sec}) as c
-        where a.id = c.id
-        """
+        # get all comments
+        query_getIds = GET_COMMENTS_BY_FILTER(label_ids, keywords, skip, limit)
 
         try:        
             postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
@@ -100,36 +80,11 @@ class CommentsGet2(Resource):
         comments = postgres.fetchall()
         ids = [ str(i['id']) for i in comments]
 
-        str_ = ', '.join(ids)
+        # get all annotations + facts for selection (ids)
 
         annotations = []
-        comments_sec = ''
-        if annotations_where_sec:
-            comments_sec = f' and  comment_id in ({str_})'
-
-            user_sec = ''
-            user_select = ''
-            if user_id:
-                user_select = ', a2.label as user'
-
-                user_sec = f"""
-                    left join annotations a2
-                    on a.comment_id = a2.comment_id and a.label_id = a2.label_id and user_id = '{user_id}'
-                """
-
-            query_comments = f"""
-            select coalesce(a.comment_id, f.comment_id) as comment_id, coalesce(a.label_id, f.label_id) as label_id, a.count_true as group_count_true, a.count_false as group_count_false, f.label as ai, f.confidence as ai_pred {user_select} from 
-            (select comment_id, label_id, count(label or null) as count_true, count(not label or null) as count_false
-            from annotations 
-            {annotations_where_sec} {comments_sec} 
-            group by comment_id, label_id
-            ) a
-            full outer join 
-            (select * from facts {annotations_where_sec} {comments_sec} ) f
-            ON a.comment_id = f.comment_id and a.label_id = f.label_id
-            {user_sec}
-            order by a.comment_id, a.label_id
-            """
+        if label_ids:
+            query_comments = GET_ANNOTATIONS_BY_FILTER(ids, label_ids, user_id)
 
             try:        
                 postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
@@ -140,6 +95,7 @@ class CommentsGet2(Resource):
 
             annotations = postgres.fetchall()
 
+            # convert annotations + facts to dic
             dic = {}
             for i in annotations:
                 index = i['comment_id']
@@ -149,6 +105,7 @@ class CommentsGet2(Resource):
                     dic[index] = list()
                     dic[index].append(i)
 
+        # join comments and annotations + facts
         for i in range(0, len(comments)):
             comments[i]['timestamp'] = comments[i]['timestamp'].isoformat()
             if annotations:
