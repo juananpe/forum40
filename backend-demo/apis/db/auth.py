@@ -32,8 +32,11 @@ class AuthTest(Resource):
 @ns.route('/login/<string:username>/<string:password>')
 class AuthLogin(Resource):
     def get(self, username, password):
+
+        query, payload = SELECT_PASSWORD_BY_NAME(username)
+
         postgres = postgres_con.cursor()
-        postgres.execute(SELECT_PASSWORD_BY_NAME(username))
+        postgres.execute(query, payload)
         db_result = postgres.fetchone()
 
         if not db_result or db_result[0] != password or password == None:

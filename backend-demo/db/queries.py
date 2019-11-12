@@ -28,7 +28,7 @@ SELECT_MAX_LABELID = "SELECT MAX(id) FROM labels"
 INSERT_LABEL = lambda id_, type_, name, source_id : f"INSERT INTO labels (id, type, name, source_id) VALUES({id_}, '{type_}', '{name}', {source_id})" 
 
 ## Auth
-SELECT_PASSWORD_BY_NAME = lambda x: f"SELECT password FROM users WHERE name = '{x}';"
+SELECT_PASSWORD_BY_NAME = lambda x: (f"SELECT password FROM users WHERE name = %s;", (x,))
 
 ## Comments
 SELECT_COMMENTS_BY_ID = lambda x: f"select * from comments where id = {x}"
