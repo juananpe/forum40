@@ -1,5 +1,7 @@
 export const State = {
     labels: 'labels',
+    source: 'source',
+    sources: 'sources',
     selectedFilters: 'selectedFilters',
     selectedViewAggregations: 'selectedViewAggregations',
     selectedLabels: 'selectedLabels',
@@ -23,6 +25,7 @@ export const Getters = {
     keywordfilter: 'keywordfilter',
     activeFilters: 'activeFilters', 
     timeFrequency: 'timeFrequency',
+    getSelectedSource: 'getSelectedSource'
 }
 
 export const Mutations = {
@@ -32,7 +35,9 @@ export const Mutations = {
     setSelectedComment: "setSelectedComment",
     setKeywordfilter: "setKeywordfilter",
     setTimeFrequency: "setTimeFrequency",
-    setLabels: "setLabels"
+    setLabels: "setLabels",
+    setSource: "setSource",
+    setSources: "setSources"
 }
 
 export const Actions = {

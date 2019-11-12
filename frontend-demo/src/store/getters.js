@@ -12,4 +12,5 @@ export default {
     [Getters.keywordfilter]: (state) => state[State.selectedFilters][State.keywordfilter],
     [Getters.activeFilters]: (state) => Object.keys(state[State.selectedFilters]).filter(e => state[State.selectedFilters][e] && state[State.selectedFilters][e].length > 0),
     [Getters.timeFrequency]: (state) => state[State.selectedViewAggregations][State.timeFrequency],
+    [Getters.getSelectedSource]: (state) => state[State.sources].find(e => e["name"] === state[State.source])
 }

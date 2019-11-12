@@ -4,7 +4,7 @@
       <v-select
         :items="sources.map(e=>e['name'])"
         v-on:change="sourceChanged"
-        v-model="source"
+        v-model="selectedSource"
         label="Datenquelle"
         chips
       ></v-select>
@@ -78,26 +78,29 @@ export default {
   name: "DataSelector",
 
   data: () => ({
-    source: undefined,
-    sources: [],
     dialog: false,
     newLabel: "",
     error: false,
     success: false
   }),
   methods: {
-    ...mapMutations([Mutations.setSelectedLabels, Mutations.setLabels]),
+    ...mapMutations([
+      Mutations.setSelectedLabels,
+      Mutations.setLabels,
+      Mutations.setSource,
+      Mutations.setSources
+    ]),
     async fetchSources() {
       const { data } = await Service.get(Endpoint.SOURCES);
-      this.sources = data;
-      if (this.sources.length > 0) {
-        this.source = this.sources[0].name;
+      if (data.length > 0) {
+        this[Mutations.setSources](data);
+        this[Mutations.setSource](data[0].name);
         this.fetchLabels();
       }
     },
     async fetchLabels() {
       const { data } = await Service.get(
-        Endpoint.LABELS(this.selectedSource.id)
+        Endpoint.LABELS(this[Getters.getSelectedSource].id)
       );
       const labels = {};
       const labels_names = data.labels;
@@ -137,8 +140,13 @@ export default {
     this.fetchSources();
   },
   computed: {
-    ...mapState([State.labels]),
-    ...mapGetters([Getters.jwt, Getters.selectedLabels, Getters.jwtLoggedIn]),
+    ...mapState([State.sources, State.source, State.labels]),
+    ...mapGetters([
+      Getters.jwt,
+      Getters.selectedLabels,
+      Getters.jwtLoggedIn,
+      Getters.getSelectedSource
+    ]),
     loggedIn() {
       return this[Getters.jwtLoggedIn];
     },
@@ -154,8 +162,13 @@ export default {
         return this[Getters.selectedLabels];
       }
     },
-    selectedSource() {
-      return this.sources.find(e => e["name"] === this.source);
+    selectedSource: {
+      get() {
+        return this[State.source];
+      },
+      set(state) {
+        this[Mutations.setSource](state);
+      }
     }
   }
 };

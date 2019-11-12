@@ -8,4 +8,6 @@ export default {
     [Mutations.setKeywordfilter]: (state, keyword) => (state[State.selectedFilters][State.keywordfilter] = keyword),
     [Mutations.setTimeFrequency]: (state, mode) => (state[State.selectedViewAggregations][State.timeFrequency] = mode),
     [Mutations.setLabels]: (state, labels) => (state[State.labels] = labels),
+    [Mutations.setSource]: (state, source) => (state[State.source] = source),
+    [Mutations.setSources]: (state, sources) => (state[State.sources] = sources),
 }
