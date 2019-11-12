@@ -81,7 +81,6 @@ class CommentsGet2(Resource):
         ids = [ str(i['id']) for i in comments]
 
         # get all annotations + facts for selection (ids)
-
         annotations = []
         if label_ids:
             query_comments = GET_ANNOTATIONS_BY_FILTER(ids, label_ids, user_id)
@@ -267,11 +266,11 @@ class CommentsGroupByYear(Resource):
 class CommentsParent(Resource):
     def get(self, id):
 
-        # TODO externalize str
-        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+        query = GET_PARENT_BY_CHILD(id)
+    
         try:
-            postgres.execute(
-                'SELECT id, text, title, user_id, year, month, day FROM comments p, (SELECT parent_comment_id FROM comments c WHERE id = {}) as c WHERE p.id = c.parent_comment_id;'.format(id))
+            postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+            postgres.execute(query)
         except DatabaseError:
             postgres_con.rollback()
             return {'msg': 'DatabaseError: transaction is aborted'}

@@ -31,7 +31,9 @@ INSERT_LABEL = lambda id_, type_, name, source_id : f"INSERT INTO labels (id, ty
 SELECT_PASSWORD_BY_NAME = lambda x: f"SELECT password FROM users WHERE name = '{x}';"
 
 ## Comments
+SELECT_COMMENTS_BY_ID = lambda x: f"select * from comments where id = {x}"
 SELECT_COMMENT_BY_ID =  lambda x: f"SELECT * FROM comments WHERE id = {x} fetch first 1 rows only"
+GET_PARENT_BY_CHILD = lambda id: f'SELECT id, text, title, user_id, year, month, day FROM comments p, (SELECT parent_comment_id FROM comments c WHERE id = {id}) as c WHERE p.id = c.parent_comment_id;'
 GROUP_COMMENTS_BY_DAY = lambda label, keywords: f"""
             SELECT day, month, year, Count(*) FROM 
                 (SELECT DISTINCT comment_id FROM annotations {opt_label_selection_single(label)} {opt_and_label_eq_true(label)}) AS a, 
