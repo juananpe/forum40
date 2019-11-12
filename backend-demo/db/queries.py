@@ -125,7 +125,7 @@ def opt_and(cond):
     return _opt_keyword(cond, 'and')
 
 def opt_comments_section(ids):
-    return f"comment_id in ({', '.join(ids)})" if ids else ''
+    return f"comment_id in ({', '.join(ids) })" if ids else ''
 
 def opt_label_selection(labels):
     return f'where label_id IN ({", ".join(i for i in labels)})' if labels else ''

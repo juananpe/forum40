@@ -78,7 +78,7 @@ class CommentsGet2(Resource):
             return {'msg' : 'DatabaseError: transaction is aborted'}, 400
 
         comments = postgres.fetchall()
-        ids = [ str(i['id']) for i in comments]
+        ids = [ i['id'] for i in comments]
 
         # get all annotations + facts for selection (ids)
         annotations = []
@@ -319,58 +319,58 @@ class CommentsParentRec(Resource):
         return response
 
 
-@ns.route('/<int:comment_id>/')
+@ns.route('/<string:comment_id>/')
 @api.expect(comment_parser)
 class Comment(Resource):
     @token_optional
     @api.doc(security='apikey')
     def get(self, request, comment_id):
         args = comment_parser.parse_args()
-        label = args["label"]
 
-        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+        label_ids = args['label'] if 'label' in args else None
+
+        user_id = None
+        if self:
+            user_id = self["user"]
 
         query = "select * from comments where id = %s"
 
         try:
+            postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
             postgres.execute(query, (comment_id,))
         except DatabaseError:
             postgres_con.rollback()
             return {'msg': 'DatabaseError: transaction is aborted'}, 400
 
         comment = postgres.fetchone()
-        if comment:
-            comment['timestamp'] = comment['timestamp'].isoformat()
+        ids = [comment_id]
 
-            if self and 'user' in self and label:
-                user_id = self["user"]
-                if user_id:
-                    annotation_query = """
-                    select coalesce(a.comment_id, f.comment_id) as comment_id, coalesce(a.label_id, f.label_id) as label_id, a.count_true as group_count_true, a.count_false as group_count_false, f.label as ai, f.confidence as ai_pred , a2.label as user from 
-                    (select comment_id, label_id, count(label or null) as count_true, count(not label or null) as count_false
-                    from annotations 
-                    where label_id in %s and comment_id = %s
-                    group by comment_id, label_id
-                    ) a
-                    full outer join 
-                    (select * from facts where label_id in %s and comment_id = %s) f
-                    ON a.comment_id = f.comment_id and a.label_id = f.label_id
-                    left join annotations a2
-                    on a.comment_id = a2.comment_id and a.label_id = a2.label_id and user_id = %s
-                    order by a.comment_id, a.label_id
-                    """
+        annotations = []
+        if label_ids:
+            query_comments = GET_ANNOTATIONS_BY_FILTER(ids, label_ids, user_id)
 
-                    try:
-                        postgres.execute(annotation_query, (tuple(
-                            label), comment_id, tuple(label), comment_id,  user_id))
-                    except DatabaseError:
-                        postgres_con.rollback()
-                        return {'msg': 'DatabaseError: transaction is aborted. Error when fetching annotations'}, 400
+            try:        
+                postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+                postgres.execute(query_comments)
+            except DatabaseError:
+                postgres_con.rollback()
+                return {'msg' : 'DatabaseError: transaction is aborted'}, 400
 
-                    annotations = postgres.fetchall()
-                    if annotations:
-                        comment['annotations'] = annotations
+            annotations = postgres.fetchall()
 
-            return comment
+            # convert annotations + facts to dic
+            dic = {}
+            for i in annotations:
+                index = i['comment_id']
+                if index in dic:
+                    dic[index].append(i)
+                else:
+                    dic[index] = list()
+                    dic[index].append(i)
 
-        return {}
+        # join comments and annotations + facts
+        comment['timestamp'] = comment['timestamp'].isoformat()
+        if annotations:
+            comment['annotations'] = dic[comment['id']]
+
+        return comment

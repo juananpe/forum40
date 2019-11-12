@@ -15,7 +15,7 @@ comments_parser.add_argument('label', action='append')
 comments_parser.add_argument('keyword', action='append')
 
 comment_parser = reqparse.RequestParser()
-comment_parser.add_argument('label', type=int, action='append')
+comment_parser.add_argument('label', action='append')
 
 source_parser = reqparse.RequestParser()
 source_parser.add_argument('name', required=True)
