@@ -63,9 +63,9 @@ GET_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids, skip, limit: f"""
             select c.id, c.title, c.text, c.timestamp from
                 (
                     select distinct coalesce(a.comment_id, f.comment_id) as id from 
-                        (select distinct comment_id, label_id from facts {opt_where(labels)} {opt_label_selection(labels)} ) as a
+                        (select distinct comment_id, label_id from facts {opt_where(labels)} {opt_label_selection(labels)} {opt_and_label_eq_true(labels)} ) as a
                         full outer join
-                        (select distinct comment_id, label_id from annotations {opt_where(labels)} {opt_label_selection(labels)}  ) as f
+                        (select distinct comment_id, label_id from annotations {opt_where(labels)} {opt_label_selection(labels)} {opt_and_label_eq_true(labels)} ) as f
                         on a.comment_id = f.comment_id and a.label_id = f.label_id
                         order by id
                         limit {limit} offset {skip}
