@@ -23,7 +23,7 @@ SELECT_LABEL_BY_ID = lambda x: f"SELECT id FROM labels WHERE id = {x} fetch firs
 SELECT_NAMES_FROM_LABES = lambda source_id: f"SELECT name FROM labels where labels.source_id = {source_id}"
 SELECT_IDS_FROM_LABES = lambda source_id: f"SELECT id FROM labels where labels.source_id = {source_id}"
 SELECT_ID_FROM_LABELS_BY_NAME = lambda x : f"SELECT id FROM labels WHERE name = '{x}';"
-SELECT_MAX_LABELID = "SELECT MAX(id) FROM labels"
+SELECT_MAX_ID = lambda table: f"SELECT MAX(id) FROM {table}"
 
 INSERT_LABEL = lambda id_, type_, name, source_id : f"INSERT INTO labels (id, type, name, source_id) VALUES({id_}, '{type_}', '{name}', {source_id})" 
 
