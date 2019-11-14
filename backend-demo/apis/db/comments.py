@@ -68,51 +68,112 @@ class CommentsGet2(Resource):
         if self:
             user_id = self["user"]
 
-        # get all comments
-        query_getIds = GET_COMMENTS_BY_FILTER(label_ids, keywords, source_ids, skip, limit)
+        # count comments
+        query = COUNT_COMMENTS_BY_FILTER(label_ids, keywords, source_ids)
 
         try:        
-            postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
-            postgres.execute(query_getIds)
+            postgres = postgres_con.cursor()
+            postgres.execute(query)
         except DatabaseError:
             postgres_con.rollback()
             return {'msg' : 'DatabaseError: transaction is aborted'}, 400
 
-        comments = postgres.fetchall()
-        ids = [ str(i['id']) for i in comments]
+        count = postgres.fetchone()[0]
 
-        # get all annotations + facts for selection (ids)
+        comments_with_label = []
+        comments_without_label = []
         annotations = []
-        if label_ids:
-            query_comments = GET_ANNOTATIONS_BY_FILTER(ids, label_ids, user_id)
+        dic = []
 
-            try:        
-                postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
-                postgres.execute(query_comments)
-            except DatabaseError:
-                postgres_con.rollback()
-                return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+        if skip < count:
+            n = (skip + limit) - count
+            if n < 0:
+                #print('labeled', file=sys.stderr)
+                #print(skip, file=sys.stderr)
+                #print(limit, file=sys.stderr)
+                comments_with_label = getAllComments(label_ids, keywords, source_ids, skip, limit)
+                ids = [ str(i['id']) for i in comments_with_label]
+                annotations, dic = getAllAnnotations(ids, label_ids, user_id)
+            else :
+                #print('split', file=sys.stderr)
+                #print(skip, limit - n, file=sys.stderr)
+                #print(0, n, file=sys.stderr)
 
-            annotations = postgres.fetchall()
+                comments_with_label = getAllComments(label_ids, keywords, source_ids, skip, limit - n)
+                ids = [ str(i['id']) for i in comments_with_label]
+                annotations, dic = getAllAnnotations(ids, label_ids, user_id)
+                comments_without_label = getAllUnlabeledComments(label_ids, keywords, source_ids, 0, n)
+        else:
+            #print('not labeled', file=sys.stderr)
+            #print(skip - count , file=sys.stderr)
+            #print(limit, file=sys.stderr)
 
-            # convert annotations + facts to dic
-            dic = {}
-            for i in annotations:
-                index = i['comment_id']
-                if index in dic:
-                    dic[index].append(i)
-                else:
-                    dic[index] = list()
-                    dic[index].append(i)
+            comments_without_label = getAllUnlabeledComments(label_ids, keywords, source_ids, skip - count, limit)
+
 
         # join comments and annotations + facts
-        for i in range(0, len(comments)):
-            comments[i]['timestamp'] = comments[i]['timestamp'].isoformat()
-            if annotations:
-                comments[i]['annotations'] = dic[comments[i]['id']]
 
-        return comments
+        if comments_with_label:
+            for i in range(len(comments_with_label)):
+                comments_with_label[i]['timestamp'] = comments_with_label[i]['timestamp'].isoformat()
+                if annotations:
+                    comments_with_label[i]['annotations'] = dic[comments_with_label[i]['id']]
+
+
+        for i in range(len(comments_without_label)):
+            comments_without_label[i]['timestamp'] = comments_without_label[i]['timestamp'].isoformat()
+
+        return comments_with_label + comments_without_label
     
+def getAllComments(label_ids, keywords, source_ids, skip, limit):
+    query_getIds = GET_COMMENTS_BY_FILTER(label_ids, keywords, source_ids, skip, limit)
+
+    try:        
+        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+        postgres.execute(query_getIds)
+    except DatabaseError:
+        postgres_con.rollback()
+        return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+
+    return postgres.fetchall()
+
+def getAllUnlabeledComments(label_ids, keywords, source_ids, skip, limit):
+    query = GET_UNLABELED_COMMENTS_BY_FILTER(label_ids, keywords, source_ids, skip, limit)
+
+    try:        
+        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+        postgres.execute(query)
+    except DatabaseError:
+        postgres_con.rollback()
+        return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+
+    return postgres.fetchall()
+
+def getAllAnnotations(ids, label_ids, user_id):
+    annotations = []
+    dic = {}
+    if label_ids:
+        query_comments = GET_ANNOTATIONS_BY_FILTER(ids, label_ids, user_id)
+
+        try:        
+            postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+            postgres.execute(query_comments)
+        except DatabaseError:
+            postgres_con.rollback()
+            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+
+        annotations = postgres.fetchall()
+
+        # convert annotations + facts to dic
+        for i in annotations:
+            index = i['comment_id']
+            if index in dic:
+                dic[index].append(i)
+            else:
+                dic[index] = list()
+                dic[index].append(i)
+    return annotations, dic
+
     @api.doc(security='apikey')
     @api.expect(comment_parser_post)
     @token_optional # change to token_required

@@ -112,11 +112,11 @@ COUNT_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids: f"""
                 select coalesce(l.cid_a, l.cid_f) as comment_id from 
                 (
                     (
-                        select distinct comment_id as cid_a from annotations {opt_where(labels)} {opt_label_selection(labels)}
+                        select distinct comment_id as cid_a from annotations {opt_where(labels)} {opt_label_selection(labels)} {opt_and_label_eq_true(labels)} 
                     ) as a
                     full outer join
                     (
-                        select distinct comment_id as cid_f from facts {opt_where(labels)} {opt_label_selection(labels)}
+                        select distinct comment_id as cid_f from facts {opt_where(labels)} {opt_label_selection(labels)} {opt_and_label_eq_true(labels)} 
                     ) as f on a.cid_a = f.cid_f
                 ) as l
                 order by comment_id
