@@ -36,7 +36,7 @@ SELECT_COMMENT_BY_ID =  lambda x: f"SELECT * FROM comments WHERE id = {x} fetch 
 GET_PARENT_BY_CHILD = lambda id: f'SELECT id, text, title, user_id, year, month, day FROM comments p, (SELECT parent_comment_id FROM comments c WHERE id = {id}) as c WHERE p.id = c.parent_comment_id;'
 GROUP_COMMENTS_BY_DAY = lambda label, keywords: f"""
             SELECT day, month, year, Count(*) FROM 
-                (SELECT DISTINCT comment_id FROM annotations {opt_label_selection_single(label)} {opt_and_label_eq_true(label)}) AS a, 
+                (SELECT DISTINCT comment_id FROM facts {opt_label_selection_single(label)} {opt_and_label_eq_true(label)}) AS a, 
                 (SELECT id AS comment_id, year, month, day FROM comments {opt_keyword_section(keywords)}) AS c 
             WHERE a.comment_id = c.comment_id
             GROUP BY year, month, day
@@ -44,7 +44,7 @@ GROUP_COMMENTS_BY_DAY = lambda label, keywords: f"""
             """
 GROUP_COMMENTS_BY_MONTH = lambda label, keywords: f"""
             SELECT month, year, Count(*) FROM 
-                (SELECT DISTINCT comment_id FROM annotations {opt_label_selection_single(label)} {opt_and_label_eq_true(label)}) AS a, 
+                (SELECT DISTINCT comment_id FROM facts {opt_label_selection_single(label)} {opt_and_label_eq_true(label)}) AS a, 
                 (SELECT id AS comment_id, year, month FROM comments {opt_keyword_section(keywords)}) AS c 
             WHERE a.comment_id = c.comment_id
             GROUP BY year, month
@@ -52,14 +52,14 @@ GROUP_COMMENTS_BY_MONTH = lambda label, keywords: f"""
             """
 GROUP_COMMENTS_BY_YEAR = lambda label, keywords: f"""
             SELECT year, Count(*) FROM 
-                (SELECT DISTINCT comment_id FROM annotations {opt_label_selection_single(label)} {opt_and_label_eq_true(label)}) AS a, 
+                (SELECT DISTINCT comment_id FROM facts {opt_label_selection_single(label)} {opt_and_label_eq_true(label)}) AS a, 
                 (SELECT id AS comment_id, year FROM comments {opt_keyword_section(keywords)}) AS c 
             WHERE a.comment_id = c.comment_id
             GROUP BY year
             ORDER BY year
             """
 
-GET_COMMENTS_BY_FILTER = lambda labels, keywords,  skip, limit: f"""
+GET_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids, skip, limit: f"""
             select c.id, c.title, c.text, c.timestamp from
                 (
                     select distinct coalesce(a.comment_id, f.comment_id) as id from 
@@ -70,7 +70,7 @@ GET_COMMENTS_BY_FILTER = lambda labels, keywords,  skip, limit: f"""
                         order by id
                         limit {limit} offset {skip}
                 ) a,
-                (select * from comments {opt_keyword_section(keywords)}) as c
+                (select * from comments {opt_where(keywords or source_ids)} {opt_keyword_section(keywords)} {opt_and(keywords and source_ids)} {opt_source_section(source_ids)}) as c
                 where a.id = c.id
             """
 
@@ -91,10 +91,10 @@ GET_ANNOTATIONS_BY_FILTER = lambda ids, labels, user_id: f"""
             order by a.comment_id, a.label_id
             """
 
-COUNT_COMMENTS_BY_FILTER = lambda labels, keywords: f"""
+COUNT_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids: f"""
             select count(*) from
             (
-                select * from comments {opt_keyword_section(keywords)}
+                select * from comments {opt_where(keywords or source_ids)} {opt_keyword_section(keywords)} {opt_and(keywords and source_ids)} {opt_source_section(source_ids)}
             ) as c
             inner join 
             (
@@ -127,6 +127,9 @@ def opt_and(cond):
 def opt_comments_section(ids):
     return f"comment_id in ({', '.join(ids) })" if ids else ''
 
+def opt_source_section(ids):
+    return f"source_id in ({', '.join(ids) })" if ids else ''
+
 def opt_label_selection(labels):
     return f'where label_id IN ({", ".join(i for i in labels)})' if labels else ''
 
@@ -137,7 +140,7 @@ def opt_and_label_eq_true(labels):
     return 'and label = True' if labels else ''
 
 def opt_keyword_section(keywords):
-    return ' where ' + ' OR '.join(f"text LIKE '%{x}%'" for x in keywords) if keywords else ''
+    return ' OR '.join(f"text LIKE '%{x}%'" for x in keywords) if keywords else ''
 
 def opt_user_sec_head(user_id):
     return ', a2.label as user' if user_id else ''

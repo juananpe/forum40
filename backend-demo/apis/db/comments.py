@@ -63,12 +63,13 @@ class CommentsGet2(Resource):
         limit = args["limit"]
         label_ids = args.get('label', None)
         keywords = args.get('keyword', None)
+        source_ids = args.get('source_id', None)
         user_id = None
         if self:
             user_id = self["user"]
 
         # get all comments
-        query_getIds = GET_COMMENTS_BY_FILTER(label_ids, keywords, skip, limit)
+        query_getIds = GET_COMMENTS_BY_FILTER(label_ids, keywords, source_ids, skip, limit)
 
         try:        
             postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
@@ -155,8 +156,9 @@ class CommentsCount(Resource):
 
         labels = args['label'] if 'label' in args else None
         keywords = args['keyword'] if 'keyword' in args else None
+        source_ids = args['source_id'] if 'source_id' in args else None
 
-        query = COUNT_COMMENTS_BY_FILTER(labels, keywords)
+        query = COUNT_COMMENTS_BY_FILTER(labels, keywords, source_ids)
 
         try:        
             postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
