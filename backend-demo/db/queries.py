@@ -36,7 +36,7 @@ SELECT_COMMENT_BY_ID =  lambda x: f"SELECT * FROM comments WHERE id = {x} fetch 
 GET_PARENT_BY_CHILD = lambda id: f'SELECT id, text, title, user_id, year, month, day FROM comments p, (SELECT parent_comment_id FROM comments c WHERE id = {id}) as c WHERE p.id = c.parent_comment_id;'
 GROUP_COMMENTS_BY_DAY = lambda label, keywords: f"""
             SELECT day, month, year, Count(*) FROM 
-                (SELECT DISTINCT comment_id FROM facts {opt_label_selection_single(label)} {opt_and_label_eq_true(label)}) AS a, 
+                (SELECT DISTINCT comment_id FROM facts {opt_where(label)} {opt_label_selection_single(label)} {opt_and_label_eq_true(label)}) AS a, 
                 (SELECT id AS comment_id, year, month, day FROM comments {opt_keyword_section(keywords)}) AS c 
             WHERE a.comment_id = c.comment_id
             GROUP BY year, month, day
@@ -44,7 +44,7 @@ GROUP_COMMENTS_BY_DAY = lambda label, keywords: f"""
             """
 GROUP_COMMENTS_BY_MONTH = lambda label, keywords: f"""
             SELECT month, year, Count(*) FROM 
-                (SELECT DISTINCT comment_id FROM facts {opt_label_selection_single(label)} {opt_and_label_eq_true(label)}) AS a, 
+                (SELECT DISTINCT comment_id FROM facts {opt_where(label)} {opt_label_selection_single(label)} {opt_and_label_eq_true(label)}) AS a, 
                 (SELECT id AS comment_id, year, month FROM comments {opt_keyword_section(keywords)}) AS c 
             WHERE a.comment_id = c.comment_id
             GROUP BY year, month
@@ -52,7 +52,7 @@ GROUP_COMMENTS_BY_MONTH = lambda label, keywords: f"""
             """
 GROUP_COMMENTS_BY_YEAR = lambda label, keywords: f"""
             SELECT year, Count(*) FROM 
-                (SELECT DISTINCT comment_id FROM facts {opt_label_selection_single(label)} {opt_and_label_eq_true(label)}) AS a, 
+                (SELECT DISTINCT comment_id FROM facts {opt_where(label)} {opt_label_selection_single(label)} {opt_and_label_eq_true(label)}) AS a, 
                 (SELECT id AS comment_id, year FROM comments {opt_keyword_section(keywords)}) AS c 
             WHERE a.comment_id = c.comment_id
             GROUP BY year
@@ -63,9 +63,9 @@ GET_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids, skip, limit: f"""
             select c.id, c.title, c.text, c.timestamp from
                 (
                     select distinct coalesce(a.comment_id, f.comment_id) as id from 
-                        (select distinct comment_id, label_id from facts {opt_label_selection(labels)} ) as a
+                        (select distinct comment_id, label_id from facts {opt_where(labels)} {opt_label_selection(labels)} ) as a
                         full outer join
-                        (select distinct comment_id, label_id from annotations {opt_label_selection(labels)}  ) as f
+                        (select distinct comment_id, label_id from annotations {opt_where(labels)} {opt_label_selection(labels)}  ) as f
                         on a.comment_id = f.comment_id and a.label_id = f.label_id
                         order by id
                         limit {limit} offset {skip}
@@ -74,17 +74,28 @@ GET_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids, skip, limit: f"""
                 where a.id = c.id
             """
 
+GET_UNLABELED_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids, skip, limit: f"""
+            select c.id, c.title, c.text, c.timestamp from comments c 
+            where 
+                {opt_keyword_section(keywords)} {opt_and(keywords and source_ids)} {opt_source_section(source_ids, "c.")}
+                {opt_and(keywords or source_ids)}
+            	not exists ( select * from annotations a where c.id = a.comment_id {opt_and(labels)} {opt_label_selection(labels)} )
+            	and 
+            	not exists ( select * from facts f where c.id = f.comment_id {opt_and(labels)} {opt_label_selection(labels)} )
+            limit {limit} offset {skip}
+            """
+
 GET_ANNOTATIONS_BY_FILTER = lambda ids, labels, user_id: f"""
             select coalesce(a.comment_id, f.comment_id) as comment_id, coalesce(a.label_id, f.label_id) as label_id, a.count_true as group_count_true, 
             a.count_false as group_count_false, f.label as ai, f.confidence as ai_pred {opt_user_sec_head(user_id)} from 
             (
                 select comment_id, label_id, count(label or null) as count_true, count(not label or null) as count_false
-                from annotations {opt_label_selection(labels)} {opt_and(ids)} {opt_comments_section(ids)} 
+                from annotations {opt_where(labels)} {opt_label_selection(labels)} {opt_and(ids)} {opt_comments_section(ids)} 
                 group by comment_id, label_id
             ) a
             full outer join 
             (
-                select * from facts {opt_label_selection(labels)} {opt_and(ids)} {opt_comments_section(ids)} 
+                select * from facts {opt_where(labels)} {opt_label_selection(labels)} {opt_and(ids)} {opt_comments_section(ids)} 
             ) f
             ON a.comment_id = f.comment_id and a.label_id = f.label_id
             {opt_user_sec_body(user_id)}
@@ -101,11 +112,11 @@ COUNT_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids: f"""
                 select coalesce(l.cid_a, l.cid_f) as comment_id from 
                 (
                     (
-                        select distinct comment_id as cid_a from annotations {opt_label_selection(labels)}
+                        select distinct comment_id as cid_a from annotations {opt_where(labels)} {opt_label_selection(labels)}
                     ) as a
                     full outer join
                     (
-                        select distinct comment_id as cid_f from facts {opt_label_selection(labels)}
+                        select distinct comment_id as cid_f from facts {opt_where(labels)} {opt_label_selection(labels)}
                     ) as f on a.cid_a = f.cid_f
                 ) as l
                 order by comment_id
@@ -127,14 +138,14 @@ def opt_and(cond):
 def opt_comments_section(ids):
     return f"comment_id in ({', '.join(ids) })" if ids else ''
 
-def opt_source_section(ids):
-    return f"source_id in ({', '.join(ids) })" if ids else ''
+def opt_source_section(ids, prefix = ''):
+    return f"{prefix}source_id in ({', '.join(ids) })" if ids else ''
 
 def opt_label_selection(labels):
-    return f'where label_id IN ({", ".join(i for i in labels)})' if labels else ''
+    return f'label_id IN ({", ".join(i for i in labels)})' if labels else ''
 
 def opt_label_selection_single(label):
-    return f'where label_id = {label}' if label else ''
+    return f'label_id = {label}' if label else ''
 
 def opt_and_label_eq_true(labels):
     return 'and label = True' if labels else ''

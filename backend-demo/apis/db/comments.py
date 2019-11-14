@@ -113,7 +113,41 @@ class CommentsGet2(Resource):
 
         return comments
         
+# GET_UNLABELD_COMMENTS_BY_FILTER
 
+import sys
+
+@ns.route('/unlabeled')
+@api.expect(comments_parser_sl)
+class CommentsGetUnlabeld(Resource):
+
+    def get(self):
+        # get args
+        args = comments_parser_sl.parse_args()
+        skip = args["skip"]
+        limit = args["limit"]
+        label_ids = args.get('label', None)
+        keywords = args.get('keyword', None)
+        source_ids = args.get('source_id', None)
+
+        # get all comments
+        query = GET_UNLABELED_COMMENTS_BY_FILTER(label_ids, keywords, source_ids, skip, limit)
+
+        print(query, file=sys.stderr)
+
+        try:        
+            postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+            postgres.execute(query)
+        except DatabaseError:
+            postgres_con.rollback()
+            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+
+        comments = postgres.fetchall()
+        
+        for i in range(0, len(comments)):
+            comments[i]['timestamp'] = comments[i]['timestamp'].isoformat()
+
+        return comments
 
 @ns.route('/count')
 @api.expect(comments_parser)
