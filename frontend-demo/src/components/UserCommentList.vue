@@ -171,7 +171,8 @@ export default {
       Getters.labelParameters,
       Getters.jwtUser,
       Getters.jwt,
-      Getters.jwtLoggedIn
+      Getters.jwtLoggedIn,
+      Getters.getSelectedSource
     ]),
     loggedIn() {
       return this[Getters.jwtLoggedIn];
@@ -190,8 +191,15 @@ export default {
     },
     countQueryString() {
       const getParams = [`${this[Getters.labelParameters]}`];
+
+      // add source
+      const selectedSource = this[Getters.getSelectedSource];
+      if (selectedSource) getParams.push(`source_id=${selectedSource.id}`);
+
+      // add keyword
       if (this.keyword) getParams.push(`keyword=${this.keyword}`);
       const queryString = getParams.filter(e => e).join("&");
+
       return queryString;
     },
     pageQueryString() {
@@ -214,8 +222,8 @@ export default {
   },
   async mounted() {
     this.similar_comments = [];
-    this.loadTable();
     EventBus.$on(Events.loggedIn, this.fetchComments);
+    EventBus.$on(Events.sourceLoaded, this.loadTable);
   },
   watch: {
     [Getters.selectedLabels]: function() {
