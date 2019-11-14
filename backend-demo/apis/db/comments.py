@@ -2,7 +2,7 @@ from flask import Response
 from flask_restplus import Resource, reqparse
 
 from apis.db import api
-from models.db_models import comments_parser, comments_parser_sl, groupByModel, comment_parser
+from models.db_models import comments_parser, comments_parser_sl, groupByModel, comment_parser, comment_parser_post
 
 #from db import postgres
 #from db import postgres_json
@@ -52,10 +52,10 @@ def getLabelIdByName(name):
 import sys
 
 @ns.route('/')
-@api.expect(comments_parser_sl)
 class CommentsGet2(Resource):
     @token_optional
     @api.doc(security='apikey')
+    @api.expect(comments_parser_sl)
     def get(self, data):
         # get args
         args = comments_parser_sl.parse_args()
@@ -111,6 +111,39 @@ class CommentsGet2(Resource):
                 comments[i]['annotations'] = dic[comments[i]['id']]
 
         return comments
+    
+    @api.doc(security='apikey')
+    @api.expect(comment_parser_post)
+    @token_optional # change to token_required
+    def post(self, data):
+        args = comment_parser_post.parse_args()
+        doc_id = args['doc_id'] if args.get('doc_id', False) else None
+        source_id = args['source_id'] if args.get('source_id', False) else None
+        user_id = args['user_id'] if args.get('user_id', False) else None
+        parent_comment_id = args['parent_comment_id']  if args.get('parent_comment_id', False) else None
+        status = args['status'] if args.get('status', False) else None
+        title = args['title'] if args.get('title', False) else None
+        text = args['text'] if args.get('text', False) else None
+        embedding = args['embedding'] if args.get('embedding', False) else None
+        timestamp = args['timestamp'] if args.get('timestamp', False) else None
+
+
+        postgres = postgres_con.cursor()
+        insert_query = "INSERT INTO comments (id, doc_id, source_id, user_id, parent_comment_id, status, title, text, embedding, timestamp) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id;"
+
+        try:
+            postgres.execute(SELECT_MAX_ID('comments'))
+            max_id = postgres.fetchone()[0]
+            postgres.execute(insert_query, (max_id+1, doc_id, source_id, user_id, parent_comment_id, status, title, text, embedding, timestamp))
+            postgres_con.commit()
+
+        except DatabaseError:
+            postgres_con.rollback()
+            return {'msg': 'DatabaseError: transaction is aborted'}, 400
+
+        added_comment = postgres.fetchone()
+        return added_comment, 200
+        
         
 
 
