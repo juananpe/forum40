@@ -124,6 +124,23 @@ COUNT_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids: f"""
             on c.id = _.comment_id
             """
 
+GET_COMMENTS_BY_FILTER_draft = lambda labels, keywords, source_ids, skip, limit: f"""
+            select distinct c.id, c.title, c.text, c.timestamp
+            from 
+            (select * from comments {opt_where(keywords or source_ids)} {opt_keyword_section(keywords)} {opt_and(keywords and source_ids)} {opt_source_section(source_ids)} ) c
+            right join 
+                (
+                    select coalesce(a.comment_id, f.comment_id) as id
+                    from annotations a 
+                    full join facts f on
+                    a.comment_id = f.comment_id
+                    where ( a."label" = true or f."label" = true ) {opt_label_coalesce_AF_in(labels)}
+                ) l
+            on c.id = l.id
+            order by c.id
+            limit {limit} offset {skip}
+            """
+
 ### utility
 
 def _opt_keyword(cond, keyword):
@@ -143,6 +160,9 @@ def opt_source_section(ids, prefix = ''):
 
 def opt_label_selection(labels):
     return f'label_id IN ({", ".join(i for i in labels)})' if labels else ''
+
+def opt_label_coalesce_AF_in(labels):
+    return f'and coalesce(a.label_id, f.label_id) iN ({", ".join(i for i in labels)})' if labels else ''
 
 def opt_label_selection_single(label):
     return f'label_id = {label}' if label else ''
