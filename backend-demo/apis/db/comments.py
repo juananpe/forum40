@@ -51,6 +51,55 @@ def getLabelIdByName(name):
 
 import sys
 
+def getAllComments(label_ids, keywords, source_ids, skip, limit):
+    query_getIds = GET_COMMENTS_BY_FILTER(label_ids, keywords, source_ids, skip, limit)
+
+    try:        
+        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+        postgres.execute(query_getIds)
+    except DatabaseError:
+        postgres_con.rollback()
+        return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+
+    return postgres.fetchall()
+
+def getAllUnlabeledComments(label_ids, keywords, source_ids, skip, limit):
+    query = GET_UNLABELED_COMMENTS_BY_FILTER(label_ids, keywords, source_ids, skip, limit)
+
+    try:        
+        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+        postgres.execute(query)
+    except DatabaseError:
+        postgres_con.rollback()
+        return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+
+    return postgres.fetchall()
+
+def getAllAnnotations(ids, label_ids, user_id):
+    annotations = []
+    dic = {}
+    if label_ids:
+        query_comments = GET_ANNOTATIONS_BY_FILTER(ids, label_ids, user_id)
+
+        try:        
+            postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+            postgres.execute(query_comments)
+        except DatabaseError:
+            postgres_con.rollback()
+            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+
+        annotations = postgres.fetchall()
+
+        # convert annotations + facts to dic
+        for i in annotations:
+            index = i['comment_id']
+            if index in dic:
+                dic[index].append(i)
+            else:
+                dic[index] = list()
+                dic[index].append(i)
+    return annotations, dic
+
 @ns.route('/')
 class CommentsGet2(Resource):
     @token_optional
@@ -125,55 +174,6 @@ class CommentsGet2(Resource):
 
         return comments_with_label + comments_without_label
     
-def getAllComments(label_ids, keywords, source_ids, skip, limit):
-    query_getIds = GET_COMMENTS_BY_FILTER(label_ids, keywords, source_ids, skip, limit)
-
-    try:        
-        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
-        postgres.execute(query_getIds)
-    except DatabaseError:
-        postgres_con.rollback()
-        return {'msg' : 'DatabaseError: transaction is aborted'}, 400
-
-    return postgres.fetchall()
-
-def getAllUnlabeledComments(label_ids, keywords, source_ids, skip, limit):
-    query = GET_UNLABELED_COMMENTS_BY_FILTER(label_ids, keywords, source_ids, skip, limit)
-
-    try:        
-        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
-        postgres.execute(query)
-    except DatabaseError:
-        postgres_con.rollback()
-        return {'msg' : 'DatabaseError: transaction is aborted'}, 400
-
-    return postgres.fetchall()
-
-def getAllAnnotations(ids, label_ids, user_id):
-    annotations = []
-    dic = {}
-    if label_ids:
-        query_comments = GET_ANNOTATIONS_BY_FILTER(ids, label_ids, user_id)
-
-        try:        
-            postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
-            postgres.execute(query_comments)
-        except DatabaseError:
-            postgres_con.rollback()
-            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
-
-        annotations = postgres.fetchall()
-
-        # convert annotations + facts to dic
-        for i in annotations:
-            index = i['comment_id']
-            if index in dic:
-                dic[index].append(i)
-            else:
-                dic[index] = list()
-                dic[index].append(i)
-    return annotations, dic
-
     @api.doc(security='apikey')
     @api.expect(comment_parser_post)
     @token_optional # change to token_required
