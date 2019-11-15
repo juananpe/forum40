@@ -22,7 +22,7 @@
       :items-per-page.sync="rowsPerPage"
       :page.sync="page"
       :expanded.sync="expanded"
-      :server-items-length="totalItems"
+      :server-items-length="Number.MAX_VALUE"
       item-key="id"
       single-expand
       show-expand
@@ -40,6 +40,10 @@
           </div>
         </div>
       </template>
+
+      <template
+        v-slot:footer.page-text="{pageStart, pageStop}"
+      >Seite {{Math.floor(pageStart/rowsPerPage)+1}}</template>
 
       <template v-slot:item="props">
         <tr class="mb-2">
