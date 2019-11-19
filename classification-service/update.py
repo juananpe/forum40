@@ -70,9 +70,11 @@ class LabelUpdater(ForumProcessor):
             facts_query,
             (self.label_id, self.label_id))
 
-        # Commit updates
-        self.logger.info("Commit to DB ...")
-        self.conn.commit()
+        # we do not need a commit here, thus, do not run!
+        if False:
+            # Commit updates
+            self.logger.info("Commit to DB ...")
+            self.conn.commit()
 
 
     def process_batch(self):
