@@ -131,7 +131,6 @@ export default {
       loading: false,
       selected: [],
       expand: false,
-      totalItems: 0,
       footerprops: {
         "items-per-page-options": [15, 30]
       },
@@ -206,11 +205,9 @@ export default {
       return queryString;
     },
     pageQueryString() {
-      const limit =
-        this.rowsPerPage === -1 ? this.totalItems : this.rowsPerPage;
-      const skip = (this.page - 1) * limit;
+      const skip = (this.page - 1) * this.rowsPerPage;
       const queryString =
-        this.countQueryString + `&skip=${skip}&limit=${limit}`;
+        this.countQueryString + `&skip=${skip}&limit=${this.rowsPerPage}`;
       return queryString;
     },
     keyword: {
@@ -251,9 +248,7 @@ export default {
     async loadTable() {
       this.loading = true;
       this.page = 1;
-      const p1 = this.setToalCommentNumber();
-      const p2 = this.fetchComments();
-      await Promise.all([p1, p2]);
+      await this.fetchComments();
       this.loading = false;
     },
     getHeaderSlotname(header) {
@@ -306,12 +301,6 @@ export default {
         this[Getters.jwt]
       );
       this.comments = data;
-    },
-    async setToalCommentNumber() {
-      const { data } = await Service.get(
-        `${Endpoint.COMMENTS_COUNT}?${this.countQueryString}`
-      );
-      this.totalItems = data.count.count;
     },
     commentClicked(props) {
       this.similar_comments = [];

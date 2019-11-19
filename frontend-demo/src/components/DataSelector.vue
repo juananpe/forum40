@@ -117,7 +117,7 @@ export default {
       this.dialog = false;
       try {
         await Service.put(
-          Endpoint.ADD_LABEL(this.newLabel, this.selectedSource.id),
+          Endpoint.ADD_LABEL(this.newLabel, this[Getters.getSelectedSource].id),
           {},
           this[Getters.jwt]
         );

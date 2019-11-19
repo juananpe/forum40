@@ -64,7 +64,7 @@ class AddLabel(Resource):
             if db_result[0] >= 1:
                 return { 'msg' : 'Label already exists.' } , 400
 
-        postgres.execute(SELECT_MAX_LABEL('labels'))
+        postgres.execute(SELECT_MAX_ID('labels'))
         max_id = postgres.fetchone()[0]
 
         postgres.execute(INSERT_LABEL(max_id+1, 'classification', label_name, source_id))
