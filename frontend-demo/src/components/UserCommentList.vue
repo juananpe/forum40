@@ -263,6 +263,7 @@ export default {
       if (annotations === undefined) return undefined;
       const annotation = annotations.find(e => e.label_id === label_id);
       if (annotation === undefined) return undefined; // no annotation for this label found
+      if (annotation.user === null) return undefined;
       return !!annotation.user;
     },
     getGroupAnnotation(annotations, label_id) {
