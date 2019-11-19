@@ -269,6 +269,11 @@ export default {
       if (annotations === undefined) return undefined;
       const annotation = annotations.find(e => e.label_id === label_id);
       if (annotation === undefined) return undefined;
+      if (
+        annotation.group_count_true === null ||
+        annotation.group_count_false === null
+      )
+        return undefined;
       return [annotation.group_count_true, annotation.group_count_false];
     },
     getConfidence(annotations, label_id) {
