@@ -59,7 +59,7 @@ GROUP_COMMENTS_BY_YEAR = lambda label, keywords: f"""
             ORDER BY year
             """
 
-GET_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids, skip, limit: f"""
+GET_COMMENTS_BY_FILTER_draft = lambda labels, keywords, source_ids, skip, limit: f"""
             select c.id, c.title, c.text, c.timestamp from
                 (
                     select distinct coalesce(a.comment_id, f.comment_id) as id from 
@@ -124,7 +124,7 @@ COUNT_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids: f"""
             on c.id = _.comment_id
             """
 
-GET_COMMENTS_BY_FILTER_draft = lambda labels, keywords, source_ids, skip, limit: f"""
+GET_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids, skip, limit: f"""
             select distinct c.id, c.title, c.text, c.timestamp
             from 
             (select * from comments {opt_where(keywords or source_ids)} {opt_keyword_section(keywords)} {opt_and(keywords and source_ids)} {opt_source_section(source_ids)} ) c
