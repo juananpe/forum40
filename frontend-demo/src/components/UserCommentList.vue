@@ -191,23 +191,34 @@ export default {
 
       return this.basicCommentsTableHeader.concat(labelTableHeaders);
     },
-    countQueryString() {
-      const getParams = [`${this[Getters.labelParameters]}`];
+    pageQueryString() {
+      const parameters = [];
 
       // add source
       const selectedSource = this[Getters.getSelectedSource];
-      if (selectedSource) getParams.push(`source_id=${selectedSource.id}`);
+      if (selectedSource) parameters.push(`source_id=${selectedSource.id}`);
+
+      // add labels
+      const labelParameters = this[Getters.labelParameters];
+      if (labelParameters) parameters.push(labelParameters);
 
       // add keyword
-      if (this.keyword) getParams.push(`keyword=${this.keyword}`);
-      const queryString = getParams.filter(e => e).join("&");
+      if (this.keyword) {
+        const keywords = this.keyword.split(" ");
+        keywords.forEach(kw => parameters.push(`keyword=${kw}`));
+      }
 
-      return queryString;
-    },
-    pageQueryString() {
+      // add skip
       const skip = (this.page - 1) * this.rowsPerPage;
-      const queryString =
-        this.countQueryString + `&skip=${skip}&limit=${this.rowsPerPage}`;
+      parameters.push(`skip=${skip}`);
+
+      // add limit
+      parameters.push(`limit=${this.rowsPerPage}`);
+
+      const queryString = parameters.join("&");
+
+      console.log(queryString);
+
       return queryString;
     },
     keyword: {
@@ -286,11 +297,15 @@ export default {
     },
     highlight: function(words, query) {
       if (query) {
-        const regEx = new RegExp("(" + query + ")", "ig");
-        const highlightedText = words.replace(
-          regEx,
-          '<span class="highlight">' + "$1" + "</span>"
-        );
+        const keywords = query.split(" ");
+        let highlightedText = words;
+        keywords.forEach(kw => {
+          const regEx = new RegExp("(" + kw + ")", "ig");
+          highlightedText = highlightedText.replace(
+            regEx,
+            '<span class="highlight">' + "$1" + "</span>"
+          );
+        });
         return highlightedText;
       }
       return words;
@@ -317,7 +332,7 @@ export default {
     keywordChanged() {
       //this.loadTable();
     },
-    async loadSimilarComments(comment) {      
+    async loadSimilarComments(comment) {
       const payload = {
         ids: [comment.id],
         n: 3
