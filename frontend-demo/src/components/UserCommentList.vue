@@ -317,15 +317,15 @@ export default {
     keywordChanged() {
       //this.loadTable();
     },
-    async loadSimilarComments(comment) {
+    async loadSimilarComments(comment) {      
       const payload = {
-        ids: [comment.comment_id],
+        ids: [comment.id],
         n: 3
       };
       try {
         const { data } = await Service.post(Endpoint.COMMENTS_SIMILAR, payload);
         let comment_ids = data[0];
-        // comment_ids = [1, 2, 3]; // for test purposes
+        comment_ids = [1, 2, 3]; // for test purposes
         if (comment_ids !== undefined) {
           const comments = await Promise.all(
             comment_ids.map(id =>
