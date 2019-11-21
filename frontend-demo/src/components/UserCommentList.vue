@@ -86,6 +86,7 @@
             >Ähnliche Kommentare anzeigen</v-btn>
           </td>
           <td></td>
+          <td v-for="(label, i) in selectedLabels" :key="item.id+i"></td>
         </tr>
         <tr
           class="elevation-1"
