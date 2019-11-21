@@ -133,8 +133,8 @@ GET_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids, skip, limit: f"""
                     select coalesce(a.comment_id, f.comment_id) as id
                     from annotations a 
                     full join facts f on
-                    a.comment_id = f.comment_id
-                    where ( a."label" = true or f."label" = true ) {opt_label_coalesce_AF_in(labels)}
+                    a.comment_id = f.comment_id and a.label_id = f.label_id
+                    where ( a."label" or f."label") {opt_label_coalesce_AF_in(labels)}
                 ) l
             on c.id = l.id
             order by c.id
