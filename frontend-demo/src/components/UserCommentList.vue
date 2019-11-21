@@ -217,8 +217,6 @@ export default {
 
       const queryString = parameters.join("&");
 
-      console.log(queryString);
-
       return queryString;
     },
     keyword: {
