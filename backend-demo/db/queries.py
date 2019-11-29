@@ -37,7 +37,7 @@ GET_PARENT_BY_CHILD = lambda id: f'SELECT id, text, title, user_id, year, month,
 GROUP_COMMENTS_BY_DAY = lambda label, keywords: f"""
             SELECT day, month, year, Count(*) FROM 
                 (SELECT DISTINCT comment_id FROM facts {opt_where(label)} {opt_label_selection_single(label)} {opt_and_label_eq_true(label)}) AS a, 
-                (SELECT id AS comment_id, year, month, day FROM comments {opt_keyword_section(keywords)}) AS c 
+                (SELECT id AS comment_id, year, month, day FROM comments {opt_where(keywords)} {opt_keyword_section(keywords)}) AS c 
             WHERE a.comment_id = c.comment_id
             GROUP BY year, month, day
             ORDER BY year
@@ -45,7 +45,7 @@ GROUP_COMMENTS_BY_DAY = lambda label, keywords: f"""
 GROUP_COMMENTS_BY_MONTH = lambda label, keywords: f"""
             SELECT month, year, Count(*) FROM 
                 (SELECT DISTINCT comment_id FROM facts {opt_where(label)} {opt_label_selection_single(label)} {opt_and_label_eq_true(label)}) AS a, 
-                (SELECT id AS comment_id, year, month FROM comments {opt_keyword_section(keywords)}) AS c 
+                (SELECT id AS comment_id, year, month FROM comments {opt_where(keywords)} {opt_keyword_section(keywords)}) AS c 
             WHERE a.comment_id = c.comment_id
             GROUP BY year, month
             ORDER BY year
@@ -53,7 +53,7 @@ GROUP_COMMENTS_BY_MONTH = lambda label, keywords: f"""
 GROUP_COMMENTS_BY_YEAR = lambda label, keywords: f"""
             SELECT year, Count(*) FROM 
                 (SELECT DISTINCT comment_id FROM facts {opt_where(label)} {opt_label_selection_single(label)} {opt_and_label_eq_true(label)}) AS a, 
-                (SELECT id AS comment_id, year FROM comments {opt_keyword_section(keywords)}) AS c 
+                (SELECT id AS comment_id, year FROM comments {opt_where(keywords)} {opt_keyword_section(keywords)}) AS c 
             WHERE a.comment_id = c.comment_id
             GROUP BY year
             ORDER BY year
