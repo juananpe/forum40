@@ -5,10 +5,10 @@
     <v-layout>
       <v-flex xs12>
         <v-text-field
-          v-model="keyword"
+          v-model="enteredKeyword"
           label="Textsuche"
-          @change="keywordChanged"
           append-icon="search"
+          @keydown.enter="keywordChanged"
           clearable
         ></v-text-field>
       </v-flex>
@@ -58,11 +58,11 @@
           </td>
           <td @click="commentClicked(props)" class="text-left commenttext">
             <div v-if="!props.isExpanded">
-              <span v-html="highlight(shortText(commentText(props)), keyword)"></span>
+              <span v-html="highlight(shortText(commentText(props)), enteredKeyword)"></span>
             </div>
 
             <b v-else>
-              <span v-html="highlight(commentText(props), keyword)"></span>
+              <span v-html="highlight(commentText(props), enteredKeyword)"></span>
             </b>
           </td>
           <td class="text-right">{{ props.item.timestamp | moment}}</td>
@@ -129,6 +129,7 @@ export default {
   name: "UserCommentList",
   data() {
     return {
+      enteredKeyword: "",
       headerPrefix: "header.",
       comments: [],
       expanded: [],
@@ -207,8 +208,8 @@ export default {
       if (labelParameters) parameters.push(labelParameters);
 
       // add keyword
-      if (this.keyword) {
-        const keywords = this.keyword.split(" ");
+      if (this.enteredKeyword) {
+        const keywords = this.enteredKeyword.split(" ");
         keywords.forEach(kw => parameters.push(`keyword=${kw}`));
       }
 
@@ -222,15 +223,6 @@ export default {
       const queryString = parameters.join("&");
 
       return queryString;
-    },
-    keyword: {
-      set(state) {
-        this[Mutations.setKeywordfilter](state);
-        this.loadTable();
-      },
-      get() {
-        return this[Getters.keywordfilter];
-      }
     }
   },
   async mounted() {
@@ -331,9 +323,6 @@ export default {
         this[Mutations.setSelectedComment]({});
       }
     },
-    keywordChanged() {
-      //this.loadTable();
-    },
     async loadSimilarComments(comment) {
       const payload = {
         ids: [comment.id],
@@ -370,6 +359,10 @@ export default {
           return false;
       }
       return true;
+    },
+    keywordChanged(e) {
+      this[Mutations.setKeywordfilter](this.enteredKeyword);
+      this.loadTable();
     }
   },
   components: {
