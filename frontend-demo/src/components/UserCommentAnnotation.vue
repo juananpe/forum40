@@ -53,7 +53,7 @@
               <v-icon v-if="confidence>=0.5" v-on="on" class="ml-1">{{svgCheckbox}}</v-icon>
               <v-icon v-else v-on="on" class="ml-1">{{svgRectangle}}</v-icon>
             </template>
-            <span>Automatische Klassifizierung ({{1-confidence | toPercentage}} Konfidenz)</span>
+            <span>Automatische Klassifizierung ({{confidence > 0.5? confidence : 1-confidence | toPercentage}} Konfidenz)</span>
           </v-tooltip>
         </span>
         <span v-else>
