@@ -370,6 +370,7 @@ export default {
 
 .columnTitle {
   font-size: 12pt;
+  color: black;
 }
 
 .tableColumn {
