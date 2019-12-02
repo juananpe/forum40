@@ -46,7 +46,7 @@
       >Seite {{Math.floor(pageStart/rowsPerPage)+1}}</template>
 
       <template v-slot:item="props">
-        <tr class="mb-2">
+        <tr class="mb-2" v-if="props.item.title || props.item.text">
           <td @click="commentClicked(props)">
             <v-icon v-if="!props.isExpanded">expand_more</v-icon>
 
