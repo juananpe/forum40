@@ -79,8 +79,8 @@ export default {
       dialog: false,
       error: false,
       testalert: false,
-      username: "user1",
-      password: "22880",
+      username: "",
+      password: "",
       show: false
     };
   },
