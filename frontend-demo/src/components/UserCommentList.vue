@@ -360,9 +360,7 @@ export default {
       }
     },
     highlightRow(props) {
-      for (const label of this.selectedLabels) {
-        console.log('test');
-        
+      for (const label of this.selectedLabels) {        
         if (
           this.getPeronalAnnotation(
             props.item.annotations,
