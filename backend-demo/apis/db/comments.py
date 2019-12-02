@@ -25,7 +25,7 @@ import sys
 from jwt_auth.token import token_required
 
 ns = api.namespace('comments', description="comments api")
-min_date = date(2003, 4, 23)
+min_date = date(2015, 1, 1)
 
 
 def convertObjectToJSonResponse(obj):
@@ -313,7 +313,7 @@ def addMissingYears(data):
 
 def prepareForVisualisation(data, f):
     if len(data) == 0:
-        return data
+        return {"start_time": None, "time": [], "data": []}
 
     time_list = []
     data_list = []
