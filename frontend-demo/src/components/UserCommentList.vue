@@ -46,11 +46,7 @@
       >Seite {{Math.floor(pageStart/rowsPerPage)+1}}</template>
 
       <template v-slot:item="props">
-        <tr
-          class="mb-2"
-          :class="{highlightRow: highlightRow(props)}"
-          v-if="props.item.title || props.item.text"
-        >
+        <tr class="mb-2" v-if="props.item.title || props.item.text">
           <td @click="commentClicked(props)">
             <v-icon v-if="!props.isExpanded">expand_more</v-icon>
 
@@ -347,19 +343,6 @@ export default {
         console.error(`Could not load similar comments: ${e}`);
       }
     },
-    highlightRow(props) {
-      if (this.selectedLabels.length === 0) return false;
-      for (const label of this.selectedLabels) {
-        if (
-          this.getPeronalAnnotation(
-            props.item.annotations,
-            this.labels[label]
-          ) !== undefined
-        )
-          return false;
-      }
-      return true;
-    },
     keywordChanged(e) {
       this[Mutations.setKeywordfilter](this.enteredKeyword);
       this.loadTable();
@@ -384,9 +367,5 @@ export default {
 
 .tableColumn {
   min-width: 60px;
-}
-
-.highlightRow {
-  background-color: #eee;
 }
 </style>
