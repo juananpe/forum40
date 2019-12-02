@@ -42,12 +42,14 @@ class AuthLogin(Resource):
         if not db_result or db_result[0] != password or password == None:
             return make_response('Could not verify!', 401)
         else :
+            user_id = db_result[1]
             token = jwt.encode({
-                'user' : username, 
+                'user' : username,
+                'user_id' : user_id,
                 'exp' : datetime.datetime.utcnow() + datetime.timedelta(minutes=60)}, 
                 globalSecret
             )
-            return jsonify({'token' : token.decode('UTF-8'), 'user' : username})
+            return jsonify({'token' : token.decode('UTF-8'), 'user' : username, 'user_id' : user_id})
 
 
 @ns.route('/refreshToken/')
@@ -56,9 +58,11 @@ class AuthRefresh(Resource):
     @api.doc(security='apikey')
     def get(self, data):
         user = self["user"]
+        user_id = self["user_id"]
 
         token = jwt.encode({
             'user' : user, 
+            'user_id' : user_id,
             'exp' : datetime.datetime.utcnow() + datetime.timedelta(minutes=60)}, 
             globalSecret) # TODO hide pwd
 
@@ -74,7 +78,5 @@ class AuthRefreshs(Resource):
         user = None
         if self:
             user = self["user"]
-
-        print(data, file=sys.stderr)
 
         return {'User': user}

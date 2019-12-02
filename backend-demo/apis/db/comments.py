@@ -115,7 +115,7 @@ class CommentsGet2(Resource):
         source_ids = args.get('source_id', None)
         user_id = None
         if self:
-            user_id = self["user"]
+            user_id = self["user_id"]
 
         # count comments
         query = COUNT_COMMENTS_BY_FILTER(label_ids, keywords, source_ids)
@@ -462,7 +462,7 @@ class Comment(Resource):
 
         user_id = None
         if self:
-            user_id = self["user"]
+            user_id = self["user_id"]
 
         query = "select * from comments where id = %s"
 

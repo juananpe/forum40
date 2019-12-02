@@ -170,17 +170,13 @@ def _user_exists(id):
     db_result = postgres.fetchone()
     return db_result != None
 
-import sys
-
-import sys
-
 @ns.route('/<int:comment_id>/<int:label_id>/<int:label>')
 class LabelComment(Resource):
     @token_required
     @api.doc(security='apikey')
     def put(self, data, comment_id ,label_id, label):
 
-        user_id = self["user"]
+        user_id = self["user_id"]
         label = bool(label)
 
         try: 
