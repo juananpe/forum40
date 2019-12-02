@@ -360,16 +360,17 @@ export default {
       }
     },
     highlightRow(props) {
-      for (const label of this.selectedLabels) {        
+      if (this.selectedLabels.length === 0) return false;
+      for (const label of this.selectedLabels) {
         if (
           this.getPeronalAnnotation(
             props.item.annotations,
             this.labels[label]
-          ) === undefined
+          ) !== undefined
         )
-          return true;
+          return false;
       }
-      return false;
+      return true;
     }
   },
   components: {
