@@ -53,13 +53,17 @@
             <v-icon v-else>expand_less</v-icon>
           </td>
           <td @click="commentClicked(props)" class="text-left commenttext">
-            <div v-if="!props.isExpanded">
-              <span v-html="highlight(shortText(commentText(props)), enteredKeyword)"></span>
+            <div>
+              <div v-if="props.item.title">
+                <b v-html="highlight(props.item.title, enteredKeyword)"></b>
+                <br />
+              </div>
+              <span
+                v-if="!props.isExpanded"
+                v-html="highlight(shortText(props.item.text), enteredKeyword)"
+              ></span>
+              <span v-else v-html="highlight(props.item.text, enteredKeyword)"></span>
             </div>
-
-            <b v-else>
-              <span v-html="highlight(commentText(props), enteredKeyword)"></span>
-            </b>
           </td>
           <td class="text-right">{{ props.item.timestamp | moment}}</td>
           <td v-for="(label, i) in selectedLabels" :key="props.item.id+i">
@@ -279,9 +283,6 @@ export default {
       if (classification === undefined) return undefined;
       return classification.ai_pred;
     },
-    commentText(props) {
-      return (props.item.title || "") + " " + props.item.text;
-    },
     shortText(text) {
       return this.$options.filters.truncate(text, this.teaserTextLength);
     },
@@ -290,11 +291,13 @@ export default {
         const keywords = query.split(" ");
         let highlightedText = words;
         keywords.forEach(kw => {
-          const regEx = new RegExp("(" + kw + ")", "ig");
-          highlightedText = highlightedText.replace(
-            regEx,
-            '<span class="highlight">' + "$1" + "</span>"
-          );
+          if (kw) {
+            const regEx = new RegExp("(" + kw + ")", "ig");
+            highlightedText = highlightedText.replace(
+              regEx,
+              '<span class="highlight">' + "$1" + "</span>"
+            );
+          }
         });
         return highlightedText;
       }
