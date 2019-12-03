@@ -25,7 +25,7 @@ import sys
 from jwt_auth.token import token_required
 
 ns = api.namespace('comments', description="comments api")
-min_date = date(2015, 1, 1)
+min_date = date(2016, 6, 1)
 
 
 def convertObjectToJSonResponse(obj):
