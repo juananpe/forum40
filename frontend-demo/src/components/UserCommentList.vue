@@ -288,6 +288,7 @@ export default {
       return classification.ai_pred;
     },
     shortText(text) {
+      if (!text) return "";
       return this.$options.filters.truncate(text, this.teaserTextLength);
     },
     highlight: function(words, query) {

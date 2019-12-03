@@ -20,6 +20,10 @@ export default {
             return false;
         }
     },
+    [Actions.logout]: function ({ commit }) {
+        // TODO: Stop refresh token requests
+        commit(Mutations.setJWT, '');
+    },
     [Actions.refreshToken]: async function ({ commit, state }) {
         const { data } = await Service.get(Endpoint.REFRESH_TOKEN, state.currentJWT);
         if (data.token) {

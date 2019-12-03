@@ -8,7 +8,10 @@
 
         <v-list>
           <v-list-item @click="checkLogin">
-            <v-list-item-title>Check login</v-list-item-title>
+            <v-list-item-title>Check Authentifizierung</v-list-item-title>
+          </v-list-item>
+          <v-list-item @click="logoutClicked">
+            <v-list-item-title>Logout</v-list-item-title>
           </v-list-item>
         </v-list>
       </v-menu>
@@ -88,10 +91,10 @@ export default {
     ...mapGetters([Getters.jwt, Getters.jwtUser, Getters.jwtLoggedIn])
   },
   methods: {
-    ...mapActions([Actions.login]),
+    ...mapActions([Actions.login, Actions.logout]),
     async loginUser() {
       this.dialog = false;
-      const success = await this.login({
+      const success = await this[Actions.login]({
         username: this.username,
         password: this.password
       });
@@ -107,6 +110,9 @@ export default {
       if (data.ok === this[Getters.jwtUser]) {
         this.testalert = true;
       }
+    },
+    logoutClicked() {
+      this[Actions.logout]();
     }
   }
 };
