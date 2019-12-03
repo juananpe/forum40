@@ -1,7 +1,7 @@
 <template>
   <div>
     <v-app-bar flat color="indigo" max-height="60" dark>
-      <v-toolbar-title>Analyse von Online-Nutzerkommentaren</v-toolbar-title>
+      <v-toolbar-title>Forum 4.0 – Analyse von Online-Nutzerkommentaren</v-toolbar-title>
       <v-spacer></v-spacer>
       <UserLogin />
     </v-app-bar>

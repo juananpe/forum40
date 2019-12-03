@@ -17,7 +17,7 @@
         chips
         clearable
         multiple
-        label="Labels"
+        label="Ausgewählte Labels"
       >
         <template v-slot:selection="data">
           <v-chip :input-value="data.selected" close @click:close="remove(data.item)">
