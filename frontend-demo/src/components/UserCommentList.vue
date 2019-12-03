@@ -98,7 +98,11 @@
           :key="i"
         >
           <td v-if="similar_comments.length>0"></td>
-          <td v-if="similar_comments.length>0">{{comment.title}} {{comment.text}}</td>
+          <td v-if="similar_comments.length>0">
+            <b>{{comment.title}}</b>
+            <br />
+            {{comment.text}}
+          </td>
           <td v-if="similar_comments.length>0" class="text-right">{{ comment.timestamp | moment}}</td>
 
           <td v-for="(label, i) in selectedLabels" :key="comment.id+i">
