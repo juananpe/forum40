@@ -4,7 +4,7 @@ from apis.db import api
 
 from psycopg2.extras import RealDictCursor
 
-from db import postgres_con
+from db import postgres_con, db_cursor
 
 from db.queries import *
 from psycopg2 import DatabaseError
@@ -18,15 +18,12 @@ ns = api.namespace('annotations', description="annotations api")
 @ns.route('/count')
 class SourcesCount(Resource):
     def get(self):
-        postgres = postgres_con.cursor()
+        query = COUNT_ANNOTATIONS
 
-        try:        
-            postgres.execute(COUNT_ANNOTATIONS)
-        except DatabaseError:
-            postgres_con.rollback()
-            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
-
-        db_return = postgres.fetchone()
+        db_return = []
+        with db_cursor() as cur:
+            cur.execute(query)
+            db_return = cur.fetchone()
 
         if db_return:
              return {'count': db_return[0]}, 200
@@ -36,15 +33,11 @@ class SourcesCount(Resource):
 @ns.route('/count_facts/')
 class SourcesCountF(Resource):
     def get(self):
-        postgres = postgres_con.cursor()
-
-        try:        
-            postgres.execute('SELECT COUNT(*) FROM facts')
-        except DatabaseError:
-            postgres_con.rollback()
-            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
-
-        db_return = postgres.fetchone()
+        query = 'SELECT COUNT(*) FROM facts'
+        db_return = []
+        with db_cursor() as cur:
+            cur.execute(query)
+            db_return = cur.fetchone()
 
         if db_return:
              return {'count': db_return[0]}, 200
@@ -54,14 +47,13 @@ class SourcesCountF(Resource):
 @ns.route('/<int:comment_id>')
 class GetLabel(Resource):
     def get(self, comment_id):
-        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
-        try:        
-            postgres.execute(f"SELECT label_id, user_id, label FROM Annotations WHERE comment_id = {comment_id}")
-        except DatabaseError:
-            postgres_con.rollback()
-            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+        
+        query = f"SELECT label_id, user_id, label FROM Annotations WHERE comment_id = {comment_id}"
+        db_return = []
+        with db_cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(query)
+            db_return = cur.fetchall()
 
-        db_return = postgres.fetchall()
         return db_return
 
 
@@ -84,7 +76,6 @@ class GetLabelUser(Resource):
             searchwords = ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
             comments_where_sec += 'WHERE ' +  searchwords
 
-        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
         query = f"""
             SELECT _.id, array_agg(_.agg) as group_annotation FROM
             (
@@ -98,14 +89,10 @@ class GetLabelUser(Resource):
             ) _ 
             GROUP BY _.id
         """
-
-        try:        
-            postgres.execute(query)
-        except DatabaseError:
-            postgres_con.rollback()
-            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
-
-        db_return = postgres.fetchall()
+        db_return = []
+        with db_cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(query)
+            db_return = cur.fetchall()
         return db_return
 
 
@@ -128,8 +115,6 @@ class GetLabelGroup(Resource):
             searchwords = ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
             comments_where_sec += 'WHERE ' +  searchwords
 
-
-        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
         query = f"""
         SELECT _.id, _.title, _.text, _.timestamp, array_agg(_.agg) as group_annotation FROM
         (
@@ -143,13 +128,11 @@ class GetLabelGroup(Resource):
         GROUP BY _.id, _.title, _.text, _.timestamp
         """
 
-        try:        
-            postgres.execute(query)
-        except DatabaseError:
-            postgres_con.rollback()
-            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+        db_return = []
+        with db_cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(query)
+            db_return = cur.fetchall()
 
-        db_return = postgres.fetchall()
         return db_return
 
 def _comment_exists(id):
@@ -179,43 +162,33 @@ class LabelComment(Resource):
         user_id = self["user_id"]
         label = bool(label)
 
-        try: 
-            # Check Args
-            if not _comment_exists(comment_id):
-                return {"msg": "No Comments with id: {0}".format(comment_id)}, 400
+        # Check Args
+        if not _comment_exists(comment_id):
+            return {"msg": "No Comments with id: {0}".format(comment_id)}, 400
 
-            if not _label_exists(label_id):
-                return {"msg": "No Label with id: {0}".format(label_id)}, 400
+        if not _label_exists(label_id):
+            return {"msg": "No Label with id: {0}".format(label_id)}, 400
 
-            if not _user_exists(user_id):
-                return {"msg": "No User with id: {0}".format(user_id)}, 400
-        except DatabaseError:
-            postgres_con.rollback()
-            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+        if not _user_exists(user_id):
+            return {"msg": "No User with id: {0}".format(user_id)}, 400
 
-        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
-        
-        try:        
-            postgres.execute(SELECT_LABEL_FROM_ANNOTATIONS_BY_IDS(label_id, comment_id, user_id))
-        except DatabaseError:
-            postgres_con.rollback()
-            return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+        query = SELECT_LABEL_FROM_ANNOTATIONS_BY_IDS(label_id, comment_id, user_id)
 
-        db_result = postgres.fetchone()
+        db_result = []
+        with db_cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(query)
+            db_result = cur.fetchone()
+
+        with db_cursor() as cur:
+            cur.execute(INSERT_ANNOTATION(label_id, comment_id, user_id, label))
 
         if not db_result: # No Annotation found
-            try:        
-                postgres.execute(INSERT_ANNOTATION(label_id, comment_id, user_id, label))
-            except DatabaseError:
-                postgres_con.rollback()
-                return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+            with db_cursor() as cur:
+                cur.execute(INSERT_ANNOTATION(label_id, comment_id, user_id, label))
 
         elif db_result['label'] != label: # Update
-            try:        
-                postgres.execute(UPDATE_ANNOTATION(label_id, comment_id, user_id, label))
-            except DatabaseError:
-                postgres_con.rollback()
-                return {'msg' : 'DatabaseError: transaction is aborted'}, 400
+            with db_cursor() as cur:
+                cur.execute(UPDATE_ANNOTATION(label_id, comment_id, user_id, label))
         else: 
             pass
 
