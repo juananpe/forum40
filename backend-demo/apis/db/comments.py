@@ -398,8 +398,11 @@ class CommentsParentRec(Resource):
                         cur.execute(query)
                         db_response = cur.fetchone()
 
-                    db_response['timestamp'] = db_response['timestamp'].isoformat()
-                    id_ = db_response['parent_comment_id']
+                    if db_response:
+                        db_response['timestamp'] = db_response['timestamp'].isoformat()
+                        id_ = db_response['parent_comment_id']
+                    else:
+                        break
                 else:
                     break
 
