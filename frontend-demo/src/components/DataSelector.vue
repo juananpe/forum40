@@ -1,6 +1,6 @@
 <template>
   <v-layout align-center>
-    <v-flex xs2 pr-2>
+    <v-flex xs4 pr-2>
       <v-select
         :items="sources.map(e=>e['name'])"
         v-on:change="sourceChanged"
@@ -10,7 +10,7 @@
       ></v-select>
     </v-flex>
 
-    <v-flex :xs8="loggedIn" :xs10="!loggedIn" pr-2>
+    <v-flex :xs6="loggedIn" :xs8="!loggedIn" pr-2>
       <v-select
         v-model="selection"
         :items="Object.keys(labels)"
@@ -92,9 +92,9 @@ export default {
     ]),
     async fetchSources() {
       const { data } = await Service.get(Endpoint.SOURCES);
-      if (data.length > 0) {
+      if (data.length > 1) {
         this[Mutations.setSources](data);
-        this[Mutations.setSource](data[0].name);
+        this[Mutations.setSource](data[1].name);
         this.fetchLabels();
       }
     },
