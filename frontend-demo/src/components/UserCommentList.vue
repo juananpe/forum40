@@ -103,7 +103,6 @@
 
           <td v-for="(label, i) in selectedLabels" :key="comment.id+i">
             <UserCommentAnnotation
-              v-if="comment.annotations !== undefined"
               :commentId="comment.id"
               :labelId="labels[label]"
               :personalLabel="getPeronalAnnotation(comment.annotations, labels[label])"
