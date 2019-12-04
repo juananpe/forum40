@@ -330,7 +330,7 @@ export default {
     async loadSimilarComments(comment) {
       const payload = {
         ids: [comment.id],
-        n: MAX_COMMENTS
+        n: this.MAX_COMMENTS
       };
       try {
         const { data } = await Service.post(Endpoint.COMMENTS_SIMILAR, payload);
