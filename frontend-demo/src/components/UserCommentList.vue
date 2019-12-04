@@ -94,7 +94,7 @@
         </tr>
         <tr
           class="elevation-1"
-          v-for="(comment, i) in similar_comments.slice(0,MAX_COMMENTS)"
+          v-for="(comment, i) in similar_comments.slice(1,MAX_COMMENTS)"
           :key="i"
         >
           <td v-if="similar_comments.length>0"></td>
@@ -164,7 +164,7 @@ export default {
       ],
       svgPath: mdiRobot,
       similar_comments: [],
-      MAX_COMMENTS: 3
+      MAX_COMMENTS: 4
     };
   },
   filters: {
@@ -330,7 +330,7 @@ export default {
     async loadSimilarComments(comment) {
       const payload = {
         ids: [comment.id],
-        n: 3
+        n: MAX_COMMENTS
       };
       try {
         const { data } = await Service.post(Endpoint.COMMENTS_SIMILAR, payload);
