@@ -92,9 +92,9 @@ export default {
     ]),
     async fetchSources() {
       const { data } = await Service.get(Endpoint.SOURCES);
-      if (data.length > 1) {
+      if (data.length > 0) {
         this[Mutations.setSources](data);
-        this[Mutations.setSource](data[1].name);
+        this[Mutations.setSource](data[0].name);
         this.fetchLabels();
       }
     },
