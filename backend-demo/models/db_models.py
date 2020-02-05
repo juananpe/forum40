@@ -4,6 +4,7 @@ from datetime import datetime
 groupByModel = reqparse.RequestParser()
 groupByModel.add_argument('label', type=int)
 groupByModel.add_argument('keyword', action='append')
+groupByModel.add_argument('source_id', type=int, default=1)
 
 comments_parser_sl = reqparse.RequestParser()
 comments_parser_sl.add_argument('label', action='append')

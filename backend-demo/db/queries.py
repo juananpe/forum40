@@ -34,30 +34,57 @@ SELECT_PASSWORD_BY_NAME = lambda x: (f"SELECT password, id FROM users WHERE name
 SELECT_COMMENTS_BY_ID = lambda x: f"select * from comments where id = {x}"
 SELECT_COMMENT_BY_ID =  lambda x: f"SELECT * FROM comments WHERE id = {x} fetch first 1 rows only"
 GET_PARENT_BY_CHILD = lambda id: f'SELECT id, text, title, user_id, year, month, day FROM comments p, (SELECT parent_comment_id FROM comments c WHERE id = {id}) as c WHERE p.id = c.parent_comment_id;'
-GROUP_COMMENTS_BY_DAY = lambda label, keywords: f"""
+
+GROUP_COMMENTS_BY_DAY = lambda label, keywords, source_id: f"""
             SELECT day, month, year, Count(*) FROM 
                 (SELECT DISTINCT comment_id FROM facts {opt_where(label)} {opt_label_selection_single(label)} {opt_and_label_eq_true(label)}) AS a, 
-                (SELECT id AS comment_id, year, month, day FROM comments {opt_where(keywords)} {opt_keyword_section(keywords)}) AS c 
+                (SELECT id AS comment_id, year, month, day FROM comments {opt_where(keywords or source_id)} 
+                    {opt_keyword_section(keywords)} {opt_and(keywords and source_id)} {opt_source_id_section(source_id)}) AS c 
             WHERE a.comment_id = c.comment_id
             GROUP BY year, month, day
             ORDER BY year
             """
-GROUP_COMMENTS_BY_MONTH = lambda label, keywords: f"""
+GROUP_COMMENTS_BY_MONTH = lambda label, keywords, source_id: f"""
             SELECT month, year, Count(*) FROM 
                 (SELECT DISTINCT comment_id FROM facts {opt_where(label)} {opt_label_selection_single(label)} {opt_and_label_eq_true(label)}) AS a, 
-                (SELECT id AS comment_id, year, month FROM comments {opt_where(keywords)} {opt_keyword_section(keywords)}) AS c 
+                (SELECT id AS comment_id, year, month FROM comments {opt_where(keywords or source_id)} 
+                    {opt_keyword_section(keywords)} {opt_and(keywords and source_id)} {opt_source_id_section(source_id)}) AS c 
             WHERE a.comment_id = c.comment_id
             GROUP BY year, month
             ORDER BY year
             """
-GROUP_COMMENTS_BY_YEAR = lambda label, keywords: f"""
+GROUP_COMMENTS_BY_YEAR = lambda label, keywords, source_id: f"""
             SELECT year, Count(*) FROM 
                 (SELECT DISTINCT comment_id FROM facts {opt_where(label)} {opt_label_selection_single(label)} {opt_and_label_eq_true(label)}) AS a, 
-                (SELECT id AS comment_id, year FROM comments {opt_where(keywords)} {opt_keyword_section(keywords)}) AS c 
+                (SELECT id AS comment_id, year FROM comments{opt_where(keywords or source_id)} 
+                    {opt_keyword_section(keywords)} {opt_and(keywords and source_id)} {opt_source_id_section(source_id)}) AS c 
             WHERE a.comment_id = c.comment_id
             GROUP BY year
             ORDER BY year
             """
+
+GROUP_ALL_COMMENTS_BY_DAY = lambda keywords, source_id: f'''
+        SELECT day, month, year, Count(*) FROM comments
+            {opt_where(keywords or source_id)}  {opt_keyword_section(keywords)}
+                    {opt_and(keywords and source_id)} {opt_source_id_section(source_id)}
+            GROUP BY year, month, day
+            ORDER BY year
+'''
+
+GROUP_ALL_COMMENTS_BY_MONTH = lambda keywords, source_id: f'''
+        SELECT month, year, Count(*) FROM comments
+            {opt_where(keywords or source_id)}  {opt_keyword_section(keywords)}
+                    {opt_and(keywords and source_id)} {opt_source_id_section(source_id)}
+            GROUP BY year, month
+            ORDER BY year
+'''
+GROUP_ALL_COMMENTS_BY_YEAR = lambda keywords, source_id: f'''
+        SELECT year, Count(*) FROM comments
+            {opt_where(keywords or source_id)}  {opt_keyword_section(keywords)}
+                    {opt_and(keywords and source_id)} {opt_source_id_section(source_id)}
+            GROUP BY year
+            ORDER BY year
+'''
 
 GET_COMMENTS_BY_FILTER_draft = lambda labels, keywords, source_ids, skip, limit: f"""
             select c.id, c.title, c.text, c.timestamp from
@@ -154,6 +181,9 @@ def opt_and(cond):
 
 def opt_comments_section(ids):
     return f"comment_id in ({', '.join(ids) })" if ids else ''
+
+def opt_source_id_section(source_id):
+    return f' source_id = {source_id} '
 
 def opt_source_section(ids, prefix = ''):
     return f"{prefix}source_id in ({', '.join(ids) })" if ids else ''
