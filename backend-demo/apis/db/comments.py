@@ -305,8 +305,13 @@ class CommentsGroupByDay(Resource):
 
         labels = args['label'] if 'label' in args else None
         keywords = args['keyword'] if 'keyword' in args else None
+        source_id = args['source_id'] if 'source_id' in args else None
 
-        query = GROUP_COMMENTS_BY_DAY(labels, keywords)
+        if labels is None:
+            # no label id: select all comments, but filtered by source and keywords
+            query = GROUP_ALL_COMMENTS_BY_DAY(keywords, source_id)
+        else:
+            query = GROUP_COMMENTS_BY_DAY(labels, keywords, source_id)
 
         db_result = None
         with db_cursor(cursor_factory=RealDictCursor) as cur:
@@ -324,8 +329,13 @@ class CommentsGroupByMonth(Resource):
 
         labels = args['label'] if 'label' in args else None
         keywords = args['keyword'] if 'keyword' in args else None
+        source_id = args['source_id'] if 'source_id' in args else None
 
-        query = GROUP_COMMENTS_BY_MONTH(labels, keywords)
+        if labels is None:
+            # no label id: select all comments, but filtered by source and keywords
+            query = GROUP_ALL_COMMENTS_BY_MONTH(keywords, source_id)
+        else:
+            query = GROUP_COMMENTS_BY_MONTH(labels, keywords, source_id)
 
         db_result = None
         with db_cursor(cursor_factory=RealDictCursor) as cur:
@@ -343,8 +353,13 @@ class CommentsGroupByYear(Resource):
 
         labels = args['label'] if 'label' in args else None
         keywords = args['keyword'] if 'keyword' in args else None
+        source_id = args['source_id'] if 'source_id' in args else None
 
-        query = GROUP_COMMENTS_BY_YEAR(labels, keywords)
+        if labels is None:
+            # no label id: select all comments, but filtered by source and keywords
+            query = GROUP_ALL_COMMENTS_BY_YEAR(keywords, source_id)
+        else:
+            query = GROUP_COMMENTS_BY_YEAR(labels, keywords, source_id)
 
         db_result = None
         with db_cursor(cursor_factory=RealDictCursor) as cur:
