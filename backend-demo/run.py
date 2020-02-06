@@ -2,13 +2,13 @@
 from flask import Flask, request
 from flask_cors import CORS
 
-import settings
+from config import settings
 
 from core.proxy_wrapper import ReverseProxied
 
 from apis.db import blueprint as db_blueprint
 from apis.service import blueprint as service_blueprint
-from apis.draft1 import blueprint as draft1_blueprint
+from apis.embeddings import blueprint as embeddings_blueprint
 
 app = Flask(__name__)
 
@@ -32,7 +32,7 @@ def hello():
 # add blueprints
 app.register_blueprint(db_blueprint, url_prefix='/db')
 app.register_blueprint(service_blueprint, url_prefix='/service')
-app.register_blueprint(draft1_blueprint, url_prefix='/draft1')
+app.register_blueprint(embeddings_blueprint, url_prefix='/similarity')
 
 # add extensions
 app.wsgi_app = ReverseProxied(app.wsgi_app)
