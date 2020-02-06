@@ -5,7 +5,9 @@ from jwt_auth import authorization
 
 blueprint = Blueprint('embedding_api', __name__)
 
-api = Api(authorizations=authorization, version='1.0', title='Embedding-API', description="Access pre-computed embeddings and comments based on embedding similarity")
+# authorizations=authorization
+
+api = Api(version='1.0', title='Embedding-API', description="Access pre-computed embeddings and comments based on embedding similarity")
 api.init_app(blueprint)
 
 from apis.embeddings.tasks import ns as embeddings_namespace

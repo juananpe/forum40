@@ -2,7 +2,7 @@ import nmslib
 import traceback, argparse
 import math
 
-from utils.tasks import ForumProcessor
+from apis.utils.tasks import ForumProcessor
 
 debug = False
 max_batches = 100

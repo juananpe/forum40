@@ -11,4 +11,4 @@ SWAGGER_UI_DOC_EXPANSION = 'none'
 JWT_SECRET_KEY = 'eh9Df9G27gahgHJ7g2oGQz6Ug5he6ud5shd'
 
 # Embedding container URL
-EMBEDDING_SERVICE_URL = 'http://embedding/api/comment'
+EMBEDDING_SERVICE_URL = 'http://embedding:5060/embed'

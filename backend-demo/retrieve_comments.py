@@ -1,7 +1,7 @@
 import pprint
 import nmslib
 import argparse
-from utils.tasks import ForumTask, concat
+from apis.utils.tasks import ForumTask, concat
 
 class RetrieveComment(ForumTask):
 

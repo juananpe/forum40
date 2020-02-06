@@ -1,4 +1,4 @@
-import argparse, logging, psycopg2
+import argparse, logging
 
 from collections import Counter
 from timeit import default_timer as timer

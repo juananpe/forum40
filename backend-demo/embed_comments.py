@@ -2,10 +2,8 @@ import argparse
 import traceback
 import math
 
-from BertFeatureExtractor import BertFeatureExtractor
-
-from utils.tasks import ForumProcessor, concat
-
+from apis.utils.tasks import ForumProcessor, concat
+from apis.embeddings.tasks import get_embeddings
 
 class CommentEmbedder(ForumProcessor):
 
@@ -21,14 +19,11 @@ class CommentEmbedder(ForumProcessor):
     def set_commit_number(self, n_commit):
         self.n_commit = n_commit
 
-    def set_extractor_model(self, model):
-        self.be = model
 
     def process_batch(self, comment_batch):
         comment_texts = [concat(c[1], c[2]) for c in comment_batch if c[1] or c[2]]
         comment_ids = [c[0] for c in comment_batch if c[1] or c[2]]
-        comment_embeddings = self.be.extract_features(comment_texts)
-
+        comment_embeddings, _ = get_embeddings(comment_texts)
         batch_update_comments = []
         for i, comment_embedding in enumerate(comment_embeddings):
             # get comment object id
@@ -131,16 +126,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    be = BertFeatureExtractor(
-        batch_size=args.batch_size,
-        device=args.device,
-        keep_cls=args.keep_cls,
-        use_layers=args.use_layers,
-        use_token=args.use_token
-    )
-
     ce = CommentEmbedder(embed_all=args.all, batch_size=args.batch_size, host=args.host, port=args.port)
-    ce.set_extractor_model(be)
 
     # start embedding
     ce.process()

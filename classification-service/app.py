@@ -4,8 +4,6 @@ from flask import Flask
 from logging.config import dictConfig
 from flask_restplus import Api, Resource, fields
 from core.proxy_wrapper import ReverseProxied
-from update import LabelUpdater
-from train import ClassifierTrainer
 from classifier import get_history_path
 
 from utils.tasks import SingleProcessManager
