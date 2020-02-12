@@ -187,7 +187,7 @@ class CommentsGet2(Resource):
             cur.execute(insert_query, (max_id+1, doc_id, source_id, user_id, parent_comment_id, status, title, text, embedding, timestamp, external_id))
             added_comment = cur.fetchone()
 
-        return added_comment, 200
+        return {'id': added_comment[0]}, 200
         
         
 # GET_UNLABELD_COMMENTS_BY_FILTER
