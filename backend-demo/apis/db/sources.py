@@ -51,6 +51,26 @@ class Sources(Resource):
         return added_source, 200
 
 
+@ns.route('/<name>')
+class SourcesByName(Resource):
+
+    def get(self, name):
+        query = f"select id from sources where name = '{name}'"
+        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+        try:
+            postgres.execute(query)
+            postgres_con.commit()
+
+        except DatabaseError:
+            postgres_con.rollback()
+            return {'msg': 'DatabaseError: transaction is aborted'}, 400
+
+        sources = postgres.fetchone()
+        if sources:
+            return sources, 200
+        else: 
+            return {"id": None}, 200
+
 @ns.route('/count')
 class SourcesCount(Resource):
     def get(self):
