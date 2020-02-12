@@ -48,7 +48,8 @@ class Documents(Resource):
             return {'msg': 'DatabaseError: transaction is aborted'}, 400
 
         sources = postgres.fetchone()
-        sources['timestamp'] = sources['timestamp'].isoformat()
+        if sources:
+            sources['timestamp'] = sources['timestamp'].isoformat()
         return sources, 200
 
 @ns.route('/')
