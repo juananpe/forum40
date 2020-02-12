@@ -89,6 +89,20 @@ def getAllAnnotations(ids, label_ids, user_id):
                 dic[index].append(i)
     return annotations, dic
 
+def getCommentByIds(id, external_id):
+    query = f"select id from comments where source_id = '{id}' and external_id = '{external_id}'"
+    postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+    try:
+        postgres.execute(query)
+        postgres_con.commit()
+
+    except DatabaseError:
+        postgres_con.rollback()
+        return {'msg': 'DatabaseError: transaction is aborted'}, False
+
+    return postgres.fetchone(), True
+
+
 @ns.route('/')
 class CommentsGet2(Resource):
     @token_optional
@@ -159,6 +173,9 @@ class CommentsGet2(Resource):
 
         return comments_with_label + comments_without_label
     
+
+
+
     @api.doc(security='apikey')
     @api.expect(comment_parser_post)
     @token_optional # change to token_required
@@ -174,6 +191,10 @@ class CommentsGet2(Resource):
         embedding = args['embedding'] if args.get('embedding', False) else None
         timestamp = args['timestamp'] if args.get('timestamp', False) else None
         external_id = args['external_id'] if args.get('external_id', False) else None
+
+        comm, _ = getCommentByIds(source_id, external_id)
+        if comm:
+             return {'id': f'already exists: source_id: {source_id}, external_id: {external_id} '}, 200
 
         insert_query = "INSERT INTO comments (id, doc_id, source_id, user_id, parent_comment_id, status, title, text, embedding, timestamp, external_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id;"
 
