@@ -4,8 +4,22 @@ from flask_restplus import Resource, reqparse
 from apis.db import api
 from db.queries import COUNT_DOCUMENTS
 from db import postgres_con
+from models.db_models import document_parser
+from jwt_auth.token import token_required
+from psycopg2 import DatabaseError
+from psycopg2.extras import RealDictCursor
 
 ns = api.namespace('documents', description="documents api")
+
+#document_parser = reqparse.RequestParser()
+#document_parser.add_argument('id', required=True)
+#document_parser.add_argument('url', required=True)
+#document_parser.add_argument('title', required=True)
+#document_parser.add_argument('text', required=True)
+#document_parser.add_argument('timestamp', required=True)
+#document_parser.add_argument('metadata', default="")
+#document_parser.add_argument('source_id', required=True)
+#document_parser.add_argument('external_id', required=True)
 
 @ns.route('/count')
 class DocumentsCount(Resource):
@@ -18,3 +32,52 @@ class DocumentsCount(Resource):
              return {'count': db_return[0]}, 200
         
         return {"msg": "Error"}, 400
+
+@ns.route('/<id>/<external_id>')
+class Documents(Resource):
+
+    def get(self, id, external_id):
+        query = f"select * from documents where source_id = '{id}' and external_id = '{external_id}'"
+        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+        try:
+            postgres.execute(query)
+            postgres_con.commit()
+
+        except DatabaseError:
+            postgres_con.rollback()
+            return {'msg': 'DatabaseError: transaction is aborted'}, 400
+
+        sources = postgres.fetchone()
+        sources['timestamp'] = sources['timestamp'].isoformat()
+        return sources, 200
+
+@ns.route('/')
+class DocumentsPost(Resource):
+    @api.expect(document_parser)
+    @token_required
+    @api.doc(security='apikey')
+    def post(self, data):
+        args = document_parser.parse_args()
+        url = args['url']
+        title = args['title']
+        text = args['text']
+        timestamp = args['timestamp']
+        metadata = args['metadata']
+        if not metadata:
+            metadata = ""
+        source_id = args['source_id']
+        external_id = args['external_id']
+
+        postgres = postgres_con.cursor()
+        insert_query = "INSERT INTO documents (url, title, text, timestamp, metadata, source_id, external_id) VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id;"
+
+        try:
+            postgres.execute(insert_query, (url, title, text, timestamp, metadata, source_id, external_id))
+            postgres_con.commit()
+
+        except DatabaseError:
+            postgres_con.rollback()
+            return {'msg': 'DatabaseError: transaction is aborted'}, 400
+
+        added_source = postgres.fetchone()
+        return added_source, 200
