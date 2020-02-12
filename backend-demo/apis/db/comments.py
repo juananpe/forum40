@@ -173,8 +173,9 @@ class CommentsGet2(Resource):
         text = args['text'] if args.get('text', False) else None
         embedding = args['embedding'] if args.get('embedding', False) else None
         timestamp = args['timestamp'] if args.get('timestamp', False) else None
+        external_id = args['external_id'] if args.get('external_id', False) else None
 
-        insert_query = "INSERT INTO comments (id, doc_id, source_id, user_id, parent_comment_id, status, title, text, embedding, timestamp) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id;"
+        insert_query = "INSERT INTO comments (id, doc_id, source_id, user_id, parent_comment_id, status, title, text, embedding, timestamp, external_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id;"
 
         max_id = []
         with db_cursor() as cur:
@@ -183,7 +184,7 @@ class CommentsGet2(Resource):
 
         added_comment = []
         with db_cursor() as cur:
-            cur.execute(insert_query, (max_id+1, doc_id, source_id, user_id, parent_comment_id, status, title, text, embedding, timestamp))
+            cur.execute(insert_query, (max_id+1, doc_id, source_id, user_id, parent_comment_id, status, title, text, embedding, timestamp, external_id))
             added_comment = cur.fetchone()
 
         return added_comment, 200
