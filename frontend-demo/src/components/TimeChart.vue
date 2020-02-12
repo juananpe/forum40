@@ -36,6 +36,7 @@ export default {
     ...mapState([State.labels]),
     ...mapGetters([
       Getters.selectedLabels,
+      Getters.getSelectedSource,
       Getters.keywordfilter,
       Getters.timeFrequency
     ])
@@ -100,7 +101,7 @@ export default {
       this.removeAllLabels();
 
       const { data } = await Service.get(
-        `${this.selectEndpoint()}${this.textFilterArg("?")}`
+        `${this.selectEndpoint()}?source_id=${this[Getters.getSelectedSource].id}&${this.textFilterArg("?")}`
       );
 
       if (this[Getters.selectedLabels].length == 0) {
@@ -115,9 +116,9 @@ export default {
         if (chart_options.legend.selected[x.name]) {
           const label_id = this[State.labels][x.name];
           const { data } = label_id ? 
-              await Service.get(`${selectEndpoint()}?label=${label_id}${textFilterArg("&")}`) 
+              await Service.get(`${selectEndpoint()}?source_id=${this[Getters.getSelectedSource].id}&label=${label_id}${textFilterArg("&")}`) 
               : 
-              await Service.get(`${selectEndpoint()}?${textFilterArg("&")}`);
+              await Service.get(`${selectEndpoint()}?source_id=${this[Getters.getSelectedSource].id}&${textFilterArg("&")}`);
           
           chart_options.xAxis.data = data["time"];
           x.data = data.data;
@@ -139,7 +140,7 @@ export default {
         ];
         const label_id = this[State.labels][label];
         const { data } = await Service.get(
-          `${this.selectEndpoint()}?label=${label_id}${this.textFilterArg("&")}`
+          `${this.selectEndpoint()}?source_id=${this[Getters.getSelectedSource].id}&label=${label_id}${this.textFilterArg("&")}`
         );
         this.addSeriesToChat(data, label);
       }
