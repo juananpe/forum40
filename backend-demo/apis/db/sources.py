@@ -48,7 +48,7 @@ class Sources(Resource):
             return {'msg': 'DatabaseError: transaction is aborted'}, 400
 
         added_source = postgres.fetchone()
-        return added_source, 200
+        return {'id': added_source[0]}, 200
 
 
 @ns.route('/<name>')
