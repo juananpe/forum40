@@ -33,21 +33,28 @@ class DocumentsCount(Resource):
         
         return {"msg": "Error"}, 400
 
+
+def getDocumentByIds(id, external_id):
+    query = f"select * from documents where source_id = '{id}' and external_id = '{external_id}'"
+    postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
+    try:
+        postgres.execute(query)
+        postgres_con.commit()
+
+    except DatabaseError:
+        postgres_con.rollback()
+        return {'msg': 'DatabaseError: transaction is aborted'}, False
+
+    return postgres.fetchone(), True
+
 @ns.route('/<id>/<external_id>')
 class Documents(Resource):
 
     def get(self, id, external_id):
-        query = f"select * from documents where source_id = '{id}' and external_id = '{external_id}'"
-        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
-        try:
-            postgres.execute(query)
-            postgres_con.commit()
+        sources, succ = getDocumentByIds(id, external_id)
+        if not succ:
+            return sources, 400
 
-        except DatabaseError:
-            postgres_con.rollback()
-            return {'msg': 'DatabaseError: transaction is aborted'}, 400
-
-        sources = postgres.fetchone()
         if sources:
             sources['timestamp'] = sources['timestamp'].isoformat()
         return sources, 200
@@ -68,6 +75,10 @@ class DocumentsPost(Resource):
             metadata = ""
         source_id = args['source_id']
         external_id = args['external_id']
+
+        sources, _ = getDocumentByIds(source_id, external_id)
+        if sources:
+            return {'msg': f'already exists: source_id: {source_id}, external_id: {external_id} '}, 200
 
         postgres = postgres_con.cursor()
         insert_query = "INSERT INTO documents (url, title, text, timestamp, metadata, source_id, external_id) VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id;"
