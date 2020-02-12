@@ -36,12 +36,11 @@ class Sources(Resource):
         args = source_parser.parse_args()
         name = args['name']
         domain = args['domain']
-        id = args['id']
         postgres = postgres_con.cursor()
-        insert_query = "INSERT INTO sources (id, name, domain) VALUES (%s, %s, %s) RETURNING id;"
+        insert_query = "INSERT INTO sources (name, domain) VALUES (%s, %s) RETURNING id;"
 
         try:
-            postgres.execute(insert_query, (id, name, domain))
+            postgres.execute(insert_query, (name, domain))
             postgres_con.commit()
 
         except DatabaseError:

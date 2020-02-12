@@ -22,7 +22,6 @@ comment_parser = reqparse.RequestParser()
 comment_parser.add_argument('label', action='append')
 
 source_parser = reqparse.RequestParser()
-source_parser.add_argument('id', required=True)
 source_parser.add_argument('name', required=True)
 source_parser.add_argument('domain', required=True)
 
