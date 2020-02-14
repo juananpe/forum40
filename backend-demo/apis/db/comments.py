@@ -194,7 +194,7 @@ class CommentsGet2(Resource):
 
         comm, _ = getCommentByIds(source_id, external_id)
         if comm:
-             return {'id': f'already exists: source_id: {source_id}, external_id: {external_id} '}, 200
+             return {'id': comm['id'], 'source_id': source_id, 'external_id': external_id, 'existed':True}, 200
 
         insert_query = "INSERT INTO comments (id, doc_id, source_id, user_id, parent_comment_id, status, title, text, embedding, timestamp, external_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id;"
 
