@@ -162,10 +162,11 @@ GET_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids, skip, limit: f"""
                     full join facts f on
                     a.comment_id = f.comment_id and a.label_id = f.label_id
                     where ( a."label" or f."label") {opt_label_coalesce_AF_in(labels)}
+                
+                    limit {limit} offset {skip}
                 ) l
             on c.id = l.id
             order by c.id
-            limit {limit} offset {skip}
             """
 
 ### utility
