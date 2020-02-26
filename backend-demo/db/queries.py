@@ -1,3 +1,5 @@
+from enum import Enum
+
 ## USERS
 COUNT_USERS = "SELECT COUNT(*) FROM users;"
 SELECT_USER_BY_ID = lambda x: f"SELECT * FROM users WHERE id = {x} fetch first 1 rows only;"
@@ -168,6 +170,45 @@ GET_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids, skip, limit: f"""
             on c.id = l.id
             order by c.id
             """
+    
+class Order(Enum):
+    ASC = 1
+    DESC = 2
+    UNCERTAIN = 0
+
+
+def GET_COMMENT_IDS_BY_FILTER(sort_label_id, order, label_ids, num_keywords):
+    """
+    Returns the query for getting comment ids
+    :param sort_label_id: label_id to sort or None, if none sort for date
+    :param order: ordering
+    :param num_keywords: number of keywords
+    """
+    query = f"""
+    select c.id, c.title, c.text, c.timestamp, f.confidence, f.label_id 
+    from comments c, facts f
+    where c.id = f.comment_id
+    and source_id = %s"""
+
+    if label_ids:
+        query+="and f.label_id = %s"
+    
+    for _ in range(num_keywords):
+        query+= "and text like '%%s%'"
+
+    if sort_label_id:
+        if order == Order.ASC:
+            query+= "order by f.confidence ASC"
+        elif order == Order.DESC:
+            query+= "order by f.confidence DESC"
+        else:
+            # todo: uncertainty order
+            pass
+    else:
+        query+= "order by c.timestamp DESC"
+
+    query+=f"limit %s offset %s"
+    return query
 
 ### utility
 

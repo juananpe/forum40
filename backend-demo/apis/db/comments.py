@@ -51,11 +51,26 @@ def getLabelIdByName(name):
 import sys
 
 def getAllComments(label_ids, keywords, source_ids, skip, limit):
-    query_getIds = GET_COMMENTS_BY_FILTER(label_ids, keywords, source_ids, skip, limit)
+    # query_getIds = GET_COMMENTS_BY_FILTER(label_ids, keywords, source_ids, skip, limit)
+
+    # todo: get sort_label_id, order from request parameter
+    sort_label_id = None
+    order = 2
+    query_getIds = GET_COMMENT_IDS_BY_FILTER(sort_label_id, order, label_ids, len(keywords))
+
+    query_parameters = []
+    query_parameters.append(source_ids[0]) # todo: why is source_ids a list?
+    if label_ids:
+        query_parameters.append(label_ids)
+    for keyword in keywords:
+        query_parameters.append(keyword)
+    query_parameters.append(limit)
+    query_parameters.append(skip)
+    
 
     res = []
     with db_cursor(cursor_factory=RealDictCursor) as cur:
-        cur.execute(query_getIds)
+        cur.execute(query_getIds, tuple(query_parameters))
         res = cur.fetchall()
     return res
 
