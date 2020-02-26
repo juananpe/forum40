@@ -196,7 +196,7 @@ class CommentsGet2(Resource):
         if comm:
              return {'id': comm['id'], 'source_id': source_id, 'external_id': external_id, 'existed':True}, 200
 
-        time = timestamp.split(' ')[0].split('-')
+        time = timestamp.split('T')[0].split('-')
         if len(time) < 3:
             time = [-1, -1, -1]
 
