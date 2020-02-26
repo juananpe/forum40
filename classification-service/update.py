@@ -112,7 +112,7 @@ class LabelUpdater(ForumProcessor):
             if self.skip_confidence and bool_label == labels_old[i]:
                 # skip update for unchanged label
                 continue
-            self.buffer.write(str(comment_id) + "\t" + str(self.label_id) + "\t" + str(bool_label) + "\t" + str(confidences[i]))
+            self.buffer.write(str(comment_id) + "\t" + str(self.label_id) + "\t" + str(bool_label) + "\t" + str(confidences[i]) + "\n")
 
         # look at next batch
         return True
@@ -136,6 +136,7 @@ class LabelUpdater(ForumProcessor):
         self.close_cursor()
 
         # copy postgres
+        self.buffer.seek(0)
         self.cursor.execute("CREATE TEMP TABLE tmp_facts (comment_id int8 NOT NULL, label_id int8 NOT NULL, label bool NULL DEFAULT false, confidence float8 NULL DEFAULT 0, CONSTRAINT tmp_facts_pk PRIMARY KEY (comment_id, label_id));")
         self.cursor.copy_from(self.buffer, 'tmp_facts')
         self.cursor.execute("UPDATE facts f SET label=t.label, confidence=t.confidence FROM tmp_facts t WHERE f.comment_id=t.comment_id AND f.label_id=t.label_id;")
