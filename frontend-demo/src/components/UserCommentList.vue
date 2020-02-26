@@ -36,7 +36,12 @@
           <div v-if="header.labelColumn" :key="i" class="tableColumn">
             <v-icon v-if="loggedIn">person</v-icon>
             <v-icon v-if="!loggedIn">people</v-icon>
-            <v-icon class="ml-1">{{svgPath}}</v-icon>
+            <v-icon @click="sortClickListener({header})" class="ml-1">{{svgPath}}</v-icon>
+            <div v-if="showSortArrow(header)" @click="sortClickListener({header})">
+              <v-icon v-if="order===2">arrow_downward</v-icon>
+              <v-icon v-else-if="order===1">arrow_upward</v-icon>
+              <v-icon v-else>check_circle_outline</v-icon>
+            </div>
           </div>
         </div>
       </template>
@@ -136,6 +141,8 @@ export default {
       enteredKeyword: "",
       headerPrefix: "header.",
       comments: [],
+      order: 2,
+      label_sort_id: null,
       expanded: [],
       loading: false,
       selected: [],
@@ -223,6 +230,12 @@ export default {
 
       // add limit
       parameters.push(`limit=${this.rowsPerPage}`);
+
+      // add sorting
+      if (this.label_sort_id) {
+        parameters.push(`order=${this.order}`);
+        parameters.push(`label_sort_id=${this.label_sort_id}`);
+      }
 
       const queryString = parameters.join("&");
 
@@ -314,6 +327,18 @@ export default {
         this[Getters.jwt]
       );
       this.comments = data;
+    },
+    sortClickListener({ header }) {
+      const label = header.text;
+      const label_sort_id = this[State.labels][label];
+      if (this.label_sort_id != label_sort_id) this.order = 2;
+      else this.order = ++this.order % 3;
+      this.label_sort_id = label_sort_id;
+      this.fetchComments();
+    },
+    showSortArrow(header) {
+      const label_sort_id = this[State.labels][header.text];
+      return label_sort_id === this.label_sort_id;
     },
     commentClicked(props) {
       this.similar_comments = [];
