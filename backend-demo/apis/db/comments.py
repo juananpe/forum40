@@ -196,7 +196,11 @@ class CommentsGet2(Resource):
         if comm:
              return {'id': comm['id'], 'source_id': source_id, 'external_id': external_id, 'existed':True}, 200
 
-        insert_query = "INSERT INTO comments (id, doc_id, source_id, user_id, parent_comment_id, status, title, text, embedding, timestamp, external_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id;"
+        time = timestamp.split('T')[0].split('-')
+        if len(time) < 3:
+            time = [-1, -1, -1]
+
+        insert_query = "INSERT INTO comments (id, doc_id, source_id, user_id, parent_comment_id, status, title, text, embedding, timestamp, external_id, year, month, day) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id;"
 
         max_id = []
         with db_cursor() as cur:
@@ -205,7 +209,7 @@ class CommentsGet2(Resource):
 
         added_comment = []
         with db_cursor() as cur:
-            cur.execute(insert_query, (max_id+1, doc_id, source_id, user_id, parent_comment_id, status, title, text, embedding, timestamp, external_id))
+            cur.execute(insert_query, (max_id+1, doc_id, source_id, user_id, parent_comment_id, status, title, text, embedding, timestamp, external_id, int(time[0]), int(time[1]), int(time[2])))
             added_comment = cur.fetchone()
 
         return {'id': added_comment[0]}, 200
