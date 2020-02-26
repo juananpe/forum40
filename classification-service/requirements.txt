@@ -1,9 +1,0 @@
-Werkzeug==0.16.1
-Flask==1.0.2
-flask-restplus==0.12.1
-h5py==2.8.0
-jsonschema==2.6.0
-numpy==1.15.4
-gunicorn==19.9.0
-psycopg2-binary==2.7.6.1
-scikit-learn==0.21.3

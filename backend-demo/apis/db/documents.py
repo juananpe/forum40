@@ -4,7 +4,7 @@ from flask_restplus import Resource, reqparse
 from apis.db import api
 from db.queries import COUNT_DOCUMENTS
 from db import postgres_con
-from models.db_models import document_parser
+from db.db_models import document_parser
 from jwt_auth.token import token_required
 from psycopg2 import DatabaseError
 from psycopg2.extras import RealDictCursor

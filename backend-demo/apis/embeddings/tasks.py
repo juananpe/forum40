@@ -7,7 +7,7 @@ from flask import current_app
 from apis.embeddings import api
 from config import settings
 
-from retrieve_comments import RetrieveComment
+from embeddings_retrieve import RetrieveComment
 from apis.utils.tasks import SingleProcessManager
 
 ns = api.namespace('embeddings', description="Embeddings-API namespace")
@@ -17,8 +17,8 @@ pg_host = os.getenv('PG_HOST', 'postgres')
 pg_port = os.getenv('PG_PORT', '5432')
 
 process_manager = SingleProcessManager(pg_host, pg_port)
-process_manager.register_process("indexing", ["index_comments.py", pg_host, pg_port])
-process_manager.register_process("embedding", ["embed_comments.py", pg_host, pg_port])
+process_manager.register_process("indexing", ["embeddings_index.py", pg_host, pg_port])
+process_manager.register_process("embedding", ["embeddings_embed.py", pg_host, pg_port])
 
 # db connection
 try:

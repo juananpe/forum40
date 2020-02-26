@@ -9,6 +9,7 @@ from core.proxy_wrapper import ReverseProxied
 from apis.db import blueprint as db_blueprint
 from apis.service import blueprint as service_blueprint
 from apis.embeddings import blueprint as embeddings_blueprint
+from apis.classification import blueprint as classification_blueprint
 
 app = Flask(__name__)
 
@@ -25,14 +26,15 @@ def hello():
     return '<a href="{0}api/db/">User-Comments-API</a> </br> ' \
            '<a href="{0}api/service/">Service-API</a> </br> ' \
            '<a href="{0}api/meta/">Meta-Comment-API</a> </br> ' \
-           '<a href="{0}api/offlang">Offensive-Language-API</a> </br>' \
            '<a href="{0}api/classification">Classification-API</a> </br>' \
+           '<a href="{0}api/similarity">Similarity-API</a> </br>' \
            '<a href="{0}api/embedding">Embedding-API</a> </br>'.format(url)
 
 # add blueprints
 app.register_blueprint(db_blueprint, url_prefix='/db')
 app.register_blueprint(service_blueprint, url_prefix='/service')
 app.register_blueprint(embeddings_blueprint, url_prefix='/similarity')
+app.register_blueprint(classification_blueprint, url_prefix='/classification')
 
 # add extensions
 app.wsgi_app = ReverseProxied(app.wsgi_app)

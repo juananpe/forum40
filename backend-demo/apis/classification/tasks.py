@@ -4,16 +4,21 @@ from flask import Flask
 from logging.config import dictConfig
 from flask_restplus import Api, Resource, fields
 from core.proxy_wrapper import ReverseProxied
-from classifier import get_history_path
+from classification_classifier import get_history_path
 
-from utils.tasks import SingleProcessManager
+from apis.classification import api
+
+from apis.utils.tasks import SingleProcessManager
+
+ns = api.namespace('classification', description="Classification-API namespace")
 
 # pg config
 pg_host = os.getenv('PG_HOST', 'postgres')
 pg_port = os.getenv('PG_PORT', '5432')
 
 process_manager = SingleProcessManager(pg_host, pg_port)
-
+process_manager.register_process("train", ["classification_train.py", pg_host, pg_port])
+process_manager.register_process("update", ["classification_update.py", pg_host, pg_port])
 
 dictConfig({
     'version': 1,
@@ -30,15 +35,6 @@ dictConfig({
     }
 })
 
-
-# define app
-app = Flask(__name__)
-app.wsgi_app = ReverseProxied(app.wsgi_app)
-
-
-# define API
-api = Api(app, version='0.1', title='Classification-API',
-          description="An API for classifying user comments")
 
 update_model = api.model('update', {
     'labelname': fields.String(
@@ -71,7 +67,7 @@ history_model = api.model('history', {
 })
 
 
-@api.route('/update')
+@ns.route('/update')
 class ClassifierService(Resource):
     @api.expect(update_model)
     def post(self):
@@ -87,22 +83,22 @@ class ClassifierService(Resource):
             return {'error' : 'Something went wrong.'}, 500
 
 
-@api.route('/status')
+@ns.route('/status')
 class StatusService(Resource):
     def get(self):
         results = process_manager.status("update")
         return results, 200
 
 
-@api.route('/abort')
+@ns.route('/abort')
 class AbortService(Resource):
     def get(self):
         results = process_manager.abort("update")
         return results, 200
 
-@api.route('/history')
+@ns.route('/history')
 class HistoryService(Resource):
-    @api.expect(history_model)
+    @ns.expect(history_model)
     def post(self):
         labelname = api.payload.get('labelname', None)
         n = api.payload.get('n', 100)
@@ -123,7 +119,3 @@ class HistoryService(Resource):
         else:
             return {'error' : 'No labelname given.'}, 404
 
-
-# run app manually
-if __name__ == "__main__":
-    app.run(threaded = True)

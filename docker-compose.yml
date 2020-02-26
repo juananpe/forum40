@@ -9,7 +9,6 @@ services:
             - flask
             - meta
             - embedding
-            - classification
         ports:
             - 443:8081
             - 80:8080
@@ -24,6 +23,7 @@ services:
             dockerfile: Dockerfile
         volumes:
             - ./backend-demo:/usr/src/app
+            - ./backend-demo/models:/usr/src/app/models
         depends_on:
             - postgres
     meta:
@@ -44,15 +44,15 @@ services:
             POSTGRES_PASSWORD: postgres
         ports:
             - 5432:5432
-    classification:
-        build:
-            context: ./classification-service
-            dockerfile: Dockerfile
-        volumes:
-            - ./classification-service:/app
-            - ./classification-service/models:/app/models
-        depends_on:
-            - postgres
+#    classification:
+#        build:
+#            context: ./classification-service
+#            dockerfile: Dockerfile
+#        volumes:
+#            - ./classification-service:/app
+#            - ./classification-service/models:/app/models
+#        depends_on:
+#            - postgres
     embedding:
         build:
             context: ./embedding-service

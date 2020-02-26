@@ -2,7 +2,7 @@ from flask import Response
 from flask_restplus import Resource, reqparse
 
 from apis.db import api
-from models.db_models import comments_parser, comments_parser_sl, groupByModel, comment_parser, comment_parser_post
+from db.db_models import comments_parser, comments_parser_sl, groupByModel, comment_parser, comment_parser_post
 
 #from db import postgres
 #from db import postgres_json

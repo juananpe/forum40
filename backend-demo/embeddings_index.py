@@ -3,6 +3,7 @@ import traceback, argparse
 import math
 
 from apis.utils.tasks import ForumProcessor
+from config.settings import EMBEDDING_INDEX_PATH
 
 debug = False
 max_batches = 100
@@ -73,9 +74,9 @@ class CommentIndexer(ForumProcessor):
         # create and save index
         self.update_state(batch_i + 1, "Create index (this may take a while)")
         self.index.createIndex({'post': 2}, print_progress=True)
-        self.index.saveIndex("model/comment_vectors.index", save_data=False)
+        self.index.saveIndex(EMBEDDING_INDEX_PATH, save_data=False)
         print()
-        message = "Indexing finished and  saved to ./model"
+        message = "Indexing finished and  saved to %s" % EMBEDDING_INDEX_PATH
         self.logger.info(message)
         # set progress to 100%
         self.update_state(batch_i * 2, message)

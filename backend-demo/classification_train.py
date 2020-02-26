@@ -3,9 +3,9 @@ import argparse, logging
 from collections import Counter
 from timeit import default_timer as timer
 from datetime import datetime
-from classifier import EmbeddingClassifier, get_history_path
+from classification_classifier import EmbeddingClassifier, get_history_path
 
-from utils.tasks import ForumProcessor
+from apis.utils.tasks import ForumProcessor
 
 class ClassifierTrainer(ForumProcessor):
 

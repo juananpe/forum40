@@ -2,12 +2,12 @@ import argparse, math
 
 from timeit import default_timer as timer
 from datetime import datetime
-from classifier import EmbeddingClassifier, get_history_path
-from train import ClassifierTrainer
+from classification_classifier import EmbeddingClassifier, get_history_path
+from classification_train import ClassifierTrainer
 from sklearn.metrics import cohen_kappa_score
 from io import StringIO
 
-from utils.tasks import ForumProcessor
+from apis.utils.tasks import ForumProcessor
 
 class LabelUpdater(ForumProcessor):
     """Functions for collection of training data and prediction on the entire DB"""

@@ -2,21 +2,11 @@ Embedding service
 =================
 
 Provides API and fuinctionality for handling embeddings:
-* compute embeddings for comment texts (BERT-based)
-* index embeddings for fast similarity retrieval (nmslib)
-* different retrieval options
+* compute embeddings for a list of strings (BERT-based)
 
-CPU-intensive tasks (embedding / indexing) are started as 
-celery tasks and can be aborted via the API.
+The CPU-intensive embedding task is started as a separate 
+python process.
 
 
-Known bugs
-----------
-
-For some reason, the BERT model does not work 
-with the `prefork` execution pool. Celery must be started 
-with `--pool=solo` option. Unfortunately, this breaks the
-tasks/abort funtionality of the API since the termination
-signal is not received by the singe-threaded embedding
-process.
-
+Indexing and retrieval of embeddings is handled with 
+conducted via the API defined in the backend-service.

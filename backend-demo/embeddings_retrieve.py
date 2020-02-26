@@ -2,6 +2,7 @@ import pprint
 import nmslib
 import argparse
 from apis.utils.tasks import ForumTask, concat
+from config.settings import EMBEDDING_INDEX_PATH
 
 class RetrieveComment(ForumTask):
 
@@ -15,10 +16,10 @@ class RetrieveComment(ForumTask):
     def load_index(self):
         try:
             self.logger.info("Loading index")
-            self.index.loadIndex("model/comment_vectors.index", load_data=False)
+            self.index.loadIndex(EMBEDDING_INDEX_PATH, load_data=False)
             self.logger.info("Loaded index with %d entries" % len(self.index))
         except:
-            self.logger.error("No index of embeddings found in ./model directory.")
+            self.logger.error("No index of embeddings found in %s" % EMBEDDING_INDEX_PATH)
 
     def get_embedding(self, id):
         if type(id) != int:

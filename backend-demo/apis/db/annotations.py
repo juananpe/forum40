@@ -11,7 +11,7 @@ from psycopg2 import DatabaseError
 
 from jwt_auth.token import token_required
 
-from models.db_models import comments_parser_sl
+from db.db_models import comments_parser_sl
 
 ns = api.namespace('annotations', description="annotations api")
 
