@@ -7,9 +7,11 @@ groupByModel.add_argument('keyword', action='append')
 groupByModel.add_argument('source_id', type=int, default=1)
 
 comments_parser_sl = reqparse.RequestParser()
-comments_parser_sl.add_argument('label', action='append')
+comments_parser_sl.add_argument('label', action='append', type=int)
 comments_parser_sl.add_argument('keyword', action='append')
-comments_parser_sl.add_argument('source_id', action='append')
+comments_parser_sl.add_argument('source_id', type=int, required=True)
+comments_parser_sl.add_argument('order', type=int, default=2)
+comments_parser_sl.add_argument('label_sort_id', type=int)
 comments_parser_sl.add_argument('skip', type=int, default=0, required=True)
 comments_parser_sl.add_argument('limit', type=int, default=50, required=True)
 

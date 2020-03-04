@@ -176,11 +176,18 @@ class Order(Enum):
     DESC = 2
     UNCERTAIN = 0
 
+def GET_ALL_COMMENTS(order):
+    return f"""select c.id, c.title, c.text, c.timestamp
+    from comments c
+    where c.source_id = %s
+    order by c.timestamp {order.name} 
+    limit %s offset %s
+    """
 
-def GET_COMMENT_IDS_BY_FILTER(sort_label_id, order, label_ids, num_keywords):
+def GET_COMMENT_IDS_BY_FILTER(label_sort_id, order, label_ids, num_keywords):
     """
     Returns the query for getting comment ids
-    :param sort_label_id: label_id to sort or None, if none sort for date
+    :param label_sort_id: label_id to sort or None, if none sort for date
     :param order: ordering
     :param num_keywords: number of keywords
     """
@@ -191,24 +198,39 @@ def GET_COMMENT_IDS_BY_FILTER(sort_label_id, order, label_ids, num_keywords):
     and source_id = %s"""
 
     if label_ids:
-        query+="and f.label_id = %s"
+        query+=" and f.label_id = %s"
     
     for _ in range(num_keywords):
-        query+= "and text like '%%s%'"
+        query+= r" and text like '%%s%'"
 
-    if sort_label_id:
-        if order == Order.ASC:
-            query+= "order by f.confidence ASC"
-        elif order == Order.DESC:
-            query+= "order by f.confidence DESC"
+    if label_sort_id:
+        if Order(order) == Order.ASC:
+            query+= " order by f.confidence ASC"
+        elif Order(order) == Order.DESC:
+            query+= " order by f.confidence DESC"
         else:
             # todo: uncertainty order
             pass
     else:
-        query+= "order by c.timestamp DESC"
+        query+= " order by c.timestamp DESC"
 
-    query+=f"limit %s offset %s"
+    query+=f" limit %s offset %s"
     return query
+
+def GET_FACTS():
+    return """select f.comment_id, f.label_id, f.confidence
+    from facts f
+    where f.comment_id in %s
+    and f.label_id in %s"""
+
+def GET_ANNOTATIONS():
+    return """
+    select a.comment_id, a.label_id, count(a.label or null) as count_true, count(not a.label or null) as count_false 
+    from annotations a
+    where a.comment_id in %s
+    and a.label_id in %s
+    group by a.comment_id, a.label_id
+    """
 
 ### utility
 

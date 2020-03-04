@@ -50,30 +50,6 @@ def getLabelIdByName(name):
 
 import sys
 
-def getAllComments(label_ids, keywords, source_ids, skip, limit):
-    # query_getIds = GET_COMMENTS_BY_FILTER(label_ids, keywords, source_ids, skip, limit)
-
-    # todo: get sort_label_id, order from request parameter
-    sort_label_id = None
-    order = 2
-    query_getIds = GET_COMMENT_IDS_BY_FILTER(sort_label_id, order, label_ids, len(keywords))
-
-    query_parameters = []
-    query_parameters.append(source_ids[0]) # todo: why is source_ids a list?
-    if label_ids:
-        query_parameters.append(label_ids)
-    for keyword in keywords:
-        query_parameters.append(keyword)
-    query_parameters.append(limit)
-    query_parameters.append(skip)
-    
-
-    res = []
-    with db_cursor(cursor_factory=RealDictCursor) as cur:
-        cur.execute(query_getIds, tuple(query_parameters))
-        res = cur.fetchall()
-    return res
-
 def getAllUnlabeledComments(label_ids, keywords, source_ids, skip, limit):
     query = GET_UNLABELED_COMMENTS_BY_FILTER(label_ids, keywords, source_ids, skip, limit)
 
@@ -119,7 +95,7 @@ def getCommentByIds(id, external_id):
 
 
 @ns.route('/')
-class CommentsGet2(Resource):
+class CommentsGet(Resource):
     @token_optional
     @api.doc(security='apikey')
     @api.expect(comments_parser_sl)
@@ -129,14 +105,71 @@ class CommentsGet2(Resource):
         skip = args["skip"]
         limit = args["limit"]
         label_ids = args.get('label', None)
-        keywords = args.get('keyword', None)
-        source_ids = args.get('source_id', None)
+        keywords = args.get('keyword', [])
+        order = args.get('order', None)
+        label_sort_id = args.get('label_sort_id', None)
+        source_id = args.get('source_id', None)
         user_id = None
         if self:
             user_id = self["user_id"]
 
-        # count comments
-        query = COUNT_COMMENTS_BY_FILTER(label_ids, keywords, source_ids)
+        if not keywords:
+            keywords = []
+
+        # No label is selected
+        if not label_ids:
+            get_all_comments_query = GET_ALL_COMMENTS(Order(order))
+            with db_cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(get_all_comments_query, (source_id, limit, skip))
+                comments = cur.fetchall()
+                for c in comments:
+                    c['timestamp'] = c['timestamp'].isoformat()
+            return comments
+        
+        # Labels selected
+        comments_query = GET_COMMENT_IDS_BY_FILTER(label_sort_id, order, label_ids, len(keywords))
+        print(comments_query, file=sys.stdout)
+        print((source_id, label_ids[0], *keywords, limit, skip), file=sys.stdout)
+        with db_cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(comments_query, (source_id, label_ids[0], *keywords, limit, skip))
+            comments = cur.fetchall()
+            comment_ids = []
+            for c in comments:
+                comment_ids.append(c['id'])
+                c['timestamp'] = c['timestamp'].isoformat()
+        facts_query = GET_FACTS()
+        with db_cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(facts_query, (tuple(comment_ids), tuple(label_ids)))
+            facts = cur.fetchall()
+        
+        annotations_query = GET_ANNOTATIONS()
+        with db_cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(annotations_query, (tuple(comment_ids), tuple(label_ids)))
+            annotations = cur.fetchall()
+
+        for c in comments:
+            comment_id = c['id']
+            c['annotations'] = []
+            filtered_facts = filter(lambda x: x['comment_id'] == comment_id, facts)
+            filtered_annotations = list(filter(lambda x: x['comment_id'] == comment_id, annotations))
+            for f in filtered_facts:
+                annotation_for_label = list(filter(lambda x: x['label_id'] == f['label_id'], filtered_annotations))
+                label = {
+                    "comment_id": f['comment_id'],
+                    "label_id": f['label_id'],
+                    "group_count_true": annotation_for_label[0]['count_true'] if annotation_for_label else None,
+                    "group_count_false": annotation_for_label[0]['count_false'] if annotation_for_label else None,
+                    "ai": f['confidence']>=0.5,
+                    "ai_pred": f['confidence'],
+                    # "user": null
+                }
+                c['annotations'].append(label)
+            
+        
+        return comments
+
+
+
 
         count = []
         with db_cursor() as cur:
