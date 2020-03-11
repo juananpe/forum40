@@ -169,61 +169,6 @@ class CommentsGet(Resource):
         return comments
 
 
-
-
-        count = []
-        with db_cursor() as cur:
-            cur.execute(query)
-            count = cur.fetchone()[0]
-
-        comments_with_label = []
-        comments_without_label = []
-        annotations = []
-        dic = []
-
-        if skip < count:
-            n = (skip + limit) - count
-            if n < 0:
-                #print('labeled', file=sys.stderr)
-                #print(skip, file=sys.stderr)
-                #print(limit, file=sys.stderr)
-                comments_with_label = getAllComments(label_ids, keywords, source_ids, skip, limit)
-                ids = [ str(i['id']) for i in comments_with_label]
-                annotations, dic = getAllAnnotations(ids, label_ids, user_id)
-            else :
-                #print('split', file=sys.stderr)
-                #print(skip, limit - n, file=sys.stderr)
-                #print(0, n, file=sys.stderr)
-
-                comments_with_label = getAllComments(label_ids, keywords, source_ids, skip, limit - n)
-                ids = [ str(i['id']) for i in comments_with_label]
-                annotations, dic = getAllAnnotations(ids, label_ids, user_id)
-                comments_without_label = getAllUnlabeledComments(label_ids, keywords, source_ids, 0, n)
-        else:
-            #print('not labeled', file=sys.stderr)
-            #print(skip - count , file=sys.stderr)
-            #print(limit, file=sys.stderr)
-
-            comments_without_label = getAllUnlabeledComments(label_ids, keywords, source_ids, skip - count, limit)
-
-
-        # join comments and annotations + facts
-
-        if comments_with_label:
-            for i in range(len(comments_with_label)):
-                comments_with_label[i]['timestamp'] = comments_with_label[i]['timestamp'].isoformat()
-                if annotations:
-                    comments_with_label[i]['annotations'] = dic[comments_with_label[i]['id']]
-
-
-        for i in range(len(comments_without_label)):
-            comments_without_label[i]['timestamp'] = comments_without_label[i]['timestamp'].isoformat()
-
-        return comments_with_label + comments_without_label
-    
-
-
-
     @api.doc(security='apikey')
     @api.expect(comment_parser_post)
     @token_optional # change to token_required
