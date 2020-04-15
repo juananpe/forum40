@@ -128,15 +128,21 @@ class CommentsGet(Resource):
         
         # Labels selected
         comments_query = GET_COMMENT_IDS_BY_FILTER(label_sort_id, order, label_ids, len(keywords))
-        print(comments_query, file=sys.stdout)
-        print((source_id, label_ids[0], *keywords, limit, skip), file=sys.stdout)
+
         with db_cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(comments_query, (source_id, label_ids[0], *keywords, limit, skip))
+
+            sort_id = label_sort_id if label_sort_id else label_ids[0]
+
+            cur.execute(comments_query, (source_id, sort_id, *keywords, limit, skip))
             comments = cur.fetchall()
             comment_ids = []
             for c in comments:
                 comment_ids.append(c['id'])
                 c['timestamp'] = c['timestamp'].isoformat()
+
+        if not comment_ids: # 
+            return []
+
         facts_query = GET_FACTS()
         with db_cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(facts_query, (tuple(comment_ids), tuple(label_ids)))
@@ -147,26 +153,42 @@ class CommentsGet(Resource):
             cur.execute(annotations_query, (tuple(comment_ids), tuple(label_ids)))
             annotations = cur.fetchall()
 
+        if user_id: # Get user annotations if user logged in
+            with db_cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(SELECT_USERS_ANNOTATION, (user_id, tuple(label_ids), tuple(comment_ids) ))
+                user_annotations = cur.fetchall()
+
+        label_id = label_sort_id
+
         for c in comments:
             comment_id = c['id']
             c['annotations'] = []
-            filtered_facts = filter(lambda x: x['comment_id'] == comment_id, facts)
+            filtered_facts = list(filter(lambda x: x['comment_id'] == comment_id, facts))
             filtered_annotations = list(filter(lambda x: x['comment_id'] == comment_id, annotations))
-            for f in filtered_facts:
-                annotation_for_label = list(filter(lambda x: x['label_id'] == f['label_id'], filtered_annotations))
+            if user_id:
+                filtered_user_annotations = list(filter(lambda x: x['comment_id'] == comment_id, user_annotations)) 
+
+            for label_id in label_ids:
+                facts_for_label = list(filter(lambda x: x['label_id'] == label_id, filtered_facts))            
+                annotation_for_label = list(filter(lambda x: x['label_id'] == label_id, filtered_annotations))
+                if user_id:
+                    user_annotation_for_label = list(filter(lambda x: x['label_id'] == label_id, filtered_user_annotations))
+                else:
+                    user_annotation_for_label = None
+
                 label = {
-                    "comment_id": f['comment_id'],
-                    "label_id": f['label_id'],
+                    "comment_id": comment_id,
+                    "label_id": label_id,
                     "group_count_true": annotation_for_label[0]['count_true'] if annotation_for_label else None,
                     "group_count_false": annotation_for_label[0]['count_false'] if annotation_for_label else None,
-                    "ai": f['confidence']>=0.5,
-                    "ai_pred": f['confidence'],
-                    # "user": null
+                    "ai": facts_for_label[0]['confidence']>=0.5 if facts_for_label else None,
+                    "ai_pred": facts_for_label[0]['confidence'] if facts_for_label else None,
+                    "user": user_annotation_for_label[0]['label'] if user_annotation_for_label else None
                 }
                 c['annotations'].append(label)
             
-        
         return comments
+
 
 
     @api.doc(security='apikey')

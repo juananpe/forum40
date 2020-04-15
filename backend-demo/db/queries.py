@@ -3,7 +3,7 @@ from enum import Enum
 ## USERS
 COUNT_USERS = "SELECT COUNT(*) FROM users;"
 SELECT_USER_BY_ID = lambda x: f"SELECT * FROM users WHERE id = {x} fetch first 1 rows only;"
-
+SELECT_USER_ID_BY_USER_NAME = "SELECT id FROM users WHERE name = %s fetch first 1 rows only;"
 ## Sources
 COUNT_SOURCES = "SELECT COUNT(*) FROM sources;"
 
@@ -16,6 +16,8 @@ SELECT_ANNOTATION_BY_COMMENTID = lambda x : f"SELECT label_id, user_id, label FR
 SELECT_LABEL_FROM_ANNOTATIONS_BY_IDS = lambda label_id, comment_id, user_id: f"SELECT label FROM annotations WHERE label_id = {label_id} AND comment_id = {comment_id} AND user_id = '{user_id}';"
 INSERT_ANNOTATION = lambda label_id, comment_id, user_id, label: f"INSERT INTO annotations (label_id, comment_id, user_id, label) VALUES ({label_id}, {comment_id}, {user_id}, {label})"
 UPDATE_ANNOTATION = lambda label_id, comment_id, user_id, label: f"UPDATE annotations SET label = {label} WHERE label_id = {label_id} AND comment_id = {comment_id} AND user_id = '{user_id}'"
+SELECT_USERS_ANNOTATION = "SELECT a.label, a.label_id, a.comment_id FROM annotations a WHERE user_id='%s' and label_id in %s and comment_id in %s"
+
 
 ## Labels
 COUNT_LABELS = "SELECT COUNT(*) FROM labels"
@@ -192,8 +194,7 @@ def GET_COMMENT_IDS_BY_FILTER(label_sort_id, order, label_ids, num_keywords):
     :param num_keywords: number of keywords
     """
     query = f"""
-    select c.id, c.title, c.text, c.timestamp, f.confidence, f.label_id 
-    from comments c, facts f
+    select c.id, c.title, c.text, c.timestamp, f.confidence, f.label_id from comments c, facts f
     where c.id = f.comment_id
     and source_id = %s"""
 
@@ -209,8 +210,7 @@ def GET_COMMENT_IDS_BY_FILTER(label_sort_id, order, label_ids, num_keywords):
         elif Order(order) == Order.DESC:
             query+= " order by f.confidence DESC"
         else:
-            # todo: uncertainty order
-            pass
+            query+= " order by uncertaintyorder DESC"
     else:
         query+= " order by c.timestamp DESC"
 

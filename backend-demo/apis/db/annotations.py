@@ -179,9 +179,6 @@ class LabelComment(Resource):
             cur.execute(query)
             db_result = cur.fetchone()
 
-        with db_cursor() as cur:
-            cur.execute(INSERT_ANNOTATION(label_id, comment_id, user_id, label))
-
         if not db_result: # No Annotation found
             with db_cursor() as cur:
                 cur.execute(INSERT_ANNOTATION(label_id, comment_id, user_id, label))
