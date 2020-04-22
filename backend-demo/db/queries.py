@@ -178,13 +178,19 @@ class Order(Enum):
     DESC = 2
     UNCERTAIN = 0
 
-def GET_ALL_COMMENTS(order):
-    return f"""select c.id, c.title, c.text, c.timestamp
+def GET_ALL_COMMENTS(order, num_keywords):
+    query = f"""select c.id, c.title, c.text, c.timestamp
     from comments c
     where c.source_id = %s
+    """
+    for _ in range(num_keywords):
+        query+= " and text like %s "
+
+    query += f"""
     order by c.timestamp {order.name} 
     limit %s offset %s
     """
+    return query
 
 def GET_COMMENT_IDS_BY_FILTER(label_sort_id, order, label_ids, num_keywords):
     """
@@ -202,7 +208,7 @@ def GET_COMMENT_IDS_BY_FILTER(label_sort_id, order, label_ids, num_keywords):
         query+=" and f.label_id = %s"
     
     for _ in range(num_keywords):
-        query+= r" and text like '%%s%'"
+        query+= " and text like %s"
 
     if label_sort_id:
         if Order(order) == Order.ASC:

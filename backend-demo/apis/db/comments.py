@@ -115,12 +115,14 @@ class CommentsGet(Resource):
 
         if not keywords:
             keywords = []
+        else:
+            keywords = [f"%{kw}%" for kw in keywords]
 
         # No label is selected
         if not label_ids:
-            get_all_comments_query = GET_ALL_COMMENTS(Order(order))
+            get_all_comments_query = GET_ALL_COMMENTS(Order(order), len(keywords))
             with db_cursor(cursor_factory=RealDictCursor) as cur:
-                cur.execute(get_all_comments_query, (source_id, limit, skip))
+                cur.execute(get_all_comments_query, (source_id, *keywords, limit, skip))
                 comments = cur.fetchall()
                 for c in comments:
                     c['timestamp'] = c['timestamp'].isoformat()
