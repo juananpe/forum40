@@ -72,11 +72,29 @@ tasks_model = api.model('TaskId', {
 })
 
 
+# API for service URL
+url_model = api.model('URL', {
+    'service_url': fields.String(example = 'http://embedding:5060/embed'),
+})
+
+
 @ns.route('/get-service-url')
 class GetServiceUrlRoute(Resource):
     def get(self):
-        return {'embedding service url': settings.EMBEDDING_SERVICE_URL}
+        url = os.getenv('EMBEDDING_SERVICE_URL', settings.EMBEDDING_SERVICE_URL)
+        return {'embedding service url': url}
 
+@ns.route('/set-service-url')
+class SetServiceUrlRoute(Resource):
+    @api.expect(url_model)
+    def post(self):
+        service_url = api.payload.get('service_url', '')
+        if service_url:
+            os.environ['EMBEDDING_SERVICE_URL'] = service_url
+            url = os.getenv('EMBEDDING_SERVICE_URL', settings.EMBEDDING_SERVICE_URL)
+            return {'embedding service url': url}
+        else:
+            return "Empty url", 400
 
 @ns.route('/id')
 class IdEmbedding(Resource):
@@ -161,7 +179,7 @@ class TasksClear(Resource):
 def get_embeddings(string_list):
 
     response = requests.post(
-        settings.EMBEDDING_SERVICE_URL,
+        os.getenv('EMBEDDING_SERVICE_URL', settings.EMBEDDING_SERVICE_URL),
         json={"texts" : string_list},
         headers={'Accept': 'application/json', 'Content-Type': 'application/json'}
     )
