@@ -36,6 +36,7 @@ services:
             - postgres
     postgres:
         image: "postgres:11.5"
+        shm_size: 1g
         volumes:
             - postgres:/var/lib/postgresql/data
         environment:
