@@ -12,5 +12,5 @@ JWT_SECRET_KEY = 'eh9Df9G27gahgHJ7g2oGQz6Ug5he6ud5shd'
 
 # Embedding container URL
 # EMBEDDING_SERVICE_URL = 'http://embedding:5060/embed'
-EMBEDDING_SERVICE_URL = 'http://ltgpu1.informatik.uni-hamburg.de:5060/embed'
+EMBEDDING_SERVICE_URL = 'http://ltdemos.informatik.uni-hamburg.de/embedding-service'
 EMBEDDING_INDEX_PATH = 'models/comment_vectors.index'
