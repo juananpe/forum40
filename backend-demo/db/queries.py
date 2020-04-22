@@ -178,7 +178,7 @@ class Order(Enum):
     DESC = 2
     UNCERTAIN = 0
 
-def GET_ALL_COMMENTS(order, num_keywords):
+def GET_ALL_COMMENTS(num_keywords):
     query = f"""select c.id, c.title, c.text, c.timestamp
     from comments c
     where c.source_id = %s
@@ -187,7 +187,7 @@ def GET_ALL_COMMENTS(order, num_keywords):
         query+= " and text like %s "
 
     query += f"""
-    order by c.timestamp {order.name} 
+    order by c.timestamp DESC
     limit %s offset %s
     """
     return query

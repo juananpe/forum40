@@ -120,7 +120,7 @@ class CommentsGet(Resource):
 
         # No label is selected
         if not label_ids:
-            get_all_comments_query = GET_ALL_COMMENTS(Order(order), len(keywords))
+            get_all_comments_query = GET_ALL_COMMENTS(len(keywords))
             with db_cursor(cursor_factory=RealDictCursor) as cur:
                 cur.execute(get_all_comments_query, (source_id, *keywords, limit, skip))
                 comments = cur.fetchall()
