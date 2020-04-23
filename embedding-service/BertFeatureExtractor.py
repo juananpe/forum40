@@ -69,12 +69,14 @@ class BertFeatureExtractor(object):
 
 
         if device:
-            print("Selected device: " + device)
+            print("Configured device: " + device)
             self.device = torch.device(device)
         else:
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            print("Selected device: " + device)
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.n_gpu = torch.cuda.device_count()
-        logger.info("Device: {} n_gpu: {}".format(self.device, self.n_gpu))
+        print("Device: {} n_gpu: {}".format(self.device, self.n_gpu))
 
         self.layer_weights = list(np.arange(1,use_layers+1))
         self.layer_indexes = [int(-x) for x in self.layer_weights]

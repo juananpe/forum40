@@ -7,7 +7,7 @@ logger = logging.getLogger()
 logger.info('Loading BERT model')
 be = BertFeatureExtractor(
     batch_size=8,
-    device='cuda' if torch.cuda.is_available() else 'cpu',
+    device=None,
     keep_cls=False,
     use_layers=4,
     use_token=True
