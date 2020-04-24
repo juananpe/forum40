@@ -28,13 +28,11 @@ once.
 You can either create an empty database or also additionally import the One Million Post corpus data.
 
 1. OMP Database migration or initialization:
-- Run the database migration or creation script from this project:
-
-- https://gitlab.informatik.haw-hamburg.de/forum40/databasemigration
+- Run the database migration or creation script from this project: https://gitlab.informatik.haw-hamburg.de/forum40/databasemigration
 
 - You may want to add a user to the database:
 
-- psql -d omp -h localhost -p 5432 --username=postgres --password 
+```psql -d omp -h localhost -p 5432 --username=postgres --password ```
 
 - type the password 'postgres' when promted. Then insert a user into the users table, e.g.:
 
