@@ -1,5 +1,4 @@
 import os
-import requests
 
 from flask_restplus import Resource, fields
 from flask import current_app
@@ -8,7 +7,7 @@ from apis.embeddings import api
 from config import settings
 
 from embeddings_retrieve import RetrieveComment
-from apis.utils.tasks import SingleProcessManager
+from apis.utils.tasks import SingleProcessManager, get_embeddings
 
 ns = api.namespace('embeddings', description="Embeddings-API namespace")
 
@@ -22,7 +21,9 @@ process_manager.register_process("embedding", ["embeddings_embed.py", pg_host, p
 
 # db connection
 try:
+    default_source_id = 1
     retriever = RetrieveComment(pg_host, pg_port)
+    retriever.load_index(default_source_id)
 except:
     current_app.logger.error('DB connection failed.')
     exit(1)
@@ -41,6 +42,11 @@ sim_comments_model = api.model('SimComments', {
         description="Number of similar comments to retrieve",
         required=False,
         example=10
+    ),
+    'source_id': fields.Integer(
+        description="Source id",
+        required=True,
+        example=1
     )
 })
 
@@ -62,14 +68,14 @@ sim_id_model = api.model('SimId', {
         description="Number of similar comments to retrieve",
         required=False,
         example=10
+    ),
+    'source_id': fields.Integer(
+        description="Source id",
+        required=True,
+        example=1
     )
 })
 
-
-# API for task ids
-tasks_model = api.model('TaskId', {
-    'task_id': fields.String
-})
 
 
 # API for service URL
@@ -113,7 +119,14 @@ class IdEmbedding(Resource):
 class SimilarIds(Resource):
     @api.expect(sim_id_model)
     def post(self):
+
         comments_ids = api.payload.get('ids', [])
+
+        source_id = api.payload.get('source_id', 1)
+        # ensure correct index is loaded for given source id
+        if not retriever.load_index(source_id):
+            return "Error: could not find index for source_id %d" % source_id, 400
+
         n = api.payload.get('n', 10)
         if n == 0:
             n = 1
@@ -121,6 +134,7 @@ class SimilarIds(Resource):
         for _id in comments_ids:
             ids = retriever.get_nearest_for_id(_id, n=n)
             results.append(ids)
+
         return results, 200
 
 
@@ -131,6 +145,11 @@ class SimilarComments(Resource):
         comment_texts = api.payload.get('comments', [])
         n = api.payload.get('n', 10)
 
+        source_id = api.payload.get('source_id', 1)
+        # ensure correct index is loaded for given source id
+        if not retriever.load_index(source_id):
+            return "Error: could not find index for source_id %d" % source_id, 400
+
         # get embedding
         embeddings, status = get_embeddings(comment_texts)
         if not status:
@@ -139,6 +158,7 @@ class SimilarComments(Resource):
         for embedding in embeddings:
             nn_ids = retriever.get_nearest_for_embedding(embedding)
             results.append([retriever.get_comment_text(id) for id in nn_ids])
+
         return results, 200
 
 
@@ -156,10 +176,10 @@ class TaskStatus(Resource):
         return results, 200
 
 
-@ns.route('/tasks/<taskname>/invoke')
+@ns.route('/tasks/<taskname>/invoke/<source_id>')
 class TaskInvoke(Resource):
-    def get(self, taskname):
-        results = process_manager.invoke(taskname)
+    def get(self, taskname, source_id):
+        results = process_manager.invoke(taskname, source_id)
         return results, 200
 
 
@@ -175,16 +195,3 @@ class TasksClear(Resource):
         results = process_manager.clear()
         return results, 200
 
-
-def get_embeddings(string_list):
-
-    response = requests.post(
-        os.getenv('EMBEDDING_SERVICE_URL', settings.EMBEDDING_SERVICE_URL),
-        json={"texts" : string_list},
-        headers={'Accept': 'application/json', 'Content-Type': 'application/json'}
-    )
-
-    if response.ok:
-        return response.json(), True
-    else:
-        return response.reason(), False

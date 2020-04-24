@@ -3,7 +3,7 @@ import traceback
 import math
 
 from apis.utils.tasks import ForumProcessor, concat
-from apis.embeddings.tasks import get_embeddings
+from apis.utils.tasks import get_embeddings
 
 class CommentEmbedder(ForumProcessor):
 
@@ -23,19 +23,24 @@ class CommentEmbedder(ForumProcessor):
     def process_batch(self, comment_batch):
         comment_texts = [concat(c[1], c[2]) for c in comment_batch if c[1] or c[2]]
         comment_ids = [c[0] for c in comment_batch if c[1] or c[2]]
-        comment_embeddings, _ = get_embeddings(comment_texts)
-        batch_update_comments = []
-        for i, comment_embedding in enumerate(comment_embeddings):
-            # get comment object id
-            comment_id = comment_ids[i]
+        comment_embeddings, success = get_embeddings(comment_texts)
+        if not success:
+            self.logger.error("No embeddings retrieved from embedding-service")
+            return False
+        else:
+            batch_update_comments = []
+            for i, comment_embedding in enumerate(comment_embeddings):
+                # get comment object id
+                comment_id = comment_ids[i]
 
-            # update mongo db
-            batch_update_comments.append(
-                (comment_embedding, comment_id)
-            )
+                # update mongo db
+                batch_update_comments.append(
+                    (comment_embedding, comment_id)
+                )
 
-        # write to db
-        self.cursor.executemany("""UPDATE comments SET embedding=%s WHERE id=%s""", batch_update_comments)
+            # write to db
+            self.cursor.executemany("""UPDATE comments SET embedding=%s WHERE id=%s""", batch_update_comments)
+            return True
 
     def init_cursor(self):
         try:
@@ -85,7 +90,9 @@ class CommentEmbedder(ForumProcessor):
             return False
 
         # get embeddings
-        self.process_batch(records)
+        success = self.process_batch(records)
+        if not success:
+            return False
 
         # commit every n batches
         if self.batch_i % self.n_commit == 0:
@@ -101,6 +108,9 @@ class CommentEmbedder(ForumProcessor):
             self.logger.info(message)
             if self.batch_i % 10 == 0:
                 self.update_state(self.batch_i, message)
+        
+        self.logger.info("Final commit to DB ...")
+        self.conn.commit()
         self.close_cursor()
 
 
@@ -111,6 +121,9 @@ if __name__ == '__main__':
                         help='DB host (default: localhost)')
     parser.add_argument('port', type=int, default=5432, nargs='?',
                         help='DB port (default: 5432)')
+    parser.add_argument('source_id', type=int, default=1, nargs='?', 
+                        help='Source id of the comment (default 1)')                        
+
     parser.add_argument('--embed-all', dest='all', default=False, action='store_true',
                         help='(Re-)embed all data (default: False)')
     parser.add_argument('--device', type=str, default='cpu', nargs='?',
@@ -125,6 +138,9 @@ if __name__ == '__main__':
                         help='How many final model layers to use (default=4).')
 
     args = parser.parse_args()
+
+    # not really needed, right?
+    source_id = args.source_id
 
     ce = CommentEmbedder(embed_all=args.all, batch_size=args.batch_size, host=args.host, port=args.port)
 

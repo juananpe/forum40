@@ -1,8 +1,11 @@
 import psycopg2
 import logging
+import requests
 import os, subprocess, pdb
 from datetime import datetime
 from abc import ABC, abstractmethod
+
+from config import settings
 
 # db configuration
 DB_NAME = "omp"
@@ -137,7 +140,7 @@ class SingleProcessManager:
                     self.processes[task] = 0
 
 
-    def invoke(self, task, arguments = []):
+    def invoke(self, task, source_id, arguments = []):
 
         # check arguments (only 2 allowed of max length 32 characters)
         arg_lengths = [len(arg) for arg in arguments]
@@ -153,17 +156,19 @@ class SingleProcessManager:
             if not self.processes[task]:
 
                 # start process
-                popen_command = ["python"] + self.commands[task] + arguments
+                popen_command = ["python"] + self.commands[task] + [source_id] + arguments
                 proc = subprocess.Popen(popen_command)
 
                 # register process
                 self.processes[task] = proc
 
                 result = {
-                    "message" : "Task %s started." % task,
+                    "message" : "Task %s started for source_id %s." % (task, source_id),
                     "pid" : proc.pid
                 }
+
             else:
+
                 result = {
                     "message" : "Task %s is still running." % task,
                     "pid" : self.processes[task].pid
@@ -279,3 +284,33 @@ def concat(title: str, text: str) -> str:
     title = title if title else ''
     text = text if text else ''
     return (title + ' ' + text).strip()
+
+
+def slugify(value):
+    """
+    Normalizes string, converts to lowercase, removes non-alpha characters,
+    and converts spaces to hyphens.
+    """
+    import unicodedata
+    value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
+    value = unicode(re.sub('[^\w\s-]', '', value).strip().lower())
+    value = unicode(re.sub('[-\s]+', '-', value))
+    # ...
+    return value
+
+
+def get_embeddings(string_list):
+
+    url = os.getenv('EMBEDDING_SERVICE_URL', settings.EMBEDDING_SERVICE_URL)
+
+    response = requests.post(
+        url,
+        json={"texts" : string_list},
+        headers={'Accept': 'application/json', 'Content-Type': 'application/json'}
+    )
+
+    if response.ok:
+        return response.json(), True
+    else:
+        print("Error: could not retrieve embeddings from %s" % url)
+        return response.reason, False

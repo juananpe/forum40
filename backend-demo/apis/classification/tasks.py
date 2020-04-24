@@ -49,7 +49,7 @@ update_model = api.model('update', {
     ),
     'fast' : fields.Boolean(
         description = 'Fast version only updates changing labels, but not confidence scores',
-        example = True
+        example = False
     )
 })
 

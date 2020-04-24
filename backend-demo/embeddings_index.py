@@ -1,6 +1,9 @@
-import nmslib
+# import nmslib
+import hnswlib
 import traceback, argparse
 import math
+import os
+import numpy as np
 
 from apis.utils.tasks import ForumProcessor
 from config.settings import EMBEDDING_INDEX_PATH
@@ -8,13 +11,21 @@ from config.settings import EMBEDDING_INDEX_PATH
 debug = False
 max_batches = 100
 
+
 class CommentIndexer(ForumProcessor):
 
-    def __init__(self, host="postgres", port=5432):
+    def __init__(self, source_id, host="postgres", port=5432):
         super().__init__("indexing", host = host, port = port)
 
         # index
-        self.index = nmslib.init(method='hnsw', space="cosinesimil", data_type=nmslib.DataType.DENSE_VECTOR)
+        self.source_id = source_id
+        self.index_filename = os.path.join(EMBEDDING_INDEX_PATH, "hnsw_" + str(source_id) + ".index")
+        self.index = hnswlib.Index(space = 'cosine', dim = 768)
+
+        # create empty index, if not existing
+        if not os.path.isfile(self.index_filename):
+            self.index.init_index(max_elements = 300, ef_construction = 300, M = 48)
+            self.index.save_index(self.index_filename)
 
         # config
         self.batch_size = 256
@@ -27,16 +38,30 @@ class CommentIndexer(ForumProcessor):
         try:
 
             # get total size of the problem
-            self.cursor.execute("""SELECT count(*) FROM comments WHERE embedding IS NOT NULL""")
+            self.cursor.execute("""SELECT count(*) FROM comments WHERE source_id = %d AND embedding IS NOT NULL""" % self.source_id)
             n_comments = self.cursor.fetchone()[0]
             n_batches = math.ceil(n_comments / self.batch_size)
-            # set twice as much because collection and indexing takes more or less the same amount of time
-            self.set_total(n_batches * 2)
+            # set totoal steps to n_batches + 2 (for saving steps)
+            self.set_total(n_batches + 2)
 
-            cursor_large = self.conn.cursor(name='fetch_large_result', withhold=True)
-            cursor_large.execute("SELECT id, embedding FROM comments WHERE embedding IS NOT NULL")
+            # incremental indexing: load index, set max comments to new value
+            self.index.load_index(self.index_filename, max_elements = n_comments)
+            self.index.set_ef(300)
+
+            # cursor without withholding, since we do not commit any db updates
+            cursor_large = self.conn.cursor(name = 'large_embedding', withhold=True)
+            cursor_large.execute("SELECT id FROM comments WHERE source_id = %d AND embedding IS NOT NULL" % self.source_id)
+
+            new_embeddings_added = False
 
             while True:
+                
+                # keep track of progress
+                batch_i += 1
+                processed_comments = batch_i * self.batch_size
+                message = "Batch %d of %d (comments: %d)" % (batch_i, n_batches, processed_comments)
+                self.logger.info(message)
+                self.update_state(batch_i, message)
 
                 # get batch from db
                 records = cursor_large.fetchmany(size=self.batch_size)
@@ -45,19 +70,34 @@ class CommentIndexer(ForumProcessor):
                 if not records:
                     break
 
-                # keep track of progress
-                batch_i += 1
-                processed_comments = batch_i * self.batch_size
-                message = "Batch %d of %d (comments: %d)" % (batch_i, n_batches, processed_comments)
-                self.logger.info(message)
-                self.update_state(batch_i, message)
+                # collect db data
+                comment_ids = [id[0] for id in records]
 
-                # extract columns separately
-                batch_embeddings = [r[1] for r in records]
-                batch_ids = [r[0] for r in records]
+                # check if already indexed
+                new_ids = []
+                try:
+                    # if one id is missing, an exception is thrown
+                    _ = self.index.get_items(comment_ids)
+                except:
+                    # check one by one for missing ids
+                    for i, comment_id in enumerate(comment_ids):
+                        try:
+                            _ = self.index.get_items([comment_id])
+                        except RuntimeError:
+                            new_ids.append(comment_id)
 
-                # add batch to index
-                self.index.addDataPointBatch(data=batch_embeddings, ids=batch_ids)
+                if new_ids:
+                    # get embeddings from db                    
+                    self.cursor.execute("SELECT id, embedding FROM comments WHERE id IN %s", (tuple(new_ids),))
+                    result_with_embeddings = self.cursor.fetchall()
+                    new_tuples = [(row[0], row[1]) for row in result_with_embeddings]
+                    new_ids, new_embeddings = zip(*new_tuples)
+
+                    # add batch to index
+                    self.logger.info("Adding %d embeddings to the index" % len(new_embeddings))
+                    self.index.add_items(np.array(new_embeddings), new_ids)
+
+                    new_embeddings_added = True
 
                 # early stopping for debugging
                 if debug and batch_i == max_batches:
@@ -72,14 +112,15 @@ class CommentIndexer(ForumProcessor):
                 cursor_large.close()
 
         # create and save index
-        self.update_state(batch_i + 1, "Create index (this may take a while)")
-        self.index.createIndex({'post': 2}, print_progress=True)
-        self.index.saveIndex(EMBEDDING_INDEX_PATH, save_data=False)
-        print()
-        message = "Indexing finished and  saved to %s" % EMBEDDING_INDEX_PATH
-        self.logger.info(message)
+        if new_embeddings_added:
+            self.update_state(batch_i + 1, "Create index (this may take a while)")
+            self.index.save_index(self.index_filename)
+            message = "Indexing finished and saved to %s" % self.index_filename
+            self.logger.info(message)
+        else:
+            self.logger.info("There are no new embeddings to index.")
         # set progress to 100%
-        self.update_state(batch_i * 2, message)
+        self.update_state(batch_i + 2, message)
 
 
 if __name__ == '__main__':
@@ -89,8 +130,12 @@ if __name__ == '__main__':
                         help='DB host (default: localhost)')
     parser.add_argument('port', type=int, default=5432, nargs='?',
                         help='DB port (default: 5432)')
+    parser.add_argument('source_id', type=int, default=1, nargs='?', 
+                        help='Source id of the comment (default 1)')                        
+
     args = parser.parse_args()
+    source_id = args.source_id
 
     # start indexing
-    indexer = CommentIndexer(args.host, args.port)
+    indexer = CommentIndexer(source_id, args.host, args.port)
     indexer.process()
