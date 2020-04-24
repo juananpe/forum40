@@ -23,7 +23,7 @@ If you have problems with the vue container ("sh: vue-cli-service: not found" or
 
 once.
 
-# Initital steps for the database:
+## Initital steps for the database:
 
 You can either create an empty database or also additionally import the One Million Post corpus data.
 
@@ -52,27 +52,27 @@ You can either create an empty database or also additionally import the One Mill
 
 - You should now be able to see comments appear in your instance in the web browser.
 
-3. Embedding generation and classification
+## Embedding generation and classification
 
 - The following steps are nessecary to get classification and embedding functionality. Calculating the BERT embeddings for new comments may take some time and can be accelated with a GPU. Once the embeddings are available in the database, training and using classifiers is very fast.
 
-3.1 Embedding Service
+3. Embedding Service
 - Run embedding container on GPU Cluster
 - bind the database port locally with `ssh -L 27017:localhost:27017 <username>@mast-se.informatik.uni-hamburg.de`
 - Trigger comment embedding
 
-3.2 Embedding Index
+4. Embedding Index
 - run embedding container locally
 - create embedding index
 
-4. Optional
+## Optional
 
 - You can optionally also use and install the pre-trained meta-comment and offensive-language classification containers:
 
-4.1 Meta-comment classifciation
+5. Meta-comment classifciation
 - Call the endpoint `/classification/unlabeled` to classify meta-comments.
 
-4.2 Offensive-language classification
+6. Offensive-language classification
 - Run offensive-language container locally
 - bind the database port locally with `ssh -L 27017:localhost:27017 <username>@mast-se.informatik.uni-hamburg.de`
 - Trigger classification
