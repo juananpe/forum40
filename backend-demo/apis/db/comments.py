@@ -224,6 +224,10 @@ class CommentsGet(Resource):
             cur.execute(SELECT_MAX_ID('comments'))
             max_id = cur.fetchone()[0]
 
+        # if the table is empty:
+        if max_id is None:
+            max_id = -1
+
         added_comment = []
         with db_cursor() as cur:
             cur.execute(insert_query, (max_id+1, doc_id, source_id, user_id, parent_comment_id, status, title, text, embedding, timestamp, external_id, int(time[0]), int(time[1]), int(time[2])))
