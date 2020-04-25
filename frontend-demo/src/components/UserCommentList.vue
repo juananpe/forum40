@@ -98,7 +98,7 @@
           <td v-for="(label, i) in selectedLabels" :key="item.id+i"></td>
         </tr>
         <tr
-          class="elevation-1"
+          class="elevation-1 sim-comments"
           v-for="(comment, i) in similar_comments.slice(1,MAX_COMMENTS)"
           :key="i"
         >
@@ -148,11 +148,11 @@ export default {
       selected: [],
       expand: false,
       footerprops: {
-        "items-per-page-options": [15, 30]
+        "items-per-page-options": [10, 25, 50, 100]
       },
       teaserTextLength: 200,
       page: 1,
-      rowsPerPage: 15,
+      rowsPerPage: 25,
       basicCommentsTableHeader: [
         {
           text: "Kommentartext",
@@ -171,7 +171,7 @@ export default {
       ],
       svgPath: mdiRobot,
       similar_comments: [],
-      MAX_COMMENTS: 4
+      MAX_COMMENTS: 11
     };
   },
   filters: {
@@ -375,10 +375,11 @@ export default {
           this.similar_comments = comments.map(response => response["data"]);
         }
       } catch (e) {
-        console.error(`Could not load similar comments: ${e}`);
+        console.error('Could not load similar comments: ${e}');
       }
     },
-    keywordChanged(e) {
+    /*eslint no-unused-vars: ["error", { "args": "none" }]*/
+    keywordChanged(e) { 
       this[Mutations.setKeywordfilter](this.enteredKeyword);
       this.loadTable();
     }
@@ -402,5 +403,9 @@ export default {
 
 .tableColumn {
   min-width: 60px;
+}
+
+.sim-comments {
+  background-color: #eeeeff;
 }
 </style>
