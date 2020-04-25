@@ -12,11 +12,12 @@ from apis.utils.tasks import ForumProcessor
 class LabelUpdater(ForumProcessor):
     """Functions for collection of training data and prediction on the entire DB"""
 
-    def __init__(self, labelname, host="postgres", port=5432, skip_confidence = False):
+    def __init__(self, source_id, labelname, host="postgres", port=5432, skip_confidence = False):
         super().__init__("classification", host=host, port=port)
         self.cursor_large = None
         self.labels_old = None
         self.labels_new = None
+        self.source_id = source_id
         self.labelname = labelname
         self.skip_confidence = skip_confidence
         self.batch_size = 5000
@@ -35,18 +36,18 @@ class LabelUpdater(ForumProcessor):
     def init_cursor(self):
 
         # get number of facts
-        facts_count = """SELECT count(*) FROM comments"""
-        self.cursor.execute(facts_count)
+        facts_count = """SELECT count(*) FROM comments WHERE source_id = %s"""
+        self.cursor.execute(facts_count, (self.source_id,))
         self.n_facts = self.cursor.fetchone()[0]
 
         self.logger.info("Preparing cursor for updates ...")
 
         # init cursor for machine labels from facts table
-        facts_query = """SELECT c.id, c.embedding, f.label, f.confidence FROM comments c JOIN facts f ON c.id = f.comment_id WHERE f.label_id = %s"""
+        facts_query = """SELECT c.id, f.label, f.confidence FROM comments c JOIN facts f ON c.id = f.comment_id WHERE c.source_id = %s AND f.label_id = %s"""
         self.cursor_large = self.conn.cursor(name='fetch_facts_' + self.labelname, withhold=True)
         self.cursor_large.execute(
             facts_query,
-            (self.label_id,))
+            (self.source_id, self.label_id))
 
         # init label arrays for stability measure
         self.labels_old = []
@@ -65,10 +66,10 @@ class LabelUpdater(ForumProcessor):
 
         # init facts entry for all
         self.logger.info("Ensuring a fact entry for each comment for label %s" % (self.labelname,))
-        facts_query = """INSERT INTO facts (SELECT c.id, %s, false, 0, 0 FROM comments c LEFT JOIN (SELECT * FROM facts WHERE label_id = %s) AS f ON c.id = f.comment_id WHERE f.comment_id IS NULL)"""
+        facts_query = """INSERT INTO facts (SELECT c.id, %s, false, 0, 0 FROM comments c LEFT JOIN (SELECT * FROM facts WHERE label_id = %s) AS f ON c.id = f.comment_id WHERE c.source_id = %s AND f.comment_id IS NULL)"""
         self.cursor.execute(
             facts_query,
-            (self.label_id, self.label_id))
+            (self.label_id, self.label_id, self.source_id))
 
         # we do not need a commit here, thus, do not run!
         if False:
@@ -88,15 +89,23 @@ class LabelUpdater(ForumProcessor):
 
         self.batch_i += 1
 
+        # get embeddings
+        batch_ids = tuple([comment[0] for comment in comment_batch])
+        self.cursor.execute("""SELECT embedding FROM comments WHERE id IN %s""", (batch_ids,))
         # remove comments without embedding
-        comment_batch = [comment for comment in comment_batch if comment[1] is not None]
+        filtered_batch = []        
+        for i, embedding in enumerate(self.cursor.fetchall()):
+            if embedding[0]:
+                entry = comment_batch[i]
+                entry = entry + embedding
+                filtered_batch.append(entry)
 
-        if not comment_batch:
+        if not filtered_batch:
             # no embeddings in current batch. Go to next one
             return True
 
         # predict new labels
-        ids, embeddings, labels_old, confidences = zip(*comment_batch)
+        ids, labels_old, confidences, embeddings = zip(*filtered_batch)
         labels_new, confidences = self.classifier.predict(embeddings)
 
         # append stability measure
@@ -181,17 +190,23 @@ if __name__ == "__main__":
                         help='Name of the category to update')
     parser.add_argument('--skip-confidence', dest='skip_confidence', default=False, action='store_true',
                         help='Update changing labels only (default: False)')
+    parser.add_argument('--optimize', dest='optimize', default=False, action='store_true',
+                        help='Perform hyperparameter optimization (default: False)')                    
     parser.add_argument('host', type=str, default='localhost', nargs='?',
                         help='DB host (default: localhost)')
     parser.add_argument('port', type=int, default=5432, nargs='?',
                         help='DB port (default: 5432)')
+    parser.add_argument('source_id', type=int, default=1, nargs='?',
+                        help='Source id (default: 1)')                    
     args = parser.parse_args()
     labelname = args.labelname
+    source_id = args.source_id
+    optimize = args.optimize
 
     # train model
     classifierTrainer = ClassifierTrainer(labelname, host=args.host, port=args.port)
-    classifierTrainer.train(optimize=False, cv=True)
+    classifierTrainer.train(optimize=optimize, cv=True)
 
     # update predictions
-    labelUpdater = LabelUpdater(labelname, host=args.host, port=args.port, skip_confidence=args.skip_confidence)
+    labelUpdater = LabelUpdater(source_id, labelname, host=args.host, port=args.port, skip_confidence=args.skip_confidence)
     labelUpdater.updateLabels()

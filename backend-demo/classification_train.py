@@ -153,6 +153,8 @@ if __name__ == "__main__":
                         help='Run C parameter optimization (default: False)')
     parser.add_argument('--cv', dest='cv', default=False, action='store_true',
                         help='Perform cross validation after training (default: False)')
+    parser.add_argument('source_id', type=1, default=1, nargs='?',
+                        help='Source id (default: 1)')
     parser.add_argument('host', type=str, default='localhost', nargs='?',
                         help='DB host (default: localhost)')
     parser.add_argument('port', type=int, default=5432, nargs='?',

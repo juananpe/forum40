@@ -37,6 +37,11 @@ dictConfig({
 
 
 update_model = api.model('update', {
+    'source_id': fields.Integer(
+        description="Source id",
+        required=True,
+        example=1
+    ),
     'labelname': fields.String(
         description = 'Labelname to update model and machine classification.',
         example = 'SentimentNegative',
@@ -44,12 +49,13 @@ update_model = api.model('update', {
     ),
     'optimize' : fields.Boolean(
         description = 'Perform hyperparameter optimization',
-        example = False,
+        default = False,
         required = False
     ),
-    'fast' : fields.Boolean(
+    'skip-confidence' : fields.Boolean(
         description = 'Fast version only updates changing labels, but not confidence scores',
-        example = False
+        default = False,
+        required = False
     )
 })
 
@@ -71,13 +77,17 @@ history_model = api.model('history', {
 class ClassifierService(Resource):
     @api.expect(update_model)
     def post(self):
+        source_id = api.payload.get('source_id', None)
         labelname = api.payload.get('labelname', None)
-        fast_run = api.payload.get('fast', True)
-        if labelname:
+        optimize = api.payload.get('optimize', False)
+        skip_confidence = api.payload.get('skip-confidence', False)
+        if labelname and source_id:
             args = ["--labelname", labelname]
-            if fast_run:
+            if skip_confidence:
                 args.append("--skip-confidence")
-            results = process_manager.invoke("update", args)
+            if optimize:
+                args.append("--optimize")
+            results = process_manager.invoke("update", str(source_id), args)
             return results, 200
         else:
             return {'error' : 'Something went wrong.'}, 500

@@ -353,9 +353,11 @@ export default {
       }
     },
     async loadSimilarComments(comment) {
+      const selectedSource = this[Getters.getSelectedSource];
       const payload = {
         ids: [comment.id],
-        n: this.MAX_COMMENTS
+        n: this.MAX_COMMENTS,
+        source_id: selectedSource.id
       };
       try {
         const { data } = await Service.post(Endpoint.COMMENTS_SIMILAR, payload);
