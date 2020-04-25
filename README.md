@@ -56,26 +56,32 @@ You can either create an empty database or also additionally import the One Mill
 
 - The following steps are nessecary to get classification and embedding functionality. Calculating the BERT embeddings for new comments may take some time and can be accelated with a GPU. Once the embeddings are available in the database, training and using classifiers is very fast.
 
-3. Embedding Service
-- Run embedding container on GPU Cluster
-- bind the database port locally with `ssh -L 27017:localhost:27017 <username>@mast-se.informatik.uni-hamburg.de`
-- Trigger comment embedding
+3. Embedding of comments
+- Optional: run embedding container on GPU server and and configure service-URL via `/api/similarity/embeddings/set-service-url`
+- Start: `/api/similarity/embeddings/embedding/invoke/1` for source_id 1
+- Check progress: `/api/similarity/embeddings/embedding`
+- Abort: ``/api/similarity/embeddings/embedding/abort`
 
-4. Embedding Index
-- run embedding container locally
-- create embedding index
+4. Indexing of embeddings
+- Start: `/api/similarity/embeddings/indexing/invoke/1` for source_id 1
+- Check progress: `/api/similarity/embeddings/indexing`
+- Abort: ``/api/similarity/embeddings/indexing/abort`
 
-## Optional
+5. Classification of comments
+- Create a new label in the front-end (needs login), add some training data (minimum 25 positive and negative examples per category)
+- Train a model and classify all comments of a specific source_id: `/api/classification/classification/update`
+- Get information about training progress: `/api/classification/classification/history`: contains timestamp, task, label, training set size, cv acc, cv f1, stability score, duration as CSV
 
-- You can optionally also use and install the pre-trained meta-comment and offensive-language classification containers:
 
-5. Meta-comment classifciation
-- Call the endpoint `/classification/unlabeled` to classify meta-comments.
+## Incremental database updates
 
-6. Offensive-language classification
-- Run offensive-language container locally
-- bind the database port locally with `ssh -L 27017:localhost:27017 <username>@mast-se.informatik.uni-hamburg.de`
-- Trigger classification
+Embedding, indexing and classification should work with incremental comments in the database. We may run cron jobs for:
+* Every m minutes: crawling comments
+* Every m minutes: embedding comments
+* Every m minutes: indexing comments
+* ???: classification of comments only when there are new comments! [not working yet]
+
+## Demo
 
 The project is live on:
 
