@@ -80,7 +80,7 @@ sim_id_model = api.model('SimId', {
 
 # API for service URL
 url_model = api.model('URL', {
-    'service_url': fields.String(example = 'http://embedding:5060/embed'),
+    'service_url': fields.String(example = 'http://ltdemos.informatik.uni-hamburg.de/embedding-service'),
 })
 
 
@@ -160,6 +160,14 @@ class SimilarComments(Resource):
             results.append([retriever.get_comment_text(id) for id in nn_ids])
 
         return results, 200
+
+@ns.route('/reload-index/<source_id>')
+class ReloadIndex(Resource):
+    def get(self, source_id):
+        if not retriever.load_index(source_id, force_reload = True):
+            return "Error: could not find index for source_id %s" % source_id, 400
+        else:
+            return "Index for source id %s reloaded" % source_id, 200
 
 
 @ns.route('/tasks')

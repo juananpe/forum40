@@ -14,10 +14,10 @@ class RetrieveComment(ForumTask):
         self.id_comment_mapping = {}
         self.loaded_index_source_id = None
  
-    def load_index(self, source_id):
+    def load_index(self, source_id, force_reload = False):
 
         # only load index, if it not has been loaded before
-        if self.loaded_index_source_id == source_id:
+        if not force_reload and self.loaded_index_source_id == source_id:
             return True
 
         try:

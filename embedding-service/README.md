@@ -1,12 +1,17 @@
 Embedding service
 =================
 
-Provides API and fuinctionality for handling embeddings:
+Provides a simple API for computing embeddings given texts:
 * compute embeddings for a list of strings (BERT-based)
 
-The CPU-intensive embedding task is started as a separate 
-python process.
+Indexing and retrieval of embeddings are handled with 
+a different API as defined in the backend-service.
 
+Start this service as a separate webservice, e.g. on ltgpu1:
 
-Indexing and retrieval of embeddings is handled with 
-conducted via the API defined in the backend-service.
+# Create a new python environment, and activate it
+# `cd embedding-service`
+# `pip install -r requirements.txt`
+# Optional: Look for a free CUDA device id
+# Start the service: `CUDA_VISIBLE_DEVICES=0 gunicorn -b 0.0.0.0:5060 --worker-connections 500 --timeout 400 app:app` 
+
