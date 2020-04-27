@@ -71,8 +71,6 @@ class CommentEmbedder(ForumProcessor):
             traceback.print_tb(err.__traceback__)
 
     def close_cursor(self):
-        if self.cursor:
-            self.cursor.close()
         if self.cursor_large:
             self.cursor_large.close()
 
