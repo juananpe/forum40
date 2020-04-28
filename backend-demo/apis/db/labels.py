@@ -5,12 +5,22 @@ from apis.db import api
 from db import postgres_con
 from db.queries import *
 
+import os
+from apis.utils.tasks import SingleProcessManager
+
 from bson import json_util
 import json
 
 from jwt_auth.token import token_required
 
 ns = api.namespace('labels', description="labels api")
+
+# pg config
+pg_host = os.getenv('PG_HOST', 'postgres')
+pg_port = os.getenv('PG_PORT', '5432')
+
+process_manager = SingleProcessManager(pg_host, pg_port)
+process_manager.register_process("init_facts", ["classification_update.py", pg_host, pg_port])
 
 @ns.route('/<int:source_id>')
 class LabelsGetAll(Resource):
@@ -67,8 +77,14 @@ class AddLabel(Resource):
         postgres.execute(SELECT_MAX_ID('labels'))
         max_id = postgres.fetchone()[0]
 
-        postgres.execute(INSERT_LABEL(max_id+1, 'classification', label_name, source_id))
+        label_id = max_id + 1
+        postgres.execute(INSERT_LABEL(label_id, 'classification', label_name, source_id))
         postgres_con.commit()
+
+        # init facts
+        args = ["--labelname", label_name, "--init-facts-only"]
+        results = process_manager.invoke("init_facts", str(source_id), args)
+        print("Init facts for label %s started as background process" % label_name)
         
         return "ok", 200 
                 

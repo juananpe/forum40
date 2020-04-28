@@ -24,14 +24,6 @@ class LabelUpdater(ForumProcessor):
         self.batch_i = 0
         self.stability = 0
         self.buffer = StringIO()
-        try:
-            self.classifier = EmbeddingClassifier()
-            self.classifier.load_from_disk(labelname)
-        except:
-            self.logger.error(
-                "Could not load classifier model for label %s. Run train.py first to create a model" % labelname)
-            exit(1)
-
 
     def init_cursor(self):
 
@@ -57,7 +49,7 @@ class LabelUpdater(ForumProcessor):
         if self.cursor_large:
             self.cursor_large.close()
 
-    def init_facts(self):
+    def init_facts(self, commit_now = False):
 
         # get label id
         self.cursor.execute("""SELECT id FROM labels WHERE name=%s""", (self.labelname,))
@@ -71,8 +63,8 @@ class LabelUpdater(ForumProcessor):
             facts_query,
             (self.label_id, self.label_id, self.source_id))
 
-        # we do not need a commit here, thus, do not run!
-        if False:
+        # for a full update, we do not need a commit here
+        if commit_now:
             # Commit updates
             self.logger.info("Commit to DB ...")
             self.conn.commit()
@@ -131,10 +123,22 @@ class LabelUpdater(ForumProcessor):
 
         start = timer()
 
+        # load model
+        try:
+            self.classifier = EmbeddingClassifier()
+            self.classifier.load_from_disk(labelname)
+        except:
+            self.logger.error(
+                "Could not load classifier model for label %s. Run train.py first to create a model" % labelname)
+            exit(1)
+
+        # make sure there is a fact entry for this label for every comment of a source
         self.init_facts()
 
+        # init the large cursor which iterates over all comments of a source
         self.init_cursor()
 
+        # keep track of progress with the SingleProcessManager
         n_total = math.ceil(self.n_facts / self.batch_size)
         self.set_total(n_total + 3) # 3 additional steps: stability, commit, finished
         while self.process_batch():
@@ -142,6 +146,7 @@ class LabelUpdater(ForumProcessor):
             self.logger.info(message)
             self.update_state(self.batch_i, message)
 
+        # close the large cursor
         self.close_cursor()
 
         # copy postgres
@@ -165,6 +170,7 @@ class LabelUpdater(ForumProcessor):
         self.update_state(self.batch_i + 2, message)
         self.conn.commit()
 
+        # some useful information and status tracking
         end = timer()
         duration = end - start
         message = "%d label updates finished after %.3f seconds." % (self.n_facts, duration)
@@ -186,12 +192,16 @@ class LabelUpdater(ForumProcessor):
 if __name__ == "__main__":
     # argument parsing
     parser = argparse.ArgumentParser(description='Update category labels.')
+
     parser.add_argument('--labelname', type=str, nargs='?', default='offtopic',
                         help='Name of the category to update')
     parser.add_argument('--skip-confidence', dest='skip_confidence', default=False, action='store_true',
                         help='Update changing labels only (default: False)')
     parser.add_argument('--optimize', dest='optimize', default=False, action='store_true',
-                        help='Perform hyperparameter optimization (default: False)')                    
+                        help='Perform hyperparameter optimization (default: False)')
+    parser.add_argument('--init-facts-only', dest='init_facts', default=False, action='store_true',
+                        help='Do not predict anything, but init the fact table for a label (default: False)')                    
+    
     parser.add_argument('host', type=str, default='localhost', nargs='?',
                         help='DB host (default: localhost)')
     parser.add_argument('port', type=int, default=5432, nargs='?',
@@ -199,14 +209,20 @@ if __name__ == "__main__":
     parser.add_argument('source_id', type=int, default=1, nargs='?',
                         help='Source id (default: 1)')                    
     args = parser.parse_args()
+    
     labelname = args.labelname
     source_id = args.source_id
     optimize = args.optimize
 
-    # train model
     classifierTrainer = ClassifierTrainer(labelname, host=args.host, port=args.port)
-    classifierTrainer.train(optimize=optimize, cv=True)
-
-    # update predictions
     labelUpdater = LabelUpdater(source_id, labelname, host=args.host, port=args.port, skip_confidence=args.skip_confidence)
-    labelUpdater.updateLabels()
+
+    if args.init_facts:
+        # just init all predictions with 0 (necessary, when new labels are inserted)
+        labelUpdater.init_facts(commit_now = True)
+    else:
+        # train model
+        classifierTrainer.train(optimize=optimize, cv=True)
+
+        # update predictions
+        labelUpdater.updateLabels()
