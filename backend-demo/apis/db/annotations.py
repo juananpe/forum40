@@ -13,6 +13,8 @@ from jwt_auth.token import token_required
 
 from db.db_models import comments_parser_sl
 
+import sys
+
 ns = api.namespace('annotations', description="annotations api")
 
 @ns.route('/count')
@@ -191,4 +193,11 @@ class LabelComment(Resource):
 
         postgres_con.commit()
 
-        return "ok", 200
+        # TODO: if enough new annotations then train new model and classify everything
+
+        with db_cursor() as cur:
+            cur.execute(GET_ANNOTATED_COMMENTS(), (label_id,))
+            number = cur.fetchone()[0]
+            print(f'Number annotations: {number}', file=sys.stderr)
+
+        return {"annotations": number}, 200

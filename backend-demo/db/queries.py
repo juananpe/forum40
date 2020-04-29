@@ -238,6 +238,13 @@ def GET_ANNOTATIONS():
     group by a.comment_id, a.label_id
     """
 
+def GET_ANNOTATED_COMMENTS():
+    return """
+    select count(distinct comment_id )
+    from annotations a
+    where a.label_id = %s
+    """
+
 ### utility
 
 def _opt_keyword(cond, keyword):
