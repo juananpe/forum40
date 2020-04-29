@@ -198,6 +198,5 @@ class LabelComment(Resource):
         with db_cursor() as cur:
             cur.execute(GET_ANNOTATED_COMMENTS(), (label_id,))
             number = cur.fetchone()[0]
-            print(f'Number annotations: {number}', file=sys.stderr)
 
         return {"annotations": number}, 200
