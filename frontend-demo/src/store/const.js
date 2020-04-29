@@ -25,7 +25,8 @@ export const Getters = {
     keywordfilter: 'keywordfilter',
     activeFilters: 'activeFilters', 
     timeFrequency: 'timeFrequency',
-    getSelectedSource: 'getSelectedSource'
+    getSelectedSource: 'getSelectedSource',
+    getLabelname: 'getLabelname'
 }
 
 export const Mutations = {
