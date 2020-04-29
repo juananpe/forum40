@@ -66,6 +66,11 @@
         </span>
       </span>
     </v-flex>
+
+    <v-snackbar v-model="snackbar" :timeout="timeout" top right>
+      {{ text }}
+      <v-btn color="blue" text @click="snackbar = false">Close</v-btn>
+    </v-snackbar>
   </v-layout>
 </template>
 
@@ -88,7 +93,10 @@ export default {
     return {
       manualLabel: undefined,
       svgRectangle: mdiCropSquare,
-      svgCheckbox: mdiCheckBoxOutline
+      svgCheckbox: mdiCheckBoxOutline,
+      snackbar: false,
+      text: "Snackbar text",
+      timeout: 2000
     };
   },
   mounted() {
@@ -103,7 +111,7 @@ export default {
   methods: {
     async annotate(value) {
       try {
-        await Service.put(
+        const { data } = await Service.put(
           Endpoint.ADD_ANNOTATION_TO_COMMENT(
             this.commentId,
             this.labelId,
@@ -112,18 +120,21 @@ export default {
           {},
           this[Getters.jwt]
         );
+        const { annotations } = data;
+        const label_name = this[Getters.getLabelname](this.labelId);
+        this.text = `${annotations} annotated "${label_name}" comments.`;
+        this.snackbar = true;
+
         this.manualLabel = value;
         return true;
       } catch (error) {
-        const status = error.response.status;
         console.error(error);
-        console.error(status);
         return false;
       }
     }
   },
   computed: {
-    ...mapGetters([Getters.jwt, Getters.jwtLoggedIn]),
+    ...mapGetters([Getters.jwt, Getters.jwtLoggedIn, Getters.getLabelname]),
     loggedIn() {
       return this[Getters.jwtLoggedIn];
     },
