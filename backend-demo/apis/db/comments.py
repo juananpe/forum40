@@ -1,13 +1,18 @@
-from flask import Response
+from flask import Response, request
 from flask_restplus import Resource, reqparse
 
 from apis.db import api
-from db.db_models import comments_parser, comments_parser_sl, groupByModel, comment_parser, comment_parser_post
+from db.db_models import *
 
 #from db import postgres
 #from db import postgres_json
 from db import postgres_con, db_cursor
 from db.queries import *
+
+from psycopg2.extras import execute_values
+import functools
+import operator
+import sys
 
 from psycopg2 import DatabaseError
 
@@ -197,48 +202,74 @@ class CommentsGet(Resource):
     @api.expect(comment_parser_post)
     @token_optional # change to token_required
     def post(self, data):
-        args = comment_parser_post.parse_args()
-        doc_id = args['doc_id'] if args.get('doc_id', False) else None
-        source_id = args['source_id'] if args.get('source_id', False) else None
-        user_id = args['user_id'] if args.get('user_id', False) else None
-        parent_comment_id = args['parent_comment_id']  if args.get('parent_comment_id', False) else None
-        status = args['status'] if args.get('status', False) else None
-        title = args['title'] if args.get('title', False) else None
-        text = args['text'] if args.get('text', False) else None
-        embedding = args['embedding'] if args.get('embedding', False) else None
-        timestamp = args['timestamp'] if args.get('timestamp', False) else None
-        external_id = args['external_id'] if args.get('external_id', False) else None
-
-        comm, _ = getCommentByIds(source_id, external_id)
-        if comm:
-             return {'id': comm['id'], 'source_id': source_id, 'external_id': external_id, 'existed':True}, 200
-
-        time = timestamp.split('T')[0].split('-')
-        if len(time) < 3:
-            time = [-1, -1, -1]
-
-        insert_query = "INSERT INTO comments (id, doc_id, source_id, user_id, parent_comment_id, status, title, text, embedding, timestamp, external_id, year, month, day) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id;"
-
-        max_id = []
-        with db_cursor() as cur:
-            cur.execute(SELECT_MAX_ID('comments'))
-            max_id = cur.fetchone()[0]
-
-        # if the table is empty:
-        if max_id is None:
-            max_id = -1
-
-        added_comment = []
-        with db_cursor() as cur:
-            cur.execute(insert_query, (max_id+1, doc_id, source_id, user_id, parent_comment_id, status, title, text, embedding, timestamp, external_id, int(time[0]), int(time[1]), int(time[2])))
-            added_comment = cur.fetchone()
-
-        return {'id': added_comment[0]}, 200
+        comment = comment_parser_post.parse_args()
+        return insert_new_comments([comment])
         
-        
-# GET_UNLABELD_COMMENTS_BY_FILTER
+@ns.route('/json')
+class CommentsInsertMany(Resource):
+    @token_optional
+    @api.doc(security='apikey')
+    @api.expect(comments_list_parser)
+    def post(self, data):
+        comments = request.json
+        return insert_new_comments(comments)
 
-import sys
+
+def check_comment(args, pk):
+    doc_id = args['doc_id'] if args.get('doc_id', False) else None
+    source_id = args['source_id'] if args.get('source_id', False) else None
+    user_id = args['user_id'] if args.get('user_id', False) else None
+    parent_comment_id = args['parent_comment_id']  if args.get('parent_comment_id', False) else None
+    status = args['status'] if args.get('status', False) else None
+    title = args['title'] if args.get('title', False) else None
+    text = args['text'] if args.get('text', False) else None
+    embedding = args['embedding'] if args.get('embedding', False) else None
+    timestamp = args['timestamp'] if args.get('timestamp', False) else None
+    external_id = args['external_id'] if args.get('external_id', False) else None
+
+    comm, _ = getCommentByIds(source_id, external_id)
+    if comm:
+        return None
+
+    time = timestamp.split('T')[0].split('-')
+    if len(time) < 3:
+        time = [-1, -1, -1]
+
+    return (pk, doc_id, source_id, user_id, parent_comment_id, status, title, text, embedding, timestamp, external_id, int(time[0]), int(time[1]), int(time[2]))
+
+def insert_new_comments(comments):
+    if type(comments) != list:
+        return {'msg': 'passed data is not a list of json objects'}, 400
+    ## TODO sequence id 
+    # create pk
+    max_id = []
+    with db_cursor() as cur:
+        cur.execute(SELECT_MAX_ID('comments'))
+        max_id = cur.fetchone()[0]
+    # if the table is empty:
+    if max_id is None:
+        max_id = -1
+
+    ress = []
+    for comment in comments:
+        res = check_comment(comment, max_id+1)
+        if res:
+            ress.append(res)
+            max_id += 1
+
+    insert_query = "INSERT INTO comments (id, doc_id, source_id, user_id, parent_comment_id, status, title, text, embedding, timestamp, external_id, year, month, day) VALUES %s RETURNING id;"
+
+    added_comment = []
+    if ress:
+        with db_cursor() as cur:
+            added_comment = execute_values(cur,
+                insert_query, 
+                ress)
+            added_comment = cur.fetchall()
+
+    # get args
+    new_comments_ids = functools.reduce(operator.iconcat, added_comment, [])
+    return {'added_comment_ids' : new_comments_ids, 'count' : len(new_comments_ids)}, 200
 
 @ns.route('/unlabeled')
 @api.expect(comments_parser_sl)
