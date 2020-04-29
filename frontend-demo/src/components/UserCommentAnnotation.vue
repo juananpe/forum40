@@ -96,7 +96,7 @@ export default {
       svgCheckbox: mdiCheckBoxOutline,
       snackbar: false,
       text: "Snackbar text",
-      timeout: 2000
+      timeout: 4000
     };
   },
   mounted() {
@@ -122,7 +122,11 @@ export default {
         );
         const { annotations } = data;
         const label_name = this[Getters.getLabelname](this.labelId);
-        this.text = `${annotations} annotated "${label_name}" comments.`;
+        this.text = `${annotations} annotierte`;
+        if (annotations == 1) this.text += "r";
+        this.text += ` "${label_name}" Kommentar`;
+        if (annotations > 1) this.text += "e";
+        this.text += ".";
         this.snackbar = true;
 
         this.manualLabel = value;
