@@ -30,6 +30,8 @@ You can either create an empty database or also additionally import the One Mill
 1. OMP Database migration or initialization:
 - Run the database migration or creation script from this project: https://git.haw-hamburg.de/forum40/databasemigration
 
+```psql -d omp -h localhost -p 5432 --username=postgres --password``` < init.sql 
+
 - After succesfully creating the database schema, you may want to add a user to the database:
 
 ```psql -d omp -h localhost -p 5432 --username=postgres --password ```
