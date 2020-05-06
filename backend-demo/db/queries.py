@@ -223,6 +223,11 @@ def GET_COMMENT_IDS_BY_FILTER(label_sort_id, order, label_ids, num_keywords):
     query+=f" limit %s offset %s"
     return query
 
+def GET_RUNNING_TRAINING():
+    return """
+    select COUNT(*) from model where label_id = %s and pid IS NOT NULL;
+    """
+
 def GET_FACTS():
     return """select f.comment_id, f.label_id, f.confidence
     from facts f
@@ -249,6 +254,9 @@ def GET_PREVIOUS_NUMBER_TRAINING_SAMPLES():
     return """
     select number_training_samples from model where label_id = %s;
     """
+
+def GET_LABEL_INFO():
+    return "SELECT name, source_id FROM labels WHERE id=%s"
 
 ### utility
 

@@ -16,6 +16,8 @@ from jwt_auth.token import token_required
 from db.db_models import comments_parser_sl
 
 import sys
+import json
+import requests
 
 ns = api.namespace('annotations', description="annotations api")
 
@@ -162,7 +164,6 @@ class LabelComment(Resource):
     @token_required
     @api.doc(security='apikey')
     def put(self, data, comment_id ,label_id, label):
-
         user_id = self["user_id"]
         label = bool(label)
 
@@ -202,16 +203,49 @@ class LabelComment(Resource):
         # get number training samples of previous model
         with db_cursor() as cur:
             cur.execute(GET_PREVIOUS_NUMBER_TRAINING_SAMPLES(), (label_id,))
-            previous_number_training_samples = cur.fetchone()[0]
+            result = cur.fetchone()
+            if result:
+                previous_number_training_samples = result[0]
+            else:
+                previous_number_training_samples = 0
             
         new_training_samples = number - previous_number_training_samples
 
-        # TODO: check if training in progress for label_id
-        if new_training_samples >= settings.NUMBER_SAMPLES_FOR_NEXT_TRAINING:
-            import sys
-            print(f'New training for label_id {label_id}', file=sys.stderr)
-            # TODO: trigger new training
-            pass
-        
+        # is training in progress?
+        with db_cursor() as cur:
+            cur.execute(GET_RUNNING_TRAINING(), (label_id,))
+            training_runnninng = cur.fetchone()[0]
 
-        return {"annotations": number}, 200
+        triggered_training = False
+
+        # TODO: check if training in progress for label_id
+        if not training_runnninng and new_training_samples >= settings.NUMBER_SAMPLES_FOR_NEXT_TRAINING:
+            print(f'New training for label_id {label_id}', file=sys.stderr)
+
+            with db_cursor() as cur:
+                cur.execute(GET_LABEL_INFO(), (label_id,))
+                label_name, source_id = cur.fetchone()
+                print(f"label_name: {label_name}, source_id: {source_id}", file=sys.stderr)
+
+            # TODO: trigger new training
+            headers = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+            }
+
+            payload={
+                "source_id": source_id,
+                "labelname": label_name,
+                "optimize": False,
+                "skip-confidence": False
+            }
+
+            response = requests.post('http://127.0.0.1:5050/classification/classification/update', headers=headers, data=json.dumps(payload))
+
+            print(response.text, file=sys.stderr)
+
+            triggered_training = True
+
+        # TODO: add number left for new training
+
+        return {"annotations": number, "triggered_training": triggered_training}, 200
