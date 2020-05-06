@@ -134,6 +134,16 @@ CREATE TABLE IF NOT EXISTS public.tasks (
 	"timestamp" timestamp NULL
 );
 
+-- DROP TABLE IF EXISTS public.model CASCADE;
+
+CREATE TABLE public.model (
+	id bigserial NOT NULL,
+	label_id int8 NOT NULL,
+	"timestamp" timestamp NOT NULL,
+	number_training_samples int8 NULL,
+	CONSTRAINT model_pk PRIMARY KEY (id)
+);
+
 -- ALTER TABLE public."annotations" ALTER COLUMN id SET DEFAULT nextval('annotations_id_seq'::regclass);
 -- ALTER TABLE public."users" ALTER COLUMN id SET DEFAULT nextval('users_id_seq'::regclass);
 -- ALTER TABLE public."comments" ALTER COLUMN id SET DEFAULT nextval('comments_id_seq'::regclass);
