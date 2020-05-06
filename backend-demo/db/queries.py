@@ -245,6 +245,11 @@ def GET_ANNOTATED_COMMENTS():
     where a.label_id = %s
     """
 
+def GET_PREVIOUS_NUMBER_TRAINING_SAMPLES():
+    return """
+    select number_training_samples from model where label_id = %s;
+    """
+
 ### utility
 
 def _opt_keyword(cond, keyword):

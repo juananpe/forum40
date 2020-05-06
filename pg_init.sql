@@ -148,6 +148,7 @@ CREATE TABLE public.model (
 	acc float8 NULL,
 	f1 float8 NULL,
 	fit_time int8 NULL,
+	pid int8 NULL,
 	CONSTRAINT model_pk PRIMARY KEY (id)
 );
 

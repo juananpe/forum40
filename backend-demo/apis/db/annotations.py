@@ -2,6 +2,8 @@ from flask import request
 from flask_restplus import Resource, reqparse, fields
 from apis.db import api
 
+from config import settings
+
 from psycopg2.extras import RealDictCursor
 
 from db import postgres_con, db_cursor
@@ -193,10 +195,23 @@ class LabelComment(Resource):
 
         postgres_con.commit()
 
-        # TODO: if enough new annotations then train new model and classify everything
-
         with db_cursor() as cur:
             cur.execute(GET_ANNOTATED_COMMENTS(), (label_id,))
             number = cur.fetchone()[0]
+
+        # get number training samples of previous model
+        with db_cursor() as cur:
+            cur.execute(GET_PREVIOUS_NUMBER_TRAINING_SAMPLES(), (label_id,))
+            previous_number_training_samples = cur.fetchone()[0]
+            
+        new_training_samples = number - previous_number_training_samples
+
+        # TODO: check if training in progress for label_id
+        if new_training_samples >= settings.NUMBER_SAMPLES_FOR_NEXT_TRAINING:
+            import sys
+            print(f'New training for label_id {label_id}', file=sys.stderr)
+            # TODO: trigger new training
+            pass
+        
 
         return {"annotations": number}, 200

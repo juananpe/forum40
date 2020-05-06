@@ -25,6 +25,10 @@ class LabelUpdater(ForumProcessor):
         self.stability = 0
         self.buffer = StringIO()
 
+        # get label id
+        self.cursor.execute("""SELECT id FROM labels WHERE name=%s""", (self.labelname,))
+        self.label_id = self.cursor.fetchone()[0]
+
     def init_cursor(self):
 
         # get number of facts
@@ -51,9 +55,7 @@ class LabelUpdater(ForumProcessor):
 
     def init_facts(self, commit_now = False):
 
-        # get label id
-        self.cursor.execute("""SELECT id FROM labels WHERE name=%s""", (self.labelname,))
-        self.label_id = self.cursor.fetchone()[0]
+
         self.logger.info("Predict new labels for: " + self.labelname + " (" + str(self.label_id) + ")")
 
         # init facts entry for all
@@ -188,15 +190,19 @@ class LabelUpdater(ForumProcessor):
                 duration
             ))
 
+    def initModelTable(self):
+        self.cursor.execute(" INSERT INTO model (label_id, pid) VALUES(%s, %s) RETURNING id;", (self.label_id, self.pid))
+        self.model_entry_id =  self.cursor.fetchone()[0]
+        self.logger.info(f"Init Model Entry: label_id={label_id}, pid={self.pid}")
+
     def updateModelTable(self, model_details):
+        label_id = self.label_id
         number_training_samples = model_details['number_training_samples']
-        label_id = model_details['label_id']
         acc = model_details['acc']
         f1 = model_details['f1']
         fit_time = model_details['fit_time']
         
-
-        self.cursor.execute(" INSERT INTO model (label_id, timestamp, number_training_samples, acc, f1, fit_time) VALUES(%s, CURRENT_TIMESTAMP, %s, %s, %s, %s);", (number_training_samples, label_id, acc, f1, int(fit_time)))
+        self.cursor.execute(" UPDATE model SET timestamp=CURRENT_TIMESTAMP, number_training_samples=%s, acc=%s, f1=%s, fit_time=%s, pid=%s WHERE id=%s;", (number_training_samples, acc, f1, int(fit_time), self.pid, self.model_entry_id))
         self.logger.info(f"Update Model Entry: label_id={label_id}, number_training_samples={number_training_samples}")
 
 if __name__ == "__main__":
@@ -231,6 +237,9 @@ if __name__ == "__main__":
         # just init all predictions with 0 (necessary, when new labels are inserted)
         labelUpdater.init_facts(commit_now = True)
     else:
+        # init model entry 
+        labelUpdater.initModelTable()
+
         # train model
         model_details = classifierTrainer.train(optimize=optimize, cv=True)
 

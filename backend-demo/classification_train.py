@@ -143,7 +143,6 @@ class ClassifierTrainer(ForumProcessor):
 
         return {
             'number_training_samples': len(annotation_dataset),
-            'label_id': self.label_id,
             'acc': acc,
             'f1': f1,
             'fit_time': fit_time
