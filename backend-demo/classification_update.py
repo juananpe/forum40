@@ -197,7 +197,7 @@ class LabelUpdater(ForumProcessor):
         
 
         self.cursor.execute(" INSERT INTO model (label_id, timestamp, number_training_samples, acc, f1, fit_time) VALUES(%s, CURRENT_TIMESTAMP, %s, %s, %s, %s);", (number_training_samples, label_id, acc, f1, int(fit_time)))
-        self.logger.error(f"Update Model Entry: label_id={label_id}, number_training_samples={number_training_samples}")
+        self.logger.info(f"Update Model Entry: label_id={label_id}, number_training_samples={number_training_samples}")
 
 if __name__ == "__main__":
     # argument parsing
