@@ -202,7 +202,7 @@ class LabelUpdater(ForumProcessor):
         f1 = model_details['f1']
         fit_time = model_details['fit_time']
         
-        self.cursor.execute(" UPDATE model SET timestamp=CURRENT_TIMESTAMP, number_training_samples=%s, acc=%s, f1=%s, fit_time=%s, pid=%s WHERE id=%s;", (number_training_samples, acc, f1, int(fit_time), self.pid, self.model_entry_id))
+        self.cursor.execute(" UPDATE model SET timestamp=CURRENT_TIMESTAMP, number_training_samples=%s, acc=%s, f1=%s, fit_time=%s, pid=%s WHERE id=%s;", (number_training_samples, acc, f1, int(fit_time), None, self.model_entry_id))
         self.logger.info(f"Update Model Entry: label_id={label_id}, number_training_samples={number_training_samples}")
 
 if __name__ == "__main__":
