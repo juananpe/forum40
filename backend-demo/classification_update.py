@@ -191,7 +191,7 @@ class LabelUpdater(ForumProcessor):
             ))
 
     def initModelTable(self):
-        self.cursor.execute(" INSERT INTO model (label_id, pid) VALUES(%s, %s) RETURNING id;", (self.label_id, self.pid))
+        self.cursor.execute(" INSERT INTO model (label_id, timestamp, pid) VALUES(%s, CURRENT_TIMESTAMP, %s) RETURNING id;", (self.label_id, self.pid))
         self.model_entry_id =  self.cursor.fetchone()[0]
         self.logger.info(f"Init Model Entry: label_id={label_id}, pid={self.pid}")
 
