@@ -202,8 +202,44 @@ class CommentsGet(Resource):
     @api.expect(comment_parser_post)
     @token_optional # change to token_required
     def post(self, data):
-        comment = comment_parser_post.parse_args()
-        return insert_new_comments([comment])
+        args = comment_parser_post.parse_args()
+        doc_id = args['doc_id'] if args.get('doc_id', False) else None
+        source_id = args['source_id'] if args.get('source_id', False) else None
+        user_id = args['user_id'] if args.get('user_id', False) else None
+        parent_comment_id = args['parent_comment_id']  if args.get('parent_comment_id', False) else None
+        status = args['status'] if args.get('status', False) else None
+        title = args['title'] if args.get('title', False) else None
+        text = args['text'] if args.get('text', False) else None
+        embedding = args['embedding'] if args.get('embedding', False) else None
+        timestamp = args['timestamp'] if args.get('timestamp', False) else None
+        external_id = args['external_id'] if args.get('external_id', False) else None
+
+        comm, _ = getCommentByIds(source_id, external_id)
+        if comm:
+             return {'id': comm['id'], 'source_id': source_id, 'external_id': external_id, 'existed':True}, 200
+
+        time = timestamp.split('T')[0].split('-')
+        if len(time) < 3:
+            time = [-1, -1, -1]
+
+        insert_query = "INSERT INTO comments (id, doc_id, source_id, user_id, parent_comment_id, status, title, text, embedding, timestamp, external_id, year, month, day) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id;"
+
+        max_id = []
+        with db_cursor() as cur:
+            cur.execute(SELECT_MAX_ID('comments'))
+            max_id = cur.fetchone()[0]
+
+        # if the table is empty:
+        if max_id is None:
+            max_id = -1
+
+        added_comment = []
+        with db_cursor() as cur:
+            cur.execute(insert_query, (max_id+1, doc_id, source_id, user_id, parent_comment_id, status, title, text, embedding, timestamp, external_id, int(time[0]), int(time[1]), int(time[2])))
+            added_comment = cur.fetchone()
+
+        return {'id': added_comment[0]}, 200
+
         
 @ns.route('/json')
 class CommentsInsertMany(Resource):
