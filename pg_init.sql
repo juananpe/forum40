@@ -134,13 +134,20 @@ CREATE TABLE IF NOT EXISTS public.tasks (
 	"timestamp" timestamp NULL
 );
 
--- DROP TABLE IF EXISTS public.model CASCADE;
+-- public.model definition
+
+-- Drop table
+
+-- DROP TABLE public.model;
 
 CREATE TABLE public.model (
 	id bigserial NOT NULL,
 	label_id int8 NOT NULL,
 	"timestamp" timestamp NOT NULL,
 	number_training_samples int8 NULL,
+	acc float8 NULL,
+	f1 float8 NULL,
+	fit_time int8 NULL,
 	CONSTRAINT model_pk PRIMARY KEY (id)
 );
 

@@ -188,6 +188,16 @@ class LabelUpdater(ForumProcessor):
                 duration
             ))
 
+    def updateModelTable(self, model_details):
+        number_training_samples = model_details['number_training_samples']
+        label_id = model_details['label_id']
+        acc = model_details['acc']
+        f1 = model_details['f1']
+        fit_time = model_details['fit_time']
+        
+
+        self.cursor.execute(" INSERT INTO model (label_id, timestamp, number_training_samples, acc, f1, fit_time) VALUES(%s, CURRENT_TIMESTAMP, %s, %s, %s, %s);", (number_training_samples, label_id, acc, f1, int(fit_time)))
+        self.logger.error(f"Update Model Entry: label_id={label_id}, number_training_samples={number_training_samples}")
 
 if __name__ == "__main__":
     # argument parsing
@@ -222,7 +232,10 @@ if __name__ == "__main__":
         labelUpdater.init_facts(commit_now = True)
     else:
         # train model
-        classifierTrainer.train(optimize=optimize, cv=True)
+        model_details = classifierTrainer.train(optimize=optimize, cv=True)
+
+        # update model entry
+        labelUpdater.updateModelTable(model_details)
 
         # update predictions
         labelUpdater.updateLabels()
