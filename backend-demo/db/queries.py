@@ -245,7 +245,11 @@ def GET_ANNOTATIONS():
 
 def GET_ANNOTATED_COMMENTS():
     return """
-    SELECT count(*) FROM comments c JOIN annotations a ON c.id=a.comment_id WHERE a.label_id=%s and c.embedding is not NULL
+    SELECT 
+    count(case when label=true then 1 end) pos,
+    count(case when label=false then 1 end) neg
+    FROM comments c JOIN annotations a ON c.id=a.comment_id
+    WHERE a.label_id=%s and c.embedding is not NULL
     """
 
 def GET_PREVIOUS_NUMBER_TRAINING_SAMPLES():

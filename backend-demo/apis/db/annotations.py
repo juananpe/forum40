@@ -196,9 +196,13 @@ class LabelComment(Resource):
 
         postgres_con.commit()
 
+        # Trigger new Training?
+
         with db_cursor() as cur:
             cur.execute(GET_ANNOTATED_COMMENTS(), (label_id,))
-            current_annotated_samples = cur.fetchone()[0]
+            current_pos_annotated_samples,current_neg_annotated_samples = cur.fetchone()
+            current_annotated_samples = current_pos_annotated_samples + current_neg_annotated_samples
+
 
         # get number training samples of previous model
         with db_cursor() as cur:
@@ -218,8 +222,11 @@ class LabelComment(Resource):
 
         triggered_training = False
 
-        # TODO: check if training in progress for label_id
-        if not training_runnninng and new_training_samples >= settings.NUMBER_SAMPLES_FOR_NEXT_TRAINING:
+        # trigger training check
+        if not training_runnninng \
+        and new_training_samples >= settings.NUMBER_SAMPLES_FOR_NEXT_TRAINING \
+        and current_pos_annotated_samples >= 10 \
+        and current_neg_annotated_samples >= 10:
             print(f'New training for label_id {label_id}', file=sys.stderr)
 
             with db_cursor() as cur:
@@ -227,7 +234,7 @@ class LabelComment(Resource):
                 label_name, source_id = cur.fetchone()
                 print(f"label_name: {label_name}, source_id: {source_id}", file=sys.stderr)
 
-            # TODO: trigger new training
+            # trigger new training
             headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
@@ -246,9 +253,14 @@ class LabelComment(Resource):
 
             triggered_training = True
 
-        # TODO: add number left for new training
+        # add number left for new training
         samples_left_for_new_training = settings.NUMBER_SAMPLES_FOR_NEXT_TRAINING - new_training_samples
 
-        return {"annotations": current_annotated_samples, "triggered_training": triggered_training,
-        "training_running": training_runnninng,
-        "samples_left_for_new_training":samples_left_for_new_training}, 200
+        return {
+            "annotations": current_annotated_samples,
+            "triggered_training": triggered_training,
+            "training_running": training_runnninng,
+            "samples_left_for_new_training":samples_left_for_new_training,
+            "numbers_pos_samples_missing":10-current_pos_annotated_samples if current_pos_annotated_samples < 10 else 0,
+            "numbers_neg_samples_missing": 10 - current_neg_annotated_samples if current_neg_annotated_samples < 10 else 0
+        }, 200
