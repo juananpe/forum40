@@ -198,7 +198,7 @@ class LabelComment(Resource):
 
         with db_cursor() as cur:
             cur.execute(GET_ANNOTATED_COMMENTS(), (label_id,))
-            number = cur.fetchone()[0]
+            current_annotated_samples = cur.fetchone()[0]
 
         # get number training samples of previous model
         with db_cursor() as cur:
@@ -209,7 +209,7 @@ class LabelComment(Resource):
             else:
                 previous_number_training_samples = 0
             
-        new_training_samples = number - previous_number_training_samples
+        new_training_samples = current_annotated_samples - previous_number_training_samples
 
         # is training in progress?
         with db_cursor() as cur:
@@ -247,5 +247,8 @@ class LabelComment(Resource):
             triggered_training = True
 
         # TODO: add number left for new training
+        samples_left_for_new_training = settings.NUMBER_SAMPLES_FOR_NEXT_TRAINING - new_training_samples
 
-        return {"annotations": number, "triggered_training": triggered_training}, 200
+        return {"annotations": current_annotated_samples, "triggered_training": triggered_training,
+        "training_running": training_runnninng,
+        "samples_left_for_new_training":samples_left_for_new_training}, 200
