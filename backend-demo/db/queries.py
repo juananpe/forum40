@@ -228,6 +228,11 @@ def GET_RUNNING_TRAINING():
     select COUNT(*) from model where label_id = %s and pid IS NOT NULL;
     """
 
+def GET_MODEL_INFO():
+    return """
+    select * from model where label_id = %s;
+    """
+
 def GET_FACTS():
     return """select f.comment_id, f.label_id, f.confidence
     from facts f

@@ -15,6 +15,7 @@ from apis.db.annotations import ns as annotations_namespace
 from apis.db.documents import ns as documents_namespace
 from apis.db.sources import ns as sources_namespace
 from apis.db.users import ns as users_namespace
+from apis.db.models import ns as models_namespace
 
 
 # add namespaces
@@ -25,3 +26,4 @@ api.add_namespace(annotations_namespace)
 api.add_namespace(documents_namespace)
 api.add_namespace(sources_namespace)
 api.add_namespace(users_namespace)
+api.add_namespace(models_namespace)
