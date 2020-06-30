@@ -21,6 +21,7 @@ export const Endpoint = {
     REFRESH_TOKEN: 'db/auth/refreshToken',
     LOGIN: (username, password) => `db/auth/login/${username}/${password}`,
     LOGOUT: 'db/auth/logout',
+    MODELS: (labelId) => `db/models/${labelId}`,
 }
 
 class Service {

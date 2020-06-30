@@ -16,6 +16,10 @@
         </v-flex>
         <v-flex xs12 class="pb-4"></v-flex>
         <v-flex xs12>
+          <ClassifierMetrics />
+        </v-flex>
+        <v-flex xs12 class="pb-4"></v-flex>
+        <v-flex xs12>
           <UserCommentList />
         </v-flex>
         <v-flex xs12 class="pb-4"></v-flex>
@@ -35,10 +39,12 @@ import UserCommentList from "./components/UserCommentList";
 import UserCommentFilter from "./components/UserCommentFilter";
 import UserCommentThread from "./components/UserCommentThread";
 import { mapActions } from "vuex";
+import ClassifierMetrics from "./components/classifiermetrics/ClassifierMetrics";
 
 export default {
   name: "App",
   components: {
+    ClassifierMetrics,
     TopToolbar,
     TimeChart,
     TimefrequenzRadioGroup,

@@ -23,10 +23,11 @@ export const Getters = {
     selectedCommentId: 'selectedCommentId',
     selectedLabels: 'selectedLabels',
     keywordfilter: 'keywordfilter',
-    activeFilters: 'activeFilters', 
+    activeFilters: 'activeFilters',
     timeFrequency: 'timeFrequency',
     getSelectedSource: 'getSelectedSource',
-    getLabelname: 'getLabelname'
+    getLabelname: 'getLabelname',
+    getLabelIdByName: 'getLabelIdByName',
 }
 
 export const Mutations = {
