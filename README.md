@@ -56,7 +56,8 @@ You can either create an empty database or also additionally import the One Mill
 
 ## Embedding generation and classification
 
-- The following steps are nessecary to get classification and embedding functionality. Calculating the BERT embeddings for new comments may take some time and can be accelated with a GPU. Once the embeddings are available in the database, training and using classifiers is very fast. All these processes can be accessed from https://localhost/api/ url.
+- The following steps are nessecary to get classification and embedding functionality. Calculating the BERT embeddings for new comments may take some time and can be accelated with a GPU. Once the embeddings are available in the database, training and using classifiers is very fast. 
+- All these processes can be accessed from https://localhost/api/ url, or https://<your_hostname>/api/ if you deployed the application on a server. In the following examples we assume a local installation:
 
 3. Embedding of comments (under Similarity-API :: https://localhost/api/similarity)
 - Optional: run embedding container on GPU server and and configure service-URL via `/api/similarity/embeddings/set-service-url`
