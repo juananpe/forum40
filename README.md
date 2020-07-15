@@ -56,22 +56,22 @@ You can either create an empty database or also additionally import the One Mill
 
 ## Embedding generation and classification
 
-- The following steps are nessecary to get classification and embedding functionality. Calculating the BERT embeddings for new comments may take some time and can be accelated with a GPU. Once the embeddings are available in the database, training and using classifiers is very fast.
+- The following steps are nessecary to get classification and embedding functionality. Calculating the BERT embeddings for new comments may take some time and can be accelated with a GPU. Once the embeddings are available in the database, training and using classifiers is very fast. All these processes can be accessed from https://localhost/api/ url.
 
-3. Embedding of comments
+3. Embedding of comments (under Similarity-API :: https://localhost/api/similarity)
 - Optional: run embedding container on GPU server and and configure service-URL via `/api/similarity/embeddings/set-service-url`
-- Start: `/api/similarity/embeddings/embedding/invoke/1` for source_id 1
-- Check progress: `/api/similarity/embeddings/embedding`
-- Abort: ``/api/similarity/embeddings/embedding/abort`
+- Start: `/api/similarity/embeddings/tasks/{taskname}/invoke/{source_id}` by providing taskname as 'embedding' and source_id as 1 (source_id denotes the database source from the available databases) before execute.
+- Check progress: `/api/similarity/embeddings/tasks/{taskname}` where taskname is 'embedding'.
+- Abort: ``/api/similarity/embeddings/tasks/{taskname}/abort` where taskname is 'embedding'.
 
-4. Indexing of embeddings
-- Start: `/api/similarity/embeddings/indexing/invoke/1` for source_id 1
-- Check progress: `/api/similarity/embeddings/indexing`
-- Abort: ``/api/similarity/embeddings/indexing/abort`
+4. Indexing of embeddings (under Similarity-API :: https://localhost/api/similarity)
+- Start: `/api/similarity/embeddings/tasks/{taskname}/invoke/{source_id}` by providing taskname as 'indexing' and source_id as 1 before execute.
+- Check progress: `/api/similarity/embeddings/tasks/{taskname}` where taskname is 'indexing'.
+- Abort: ``/api/similarity/embeddings/tasks/{taskname}/abort` where taskname is 'indexing'.
 
-5. Classification of comments
+5. Classification of comments (under Classification-API :: https://localhost/api/classification)
 - Create a new label in the front-end (needs login), add some training data (minimum 25 positive and negative examples per category)
-- Train a model and classify all comments of a specific source_id: `/api/classification/classification/update`
+- Train a model and classify all comments of a specific source_id for each labelname one by one: `/api/classification/classification/update`
 - Get information about training progress: `/api/classification/classification/history`: contains timestamp, task, label, training set size, cv acc, cv f1, stability score, duration as CSV
 
 
