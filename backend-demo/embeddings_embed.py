@@ -45,17 +45,17 @@ class CommentEmbedder(ForumProcessor):
     def init_cursor(self):
         try:
 
-            self.cursor.execute("""SELECT COUNT(*) from comments""")
+            self.cursor.execute("""SELECT COUNT(*) from comments WHERE source_id = %s""", (source_id,))
             n_comments = self.cursor.fetchone()[0]
 
-            self.logger.info("Comments in the database: " + str(n_comments))
+            self.logger.info("Comments in the database source " + str(source_id) + ": " + str(n_comments))
 
-            embed_query = """SELECT id, title, text FROM comments"""
+            embed_query = """SELECT id, title, text FROM comments WHERE source_id = """ + str(source_id)
             self.n_to_embed = n_comments
 
             if not self.embed_all:
-                embed_query += " WHERE embedding IS NULL"
-                self.cursor.execute("""SELECT COUNT(*) from comments WHERE embedding IS NULL""")
+                embed_query += " AND embedding IS NULL"
+                self.cursor.execute("""SELECT COUNT(*) from comments WHERE source_id = %s AND embedding IS NULL""", (source_id,))
                 self.n_to_embed = self.cursor.fetchone()[0]
 
             self.logger.info("Comments to embed: " + str(self.n_to_embed))
