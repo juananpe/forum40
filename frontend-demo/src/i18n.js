@@ -8,6 +8,7 @@ Vue.use(VueI18n);
 const messages = { de, en };
 
 export default new VueI18n({
-	locale: process.env.VUE_APP_LOCALE,
+	locale: navigator.language.split('-')[0],
+	fallbackLocale: process.env.VUE_APP_FALLBACK_LOCALE || 'en',
 	messages,
 })
