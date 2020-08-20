@@ -3,6 +3,7 @@
     <v-app-bar flat color="indigo" max-height="60" dark>
       <v-toolbar-title>{{ $t("top_toolbar.title") }}</v-toolbar-title>
       <v-spacer></v-spacer>
+      <LanguageSelect class="mr-2" />
       <UserLogin />
     </v-app-bar>
   </div>
@@ -10,6 +11,7 @@
 
 <script>
 import UserLogin from "./UserLogin";
+import LanguageSelect from "@/components/LanguageSelect";
 export default {
   data() {
     return {
@@ -21,6 +23,7 @@ export default {
     };
   },
   components: {
+    LanguageSelect,
     UserLogin
   }
 };
