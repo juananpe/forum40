@@ -64,7 +64,7 @@ export default {
   methods: {
     initChart: async function() {
       const { data } = await Service.get(Endpoint.LABELS(1));
-      data.labels.push("Gesamtheit");
+      data.labels.push(this.$i18n.t("time_chart.series_total"));
 
       data.labels.forEach(labelName => {
         this.chart_options.legend.selected[labelName] = false;
@@ -83,7 +83,7 @@ export default {
     },
     addSeriesToChat: function(data, name) {
       var seriesId = this.chart_options.series.findIndex(x => x.name == name);
-      if (name != "Gesamtheit") {
+      if (name != this.$i18n.t("time_chart.series_total")) {
         this.local_chart_state.push(name);
       } else {
         this.chart_options.xAxis.data = data["time"];
@@ -105,7 +105,7 @@ export default {
       );
 
       if (this[Getters.selectedLabels].length == 0) {
-        this.addSeriesToChat(data, "Gesamtheit");
+        this.addSeriesToChat(data, this.$i18n.t("time_chart.series_total"));
       }
     },
     updateChart: async function() {
@@ -115,11 +115,11 @@ export default {
       chart_options.series.forEach(async (x) => {
         if (chart_options.legend.selected[x.name]) {
           const label_id = this[State.labels][x.name];
-          const { data } = label_id ? 
-              await Service.get(`${selectEndpoint()}?source_id=${this[Getters.getSelectedSource].id}&label=${label_id}${textFilterArg("&")}`) 
-              : 
+          const { data } = label_id ?
+              await Service.get(`${selectEndpoint()}?source_id=${this[Getters.getSelectedSource].id}&label=${label_id}${textFilterArg("&")}`)
+              :
               await Service.get(`${selectEndpoint()}?source_id=${this[Getters.getSelectedSource].id}&${textFilterArg("&")}`);
-          
+
           chart_options.xAxis.data = data["time"];
           x.data = data.data;
         }
@@ -127,11 +127,11 @@ export default {
     },
     updateChart_OnLabelChange: async function() {
       var seriesId = this.chart_options.series.findIndex(
-        x => x.name == "Gesamtheit"
+        x => x.name == this.$i18n.t("time_chart.series_total")
       );
       if (seriesId != -1) {
         this.chart_options.series[seriesId].data = [];
-        this.chart_options.legend.selected["Gesamtheit"] = false;
+        this.chart_options.legend.selected[this.$i18n.t("time_chart.series_total")] = false;
       }
 
       if (this[Getters.selectedLabels].length > this.local_chart_state.length) {

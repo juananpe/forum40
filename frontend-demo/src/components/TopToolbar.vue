@@ -1,7 +1,7 @@
 <template>
   <div>
     <v-app-bar flat color="indigo" max-height="60" dark>
-      <v-toolbar-title>Forum 4.0 – Analyse von Online-Nutzerkommentaren</v-toolbar-title>
+      <v-toolbar-title>{{ $t("top_toolbar.title") }}</v-toolbar-title>
       <v-spacer></v-spacer>
       <UserLogin />
     </v-app-bar>
@@ -15,8 +15,8 @@ export default {
     return {
       drawer: false,
       items: [
-        { title: "Analyse", icon: "bar_chart" },
-        { title: "Annotation", icon: "check" }
+        { title: this.$i18n.t('top_toolbar.analysis'), icon: "bar_chart" }, // TODO: Check if needed?
+        { title: this.$i18n.t('top_toolbar.annotation'), icon: "check" }
       ]
     };
   },

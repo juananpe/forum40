@@ -5,7 +5,7 @@
         :items="sources.map(e=>e['name'])"
         v-on:change="sourceChanged"
         v-model="selectedSource"
-        label="Datenquelle"
+        :label="$t('selector.data_source')"
         chips
       ></v-select>
     </v-flex>
@@ -17,7 +17,7 @@
         chips
         clearable
         multiple
-        label="Ausgewählte Labels"
+        :label="$t('selector.selected_labels')"
       >
         <template v-slot:selection="data">
           <v-chip :input-value="data.selected" close @click:close="remove(data.item)">
@@ -35,11 +35,11 @@
             outlined
             color="success"
             v-on="on"
-          >Label erstellen</v-btn>
+          >{{ $t('selector.create_label.action') }}</v-btn>
         </template>
 
         <v-card>
-          <v-card-title class="headline primary white--text" primary-title>Label erstellen</v-card-title>
+          <v-card-title class="headline primary white--text" primary-title>{{ $t('selector.create_label.action') }}</v-card-title>
 
           <v-form>
             <v-container fluid>
@@ -49,7 +49,7 @@
                     v-if="dialog"
                     autofocus
                     v-model="newLabel"
-                    label="Neue Label Beschreibung"
+                    :label="$t('selector.create_label.description')"
                     clearable
                   ></v-text-field>
                 </v-flex>
@@ -59,12 +59,12 @@
           <v-divider></v-divider>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="primary" text @click="addLabel">Erstellen</v-btn>
+            <v-btn color="primary" text @click="addLabel">{{ $t('selector.create_label.confirmation') }}</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
-      <v-alert v-model="success" dismissible type="success" class="center">Label hinzugefügt!</v-alert>
-      <v-alert v-model="error" type="error" dismissible class="center">Label bereits vorhanden!</v-alert>
+      <v-alert v-model="success" dismissible type="success" class="center">{{ $t('selector.create_label.success') }}</v-alert>
+      <v-alert v-model="error" type="error" dismissible class="center">{{ $t('selector.create_label.exists') }}</v-alert>
     </v-flex>
   </v-layout>
 </template>

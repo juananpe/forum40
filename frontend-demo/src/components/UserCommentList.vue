@@ -1,12 +1,12 @@
 <template>
   <div>
-    <h3>Kommentarliste</h3>
+    <h3>{{ $t("comment_list.title") }}</h3>
 
     <v-layout>
       <v-flex xs12>
         <v-text-field
           v-model="enteredKeyword"
-          label="Textsuche"
+          :label="$t('comment_list.search')"
           append-icon="search"
           @keydown.enter="keywordChanged"
           clearable
@@ -48,7 +48,7 @@
 
       <template
         v-slot:footer.page-text="{pageStart, pageStop}"
-      >Seite {{Math.floor(pageStart/rowsPerPage)+1}}</template>
+      >{{ $t("comment_list.page", {number: Math.floor(pageStart/rowsPerPage)+1})}}</template>
 
       <template v-slot:item="props">
         <tr class="mb-2" v-if="props.item.title || props.item.text">
@@ -92,7 +92,7 @@
               color="primary"
               text
               @click="loadSimilarComments(item)"
-            >Ähnliche Kommentare anzeigen</v-btn>
+            >{{ $t("comment_list.show_similar_comments") }}</v-btn>
           </td>
           <td></td>
           <td v-for="(label, i) in selectedLabels" :key="item.id+i"></td>
@@ -153,22 +153,6 @@ export default {
       teaserTextLength: 200,
       page: 1,
       rowsPerPage: 25,
-      basicCommentsTableHeader: [
-        {
-          text: "Kommentartext",
-          align: "left",
-          sortable: false,
-          value: "text",
-          width: "80%"
-        },
-        {
-          text: "Datum",
-          align: "right",
-          sortable: false,
-          value: "timestamp",
-          width: "15%"
-        }
-      ],
       svgPath: mdiRobot,
       similar_comments: [],
       MAX_COMMENTS: 11
@@ -196,16 +180,30 @@ export default {
       return this[Getters.jwtLoggedIn];
     },
     commentsTableHeader() {
-      const labelTableHeaders = this[Getters.selectedLabels].map(e => ({
-        text: e,
-        align: "center",
-        sortable: false,
-        value: "text",
-        width: "15%",
-        labelColumn: true
-      }));
-
-      return this.basicCommentsTableHeader.concat(labelTableHeaders);
+      return [
+        {
+          text: this.$i18n.t("comment_list.headers.comment_text"),
+          align: "left",
+          sortable: false,
+          value: "text",
+          width: "80%"
+        },
+        {
+          text: this.$i18n.t("comment_list.headers.date"),
+          align: "right",
+          sortable: false,
+          value: "timestamp",
+          width: "15%"
+        },
+        ...this[Getters.selectedLabels].map(e => ({
+          text: e,
+          align: "center",
+          sortable: false,
+          value: "text",
+          width: "15%",
+          labelColumn: true
+        })),
+      ]
     },
     pageQueryString() {
       const parameters = [];
@@ -379,7 +377,7 @@ export default {
       }
     },
     /*eslint no-unused-vars: ["error", { "args": "none" }]*/
-    keywordChanged(e) { 
+    keywordChanged(e) {
       this[Mutations.setKeywordfilter](this.enteredKeyword);
       this.loadTable();
     }

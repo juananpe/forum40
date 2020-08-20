@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h3>Kommentar-Thread</h3>
+    <h3>{{ $t("comment_thread.title")}}</h3>
     <p></p>
     <div v-for="(comment, i) in comments" v-bind:key="comment.id">
       <v-layout>

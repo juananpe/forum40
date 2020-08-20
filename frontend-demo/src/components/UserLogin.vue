@@ -8,10 +8,10 @@
 
         <v-list>
           <v-list-item @click="checkLogin">
-            <v-list-item-title>Check Authentifizierung</v-list-item-title>
+            <v-list-item-title>{{ $t("user.check_login") }}</v-list-item-title>
           </v-list-item>
           <v-list-item @click="logoutClicked">
-            <v-list-item-title>Logout</v-list-item-title>
+            <v-list-item-title>{{ $t("user.logout") }}</v-list-item-title>
           </v-list-item>
         </v-list>
       </v-menu>
@@ -20,16 +20,16 @@
         dismissible
         type="success"
         class="center"
-      >Sie sind authentifiziert!</v-alert>
+      >{{ $t("user.authenticated") }}</v-alert>
     </div>
     <div v-else>
       <v-dialog v-model="dialog" width="500" @keydown.enter.prevent="loginUser">
         <template v-slot:activator="{ on }">
-          <v-btn color="primary" v-on="on">Einloggen</v-btn>
+          <v-btn color="primary" v-on="on">{{ $t("user.login") }}</v-btn>
         </template>
 
         <v-card>
-          <v-card-title class="headline primary white--text" primary-title>Login</v-card-title>
+          <v-card-title class="headline primary white--text" primary-title>{{ $t("user.login") }}</v-card-title>
 
           <v-form>
             <v-container>
@@ -39,7 +39,7 @@
                     v-if="dialog"
                     autofocus
                     v-model="username"
-                    label="Nutzername"
+                    :label="$t('user.username')"
                     clearable
                   ></v-text-field>
                 </v-flex>
@@ -50,7 +50,7 @@
                     :append-icon="show ? 'visibility' : 'visibility_off'"
                     :type="show ? 'text' : 'password'"
                     name="password"
-                    label="Passwort"
+                    :label="$t('user.password')"
                     @click:append="show = !show"
                   ></v-text-field>
                 </v-flex>
@@ -62,12 +62,12 @@
 
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="primary" text @click="loginUser">Einloggen</v-btn>
+            <v-btn color="primary" text @click="loginUser">{{ $t("user.login") }}</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
 
-      <v-alert v-model="error" type="error" dismissible class="center">Einloggen fehlgeschlagen!</v-alert>
+      <v-alert v-model="error" type="error" dismissible class="center">{{ $t("user.login_failed") }}</v-alert>
     </div>
   </div>
 </template>

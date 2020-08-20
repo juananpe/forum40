@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<h3>Klassifikatoren</h3>
+		<h3>{{ $t("classifier_metrics.title" ) }}</h3>
 
 		<v-data-table
 				:headers="headers"
@@ -11,12 +11,12 @@
 				:hide-default-footer="true"
 		>
 			<template v-slot:item.lastUpdated="{ item }">
-				<span v-if="item.lastUpdated === null" class="not-available">Nie</span>
+				<span v-if="item.lastUpdated === null" class="not-available">{{ $t("classifier_metrics.last_updated.never" ) }}</span>
 				<span v-else>{{item.lastUpdated}}</span>
 			</template>
 
 			<template v-slot:item.accuracy="{ item }">
-				<span v-if="item.accuracy === null" class="not-available">Nicht verfügbar</span>
+				<span v-if="item.accuracy === null" class="not-available">{{ $t("classifier_metrics.not_available" ) }}</span>
 				<div v-else>
 					<ScoreBar :value="item.accuracy" class="score-bar" />
 					{{formatPercent(item.accuracy)}}
@@ -24,7 +24,7 @@
 			</template>
 
 			<template v-slot:item.f1="{ item }">
-				<span v-if="item.f1 === null" class="not-available">Nicht verfügbar</span>
+				<span v-if="item.f1 === null" class="not-available">{{ $t("classifier_metrics.not_available" ) }}</span>
 				<div v-else>
 					<MinimalLineChart :values="item.f1" class="chart" />
 					{{formatPercent(item.f1[item.f1.length-1])}}
@@ -51,18 +51,20 @@
 		},
 		data() {
 			return {
-				headers: [
-					{ text: "Label", value: "labelName" },
-					{ text: "Aktualisiert", value: "lastUpdated" },
-					{ text: "Accuracy", value: "accuracy" },
-					{ text: "F1", value: "f1" },
-				],
 				labelModels: {},
 				loading: false,
 			}
 		},
 		computed: {
 			...mapGetters([Getters.selectedLabels, Getters.getLabelIdByName]),
+      headers() {
+        return [
+          { value: "labelName", text: this.$i18n.t("classifier_metrics.headers.label") },
+          { value: "lastUpdated", text: this.$i18n.t("classifier_metrics.headers.last_updated") },
+          { value: "accuracy", text: this.$i18n.t("classifier_metrics.headers.accuracy") },
+          { value: "f1", text: this.$i18n.t("classifier_metrics.headers.f1") },
+        ]
+      },
 			labels() {
 				return this[Getters.selectedLabels]
 					.map((labelName) => [labelName, this[Getters.getLabelIdByName](labelName)])
