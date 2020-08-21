@@ -11,7 +11,7 @@
             </template>
             <span
               v-if="majority !== undefined"
-            >{{ $t('comment_list.annotation.majority', {agree: majority[0], total: majority[0]+majority[1]}) }}</span>
+            >{{ $t('comment_list.annotation.human.majority', {agree: majority[0], total: majority[0]+majority[1]}) }}</span>
           </v-tooltip>
         </span>
 
@@ -53,7 +53,7 @@
               <v-icon v-if="confidence>=0.5" v-on="on" class="ml-1">{{svgCheckbox}}</v-icon>
               <v-icon v-else v-on="on" class="ml-1">{{svgRectangle}}</v-icon>
             </template>
-            <span>{{ $t('comment_list.annotation.classifier.estimate', {confidence: this.toPercentage(confidence > 0.5? confidence : 1-confidence)}) }}</span>
+            <span>{{ $t('comment_list.annotation.classifier.estimate', {confidence: this.$options.filters.toPercentage(confidence > 0.5? confidence : 1-confidence)}) }}</span>
           </v-tooltip>
         </span>
         <span v-else>
