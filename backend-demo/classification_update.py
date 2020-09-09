@@ -29,17 +29,24 @@ class LabelUpdater(ForumProcessor):
         self.cursor.execute("""SELECT id FROM labels WHERE name=%s""", (self.labelname,))
         self.label_id = self.cursor.fetchone()[0]
 
-    def init_cursor(self):
+    def init_cursor(self, skip_train=False):
 
         # get number of facts
-        facts_count = """SELECT count(*) FROM comments WHERE source_id = %s"""
+        if skip_train: 
+            # TODO 
+            facts_count = """SELECT count(*) FROM comments c JOIN facts f ON c.id = f.comment_id WHERE c.source_id = %s AND f.label_id = %s and f.confidence = 0"""
+            facts_query = """SELECT c.id, f.label, f.confidence FROM comments c JOIN facts f ON c.id = f.comment_id WHERE c.source_id = %s AND f.label_id = %s and f.confidence = 0"""
+        else: 
+            facts_count = """SELECT count(*) FROM comments c WHERE c.source_id = %s """
+            facts_query = """SELECT c.id, f.label, f.confidence FROM comments c JOIN facts f ON c.id = f.comment_id WHERE c.source_id = %s AND f.label_id = %s"""
+
         self.cursor.execute(facts_count, (self.source_id,))
         self.n_facts = self.cursor.fetchone()[0]
 
         self.logger.info("Preparing cursor for updates ...")
 
         # init cursor for machine labels from facts table
-        facts_query = """SELECT c.id, f.label, f.confidence FROM comments c JOIN facts f ON c.id = f.comment_id WHERE c.source_id = %s AND f.label_id = %s"""
+        
         self.cursor_large = self.conn.cursor(name='fetch_facts_' + self.labelname, withhold=True)
         self.cursor_large.execute(
             facts_query,
@@ -218,6 +225,9 @@ if __name__ == "__main__":
     parser.add_argument('--init-facts-only', dest='init_facts', default=False, action='store_true',
                         help='Do not predict anything, but init the fact table for a label (default: False)')                    
     
+    parser.add_argument('--skip-train', dest='skip_train', default=False, action='store_true',
+                        help='Skip retraining model.') 
+
     parser.add_argument('host', type=str, default='localhost', nargs='?',
                         help='DB host (default: localhost)')
     parser.add_argument('port', type=int, default=5432, nargs='?',
@@ -240,11 +250,12 @@ if __name__ == "__main__":
         # init model entry 
         labelUpdater.initModelTable()
 
-        # train model
-        model_details = classifierTrainer.train(optimize=optimize, cv=True)
+        if not args.skip_train:
+            # train model
+            model_details = classifierTrainer.train(optimize=optimize, cv=True)
 
-        # update model entry
-        labelUpdater.updateModelTable(model_details)
+            # update model entry
+            labelUpdater.updateModelTable(model_details)
 
         # update predictions
         labelUpdater.updateLabels()
