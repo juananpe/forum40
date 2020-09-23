@@ -11,7 +11,7 @@
             </template>
             <span
               v-if="majority !== undefined"
-            >Klassifizierung der Mehrheit ({{majority[0]}} von {{majority[0]+majority[1]}})</span>
+            >{{ $t('comment_list.annotation.human.majority', {agree: majority[0], total: majority[0]+majority[1]}) }}</span>
           </v-tooltip>
         </span>
 
@@ -33,7 +33,7 @@
               <v-icon v-if="majority[0]>=majority[1]" v-on="on">{{svgCheckbox}}</v-icon>
               <v-icon v-else v-on="on">{{svgRectangle}}</v-icon>
             </template>
-            <span>Klassifizierung der Mehrheit ({{majority[0]}} von {{majority[0]+majority[1]}})</span>
+            <span>{{ $t('comment_list.annotation.human.majority', {agree: majority[0], total: majority[0]+majority[1]}) }}</span>
           </v-tooltip>
         </span>
         <span v-else>
@@ -41,7 +41,7 @@
             <template #activator="{ on }">
               <v-icon v-on="on" class="mr-0 ml-0">not_interested</v-icon>
             </template>
-            <span>Keine weiteren Labels vorhanden</span>
+            <span>{{ $t('comment_list.annotation.human.no_majority') }}</span>
           </v-tooltip>
         </span>
       </span>
@@ -53,7 +53,7 @@
               <v-icon v-if="confidence>=0.5" v-on="on" class="ml-1">{{svgCheckbox}}</v-icon>
               <v-icon v-else v-on="on" class="ml-1">{{svgRectangle}}</v-icon>
             </template>
-            <span>Automatische Klassifizierung ({{confidence > 0.5? confidence : 1-confidence | toPercentage}} Konfidenz)</span>
+            <span>{{ $t('comment_list.annotation.classifier.estimate', {confidence: this.$options.filters.toPercentage(confidence > 0.5? confidence : 1-confidence)}) }}</span>
           </v-tooltip>
         </span>
         <span v-else>
@@ -61,7 +61,7 @@
             <template #activator="{ on }">
               <v-icon v-on="on" class="ml-1">not_interested</v-icon>
             </template>
-            <span>Keine Klassifizierung vorhanden</span>
+            <span>{{ $t('comment_list.annotation.classifier.no_estimate') }}</span>
           </v-tooltip>
         </span>
       </span>
@@ -122,11 +122,7 @@ export default {
         );
         const { annotations } = data;
         const label_name = this[Getters.getLabelname](this.labelId);
-        this.text = `${annotations} annotierte`;
-        if (annotations == 1) this.text += "r";
-        this.text += ` "${label_name}" Kommentar`;
-        if (annotations > 1) this.text += "e";
-        this.text += ".";
+        this.text = this.$i18n.tc("comment_list.annotation.state", annotations, { label: label_name });
         this.snackbar = true;
 
         this.manualLabel = value;

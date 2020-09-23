@@ -1,0 +1,74 @@
+{
+  "top_toolbar": {
+    "title": "Forum 4.0 – Analyse von Online-Nutzerkommentaren",
+    "analysis": "Analyse",
+    "annotation": "Annotation"
+  },
+  "user": {
+    "check_login": "Check Authentifizierung",
+    "logout": "Logout",
+    "authenticated": "Sie sind authentifiziert!",
+    "login": "Einloggen",
+    "username": "Nutzername",
+    "password": "Passwort",
+    "login_failed": "Einloggen fehlgeschlagen!"
+  },
+  "selector": {
+    "data_source": "Datenquelle",
+    "selected_labels": "Ausgewählte Labels",
+    "create_label": {
+      "action": "Label erstellen",
+      "description": "Neue Label Beschreibung",
+      "confirmation": "Erstellen",
+      "success": "Label hinzugefügt!",
+      "exists": "Label bereits vorhanden!"
+    }
+  },
+  "granularity": {
+    "day": "Tag",
+    "month": "Monat",
+    "year": "Jahr"
+  },
+  "time_chart": {
+    "title": "Kommentaraufkommen im zeitlichen Verlauf",
+    "series_total": "Total"
+  },
+  "classifier_metrics": {
+    "title": "Klassifikatoren",
+    "last_updated": {
+      "never": "Nie"
+    },
+    "not_available": "Nicht verfügbar",
+    "headers": {
+      "label": "Label",
+      "last_updated": "Aktualisiert",
+      "accuracy": "Accuracy",
+      "f1": "F1"
+    }
+  },
+  "comment_list": {
+    "title": "Kommentarliste",
+    "search": "Textsuche",
+    "page": "Seite {number}",
+    "show_similar_comments": "Ähnliche Kommentare anzeigen",
+    "headers": {
+      "comment_text": "Kommentartext",
+      "date": "Datum"
+    },
+    "annotation": {
+      "human": {
+        "majority": "Klassifizierung der Mehrheit ({agree} von {total})",
+        "no_majority": "Keine weiteren Labels vorhanden"
+      },
+      "classifier": {
+        "estimate": "Automatische Klassifizierung ({confidence} Konfidenz)",
+        "no_estimate": "Keine Klassifizierung vorhanden"
+      },
+      "state": "{count} annotierter \"{label}\" Kommentar. | {count} annotierte \"{label}\" Kommentare."
+    }
+  },
+  "comment_thread": {
+    "title": "Kommentar-Thread",
+    "user_id": "UserID: {id}"
+  }
+}

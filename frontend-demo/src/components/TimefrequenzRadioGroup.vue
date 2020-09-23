@@ -1,9 +1,9 @@
 <template>
   <div>
     <v-radio-group v-model="radios" :mandatory="false" row class="align-center justify-center">
-      <v-radio label="Tag" value="d"></v-radio>
-      <v-radio label="Monat" value="m"></v-radio>
-      <v-radio label="Jahr" value="y"></v-radio>
+      <v-radio :label="$t('granularity.day')" value="d"></v-radio>
+      <v-radio :label="$t('granularity.month')" value="m"></v-radio>
+      <v-radio :label="$t('granularity.year')" value="y"></v-radio>
     </v-radio-group>
   </div>
 </template>

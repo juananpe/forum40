@@ -1,0 +1,74 @@
+{
+  "top_toolbar": {
+    "title": "Forum 4.0 – Analysis of Online User Comments",
+    "analysis": "Analysis",
+    "annotation": "Annotation"
+  },
+  "user": {
+    "check_login": "Check Authentication",
+    "logout": "Logout",
+    "authenticated": "You are authenticated!",
+    "login": "Login",
+    "username": "Username",
+    "password": "Password",
+    "login_failed": "Login failed!"
+  },
+  "selector": {
+    "data_source": "Data source",
+    "selected_labels": "Selected labels",
+    "create_label": {
+      "action": "Create label",
+      "description": "New label description",
+      "confirmation": "Create",
+      "success": "Label created!",
+      "exists": "Label exists already!"
+    }
+  },
+  "granularity": {
+    "day": "Day",
+    "month": "Month",
+    "year": "Year"
+  },
+  "time_chart": {
+    "title": "Number of Comments Over Time",
+    "series_total": "Total"
+  },
+  "classifier_metrics": {
+    "title": "Classifiers",
+    "last_updated": {
+      "never": "Never"
+    },
+    "not_available": "Not available",
+    "headers": {
+      "label": "Label",
+      "last_updated": "Updated",
+      "accuracy": "Accuracy",
+      "f1": "F1"
+    }
+  },
+  "comment_list": {
+    "title": "Comment List",
+    "search": "Text search",
+    "page": "Page {number}",
+    "show_similar_comments": "Show similar comments",
+    "headers": {
+      "comment_text": "Comment body",
+      "date": "Date"
+    },
+    "annotation": {
+      "human": {
+        "majority": "Majority classification ({agree} out of {total})",
+        "no_majority": "No further labels available"
+      },
+      "classifier": {
+        "estimate": "Automated classification ({confidence} confidence)",
+        "no_estimate": "No classification available"
+      },
+      "state": "{count} annotated \"{label}\" comment. | {count} annotated \"{label}\" comments."
+    }
+  },
+  "comment_thread": {
+    "title": "Comment Thread",
+    "user_id": "UserID: {id}"
+  }
+}

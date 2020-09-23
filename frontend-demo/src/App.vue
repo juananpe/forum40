@@ -7,7 +7,7 @@
           <UserCommentFilter />
         </v-flex>
         <v-flex xs12 class="pb-4"></v-flex>
-        <h3>Kommentaraufkommen im zeitlichen Verlauf</h3>
+        <h3>{{ $t("time_chart.title") }}</h3>
         <v-flex class="text-xs-center" xs12>
           <TimefrequenzRadioGroup />
         </v-flex>
