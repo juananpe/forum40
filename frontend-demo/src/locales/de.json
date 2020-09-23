@@ -31,7 +31,7 @@
   },
   "time_chart": {
     "title": "Kommentaraufkommen im zeitlichen Verlauf",
-    "series_total": "Gesamtheit"
+    "series_total": "Total"
   },
   "classifier_metrics": {
     "title": "Klassifikatoren",
