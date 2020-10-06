@@ -69,3 +69,7 @@ default_comment = '''
 
 comments_list_parser = reqparse.RequestParser()
 comments_list_parser.add_argument('comments', type=str, default=default_comment, location='json')
+
+
+label_parser_post = reqparse.RequestParser()
+label_parser_post.add_argument('description', required=True, default="")

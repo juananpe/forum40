@@ -53,6 +53,14 @@
                     clearable
                   ></v-text-field>
                 </v-flex>
+                <v-flex xs12>
+                  <v-textarea
+                    v-if="dialog"
+                    v-model="newSeed"
+                    :label="$t('selector.create_label.seedtext')"
+                    clearable
+                  ></v-textarea>
+                </v-flex>
               </v-layout>
             </v-container>
           </v-form>
@@ -80,6 +88,7 @@ export default {
   data: () => ({
     dialog: false,
     newLabel: "",
+    newSeed: "",
     error: false,
     success: false
   }),
@@ -118,7 +127,9 @@ export default {
       try {
         await Service.put(
           Endpoint.ADD_LABEL(this.newLabel, this[Getters.getSelectedSource].id),
-          {},
+          {
+            "description": this.newSeed,
+          },
           this[Getters.jwt]
         );
         this.fetchLabels();
@@ -130,6 +141,7 @@ export default {
         }
       }
       this.newLabel = "";
+      this.newSeed = "";
     },
     sourceChanged(value) {
       this.selection = [];

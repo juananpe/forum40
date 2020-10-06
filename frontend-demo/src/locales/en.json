@@ -21,7 +21,8 @@
       "description": "New label description",
       "confirmation": "Create",
       "success": "Label created!",
-      "exists": "Label exists already!"
+      "exists": "Label exists already!",
+      "seedtext": "New seed text for initial classification"
     }
   },
   "granularity": {

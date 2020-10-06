@@ -5,6 +5,8 @@ from apis.db import api
 from db import postgres_con
 from db.queries import *
 
+from db.db_models import label_parser_post
+
 import os
 from apis.utils.tasks import SingleProcessManager
 
@@ -65,10 +67,14 @@ class LabelsId(Resource):
 class AddLabel(Resource):
     @token_required
     @api.doc(security='apikey')
+    @api.expect(label_parser_post)
     def put(self, data, label_name, source_id):
         postgres = postgres_con.cursor()
         postgres.execute(COUNT_LABELS_BY_NAME(label_name))
         db_result = postgres.fetchone()
+
+        args = label_parser_post.parse_args()
+        description = args.get('description', None)
 
         if db_result:
             if db_result[0] >= 1:
@@ -78,7 +84,8 @@ class AddLabel(Resource):
         max_id = postgres.fetchone()[0]
 
         label_id = max_id + 1
-        postgres.execute(INSERT_LABEL(label_id, 'classification', label_name, source_id))
+
+        postgres.execute(INSERT_LABEL, (label_id, 'classification', label_name, source_id, description))
         postgres_con.commit()
 
         # init facts
