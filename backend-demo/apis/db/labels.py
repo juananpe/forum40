@@ -28,15 +28,20 @@ process_manager.register_process("init_facts", ["classification_update.py", pg_h
 class LabelsGetAll(Resource):
     def get(self, source_id):
         postgres = postgres_con.cursor()
-        postgres.execute(SELECT_NAMES_FROM_LABES(source_id))
+
+        postgres.execute(SELECT_NAMES_FROM_LABELS, (source_id,))
         d_list = [t[0] for t in postgres.fetchall()]
 
-        postgres.execute(SELECT_IDS_FROM_LABES(source_id))
+        postgres.execute(SELECT_IDS_FROM_LABES, (source_id,))
         i_list = [t[0] for t in postgres.fetchall()]
+
+        postgres.execute(SELECT_DESCRIPTIONS_FROM_LABES, (source_id,))
+        descriptions = [t[0] for t in postgres.fetchall()]
 
         return { 
             "labels" : d_list,
-            "ids" : i_list
+            "ids" : i_list,
+            "descriptions": descriptions
         }
 
 @ns.route('/count')
