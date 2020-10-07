@@ -30,10 +30,13 @@ class LabelUpdater(ForumProcessor):
         self.label_id = self.cursor.fetchone()[0]
 
     def init_cursor(self, skip_train=False):
+        """
+        Initializes cursor that later (in process_batch) retreives all comments
+        if skip_train is true, only select new comments that have not been labeled yet
+        """
 
         # get number of facts
         if skip_train: 
-            # TODO 
             facts_count = """SELECT count(*) FROM comments c JOIN facts f ON c.id = f.comment_id WHERE c.source_id = %s AND f.label_id = %s and f.confidence = 0"""
             facts_query = """SELECT c.id, f.label, f.confidence FROM comments c JOIN facts f ON c.id = f.comment_id WHERE c.source_id = %s AND f.label_id = %s and f.confidence = 0"""
         else: 
@@ -150,6 +153,8 @@ class LabelUpdater(ForumProcessor):
         # keep track of progress with the SingleProcessManager
         n_total = math.ceil(self.n_facts / self.batch_size)
         self.set_total(n_total + 3) # 3 additional steps: stability, commit, finished
+
+        # process comments batch by batch
         while self.process_batch():
             message = "Completed batch %d of %d." % (self.batch_i, n_total)
             self.logger.info(message)

@@ -56,6 +56,11 @@ update_model = api.model('update', {
         description = 'Fast version only updates changing labels, but not confidence scores',
         default = False,
         required = False
+    ),
+    'skip-training' : fields.Boolean(
+        description = 'Indicate whether training should be skipped',
+        default = False,
+        required = False
     )
 })
 
@@ -80,6 +85,7 @@ class ClassifierService(Resource):
         source_id = api.payload.get('source_id', None)
         labelname = api.payload.get('labelname', None)
         optimize = api.payload.get('optimize', False)
+        skip_training = api.payload.get('skip-training', False)
         skip_confidence = api.payload.get('skip-confidence', False)
         if labelname and source_id:
             args = ["--labelname", labelname]
@@ -87,6 +93,8 @@ class ClassifierService(Resource):
                 args.append("--skip-confidence")
             if optimize:
                 args.append("--optimize")
+            if skip_training:
+                args.append("--skip-train")
             results = process_manager.invoke("update", str(source_id), args)
             return results, 200
         else:

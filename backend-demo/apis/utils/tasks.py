@@ -153,7 +153,7 @@ class SingleProcessManager:
             # check for terminated tasks
             self.poll()
 
-            if not self.processes[task]:
+            if not self.processes[task] or task == 'update': # allow update task in parallel
 
                 # start process
                 popen_command = ["python"] + self.commands[task] + [source_id] + arguments
