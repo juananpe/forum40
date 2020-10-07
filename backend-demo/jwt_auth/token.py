@@ -3,10 +3,9 @@ from flask import request
 import jwt
 
 from db import postgres_con
+import sys
 
 globalSecret = "eh9Df9G27gahgHJ7g2oGQz6Ug5he6ud5shd" # TODO hide
-
-import sys
 
 def returnErrorMsg(msg):
     return {'message' : msg}, 401
@@ -37,6 +36,50 @@ def checkIfUserIsAuthorised(token, data):
             return False
         return True
 """
+
+
+def check_source_id_access(source_id, token):
+    success, data = checkIfTokenIsValidAndGetData(token)
+    if success:
+        role = data.get('role', '')
+        if role == 'admin':
+            return True
+
+    return not is_source_id_protected(source_id)
+
+
+def is_source_id_protected(source_id):
+    postgres = postgres_con.cursor()
+    postgres.execute("SELECT protected FROM sources WHERE id=%s", (source_id,))
+    db_result = postgres.fetchone()
+    isProtected = db_result[0]
+    return isProtected
+
+def allow_access_source_id(source_id, token_dict):
+    is_protected = is_source_id_protected(source_id)
+    if is_protected:
+        role = None
+        if token_dict:
+            role = token_dict.get('role', None)
+            return role == 'admin'
+        else:
+            return False
+    return True
+
+
+
+def check_source_id(func):
+    @wraps(func)
+    def decorated(*args, **kwargs):
+        source_id = request.args.get('source_id', None)
+        if source_id:
+            token = request.headers['x-access-token'] if 'x-access-token' in request.headers else None
+            if not check_source_id_access(source_id, token):
+                return returnErrorMsg('Cannot access source_id.')
+        return func(*args, **kwargs)
+    return decorated
+
+
 
 def token_required(func):
     @wraps(func)

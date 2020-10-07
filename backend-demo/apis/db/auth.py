@@ -33,19 +33,19 @@ class AuthTest(Resource):
 class AuthLogin(Resource):
     def get(self, username, password):
 
-        query, payload = SELECT_PASSWORD_BY_NAME(username)
-
         postgres = postgres_con.cursor()
-        postgres.execute(query, payload)
+        postgres.execute(SELECT_PASSWORD_BY_NAME, (username,))
         db_result = postgres.fetchone()
 
         if not db_result or db_result[0] != password or password == None:
             return make_response('Could not verify!', 401)
         else :
             user_id = db_result[1]
+            role = db_result[2]
             token = jwt.encode({
                 'user' : username,
                 'user_id' : user_id,
+                'role': role,
                 'exp' : datetime.datetime.utcnow() + datetime.timedelta(minutes=60)}, 
                 globalSecret
             )

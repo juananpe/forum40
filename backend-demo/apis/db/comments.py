@@ -21,7 +21,7 @@ from psycopg2.extras import RealDictCursor
 from datetime import timedelta, date, datetime
 from dateutil.relativedelta import relativedelta
 
-from jwt_auth.token import token_optional
+from jwt_auth.token import token_optional, check_source_id, allow_access_source_id
 
 from bson import json_util, ObjectId
 import json
@@ -101,6 +101,7 @@ def getCommentByIds(id, external_id):
 
 @ns.route('/')
 class CommentsGet(Resource):
+    @check_source_id
     @token_optional
     @api.doc(security='apikey')
     @api.expect(comments_parser_sl)
@@ -197,10 +198,10 @@ class CommentsGet(Resource):
         return comments
 
 
-
+    @check_source_id
     @api.doc(security='apikey')
     @api.expect(comment_parser_post)
-    @token_optional # change to token_required
+    @token_required
     def post(self, data):
         args = comment_parser_post.parse_args()
         doc_id = args['doc_id'] if args.get('doc_id', False) else None
@@ -307,6 +308,7 @@ def insert_new_comments(comments):
     new_comments_ids = functools.reduce(operator.iconcat, added_comment, [])
     return {'added_comment_ids' : new_comments_ids, 'count' : len(new_comments_ids)}, 200
 
+@api.deprecated
 @ns.route('/unlabeled')
 @api.expect(comments_parser_sl)
 class CommentsGetUnlabeld(Resource):
@@ -333,6 +335,7 @@ class CommentsGetUnlabeld(Resource):
 
         return comments
 
+@api.deprecated
 @ns.route('/count')
 @api.expect(comments_parser)
 class CommentsCount(Resource):
@@ -410,7 +413,7 @@ def prepareForVisualisation(data, f):
     del start_time['count']
     return {"start_time": start_time, "time": time_list, "data": data_list}
 
-
+@check_source_id
 @ns.route('/groupByDay')
 @api.expect(groupByModel)
 class CommentsGroupByDay(Resource):
@@ -434,7 +437,7 @@ class CommentsGroupByDay(Resource):
 
         return prepareForVisualisation(addMissingDays(db_result), lambda d: "{}.{}.{}".format(d['day'], d['month'], d['year']))
 
-
+@check_source_id
 @ns.route('/groupByMonth')
 @api.expect(groupByModel)
 class CommentsGroupByMonth(Resource):
@@ -458,7 +461,7 @@ class CommentsGroupByMonth(Resource):
 
         return prepareForVisualisation(addMissingMonths(db_result), lambda d: "{}.{}".format(d['month'], d['year']))
 
-
+@check_source_id
 @ns.route('/groupByYear')
 @api.expect(groupByModel)
 class CommentsGroupByYear(Resource):
@@ -485,15 +488,19 @@ class CommentsGroupByYear(Resource):
 
 @ns.route('/parent/<string:id>/')
 class CommentsParent(Resource):
-    def get(self, id):
 
-        query = GET_PARENT_BY_CHILD(id)
+    @token_optional
+    @api.doc(security='apikey')
+    def get(self, data, id):
     
         db_result = None
         with db_cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(query)
-            db_result = cur.fetchall()
+            cur.execute(GET_PARENT_BY_CHILD, (id,))
+            db_result = cur.fetchone()
 
+            source_id = db_result['source_id']
+            if not allow_access_source_id(source_id, self):
+                return {'error': 'Cannot access comment_id.'}
         
         if not db_result:
             return {'msg': "Error: No such Comment"}
@@ -502,15 +509,22 @@ class CommentsParent(Resource):
 
 @ns.route('/parent_recursive/<string:id>/')
 class CommentsParentRec(Resource):
-    def get(self, id):
+
+    @token_optional
+    @api.doc(security='apikey')
+    def get(self, data, id):
         comments = []
 
-        query = 'SELECT id, parent_comment_id, user_id, title, text, timestamp FROM comments WHERE id = {0};'.format(id)
+        query = 'SELECT id, parent_comment_id, user_id, title, text, timestamp, source_id FROM comments WHERE id = {0};'.format(id)
 
         db_response = []
         with db_cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(query)
             db_response = cur.fetchone()
+
+            source_id = db_response['source_id']
+            if not allow_access_source_id(source_id, self):
+                return {'error': 'Cannot access comment_id.'}
 
         db_response['timestamp'] = db_response['timestamp'].isoformat()
 
@@ -559,10 +573,17 @@ class Comment(Resource):
 
         query = "select * from comments where id = %s"
 
+        import sys
+
         comment = None
         with db_cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(query, (comment_id,))
             comment = cur.fetchone()
+
+            source_id = comment['source_id']
+            if not allow_access_source_id(source_id, self):
+                return {'error': 'Cannot access comment_id.'}
+
 
         ids = [comment_id]
 

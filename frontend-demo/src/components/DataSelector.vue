@@ -81,6 +81,7 @@
 import { State, Getters, Mutations } from "../store/const";
 import { mapState, mapGetters, mapMutations } from "vuex";
 import Service, { Endpoint } from "../api/db";
+import { EventBus, Events } from "../event-bus";
 
 export default {
   name: "DataSelector",
@@ -100,7 +101,8 @@ export default {
       Mutations.setSources
     ]),
     async fetchSources() {
-      const { data } = await Service.get(Endpoint.SOURCES);
+      const token = this[Getters.jwt];
+      const { data } = await Service.get(Endpoint.SOURCES, token);
       if (data.length > 0) {
         this[Mutations.setSources](data);
         this[Mutations.setSource](data[0].name);
@@ -150,6 +152,7 @@ export default {
   },
   mounted() {
     this.fetchSources();
+    EventBus.$on(Events.loggedIn, this.fetchSources);
   },
   computed: {
     ...mapState([State.sources, State.source, State.labels]),

@@ -5,9 +5,10 @@ from apis.db import api
 from db import postgres_con
 from db.queries import COUNT_SOURCES
 from db.db_models import source_parser
-from jwt_auth.token import token_required
+from jwt_auth.token import token_required, token_optional
 from psycopg2 import DatabaseError
 from psycopg2.extras import RealDictCursor
+import sys
 
 ns = api.namespace('sources', description="sources api")
 
@@ -15,8 +16,17 @@ ns = api.namespace('sources', description="sources api")
 @ns.route('/')
 class Sources(Resource):
 
-    def get(self):
-        query = "select * from sources"
+    @token_optional
+    @api.doc(security='apikey')
+    def get(self, data):
+        role = None
+        if self:
+            role = self.get('role', None)
+        query = "select * from sources s"
+
+        if role != 'admin':
+            query += " where not s.protected"
+
         postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
         try:
             postgres.execute(query)

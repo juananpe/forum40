@@ -43,14 +43,15 @@ export default {
   },
   computed: {
     ...mapState([State.selectedComment]),
-    ...mapGetters([Getters.selectedCommentId])
+    ...mapGetters([Getters.selectedCommentId, Getters.jwt])
   },
   watch: {
     async selectedComment() {
       //fetch parent comments
       if (this.selectedCommentId) {
+        const jwt = this[Getters.jwt];
         const { data } = await Service.get(
-          Endpoint.COMMENTS_PARENTS(this.selectedCommentId)
+          Endpoint.COMMENTS_PARENTS(this.selectedCommentId), jwt
         );
         const comments = data.comments;
         this.comments = comments;

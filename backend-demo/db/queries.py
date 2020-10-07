@@ -33,12 +33,12 @@ SELECT_MAX_ID = lambda table: f"SELECT MAX(id) FROM {table}"
 INSERT_LABEL = "INSERT INTO labels (id, type, name, source_id, description) VALUES(%s, %s, %s, %s, %s)" 
 
 ## Auth
-SELECT_PASSWORD_BY_NAME = lambda x: (f"SELECT password, id FROM users WHERE name = %s;", (x,))
+SELECT_PASSWORD_BY_NAME ="SELECT password, id, role FROM users WHERE name = %s;"
 
 ## Comments
 SELECT_COMMENTS_BY_ID = lambda x: f"select * from comments where id = {x}"
 SELECT_COMMENT_BY_ID =  lambda x: f"SELECT * FROM comments WHERE id = {x} fetch first 1 rows only"
-GET_PARENT_BY_CHILD = lambda id: f'SELECT id, text, title, user_id, year, month, day FROM comments p, (SELECT parent_comment_id FROM comments c WHERE id = {id}) as c WHERE p.id = c.parent_comment_id;'
+GET_PARENT_BY_CHILD = f'SELECT id, text, title, user_id, year, month, day, source_id FROM comments p, (SELECT parent_comment_id FROM comments c WHERE id = %s) as c WHERE p.id = c.parent_comment_id;'
 
 GROUP_COMMENTS_BY_DAY = lambda label, keywords, source_id: f"""
             SELECT day, month, year, Count(*) FROM 
