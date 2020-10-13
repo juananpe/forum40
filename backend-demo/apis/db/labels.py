@@ -32,10 +32,10 @@ class LabelsGetAll(Resource):
         postgres.execute(SELECT_NAMES_FROM_LABELS, (source_id,))
         d_list = [t[0] for t in postgres.fetchall()]
 
-        postgres.execute(SELECT_IDS_FROM_LABES, (source_id,))
+        postgres.execute(SELECT_IDS_FROM_LABELS, (source_id,))
         i_list = [t[0] for t in postgres.fetchall()]
 
-        postgres.execute(SELECT_DESCRIPTIONS_FROM_LABES, (source_id,))
+        postgres.execute(SELECT_DESCRIPTIONS_FROM_LABELS, (source_id,))
         descriptions = [t[0] for t in postgres.fetchall()]
 
         return { 

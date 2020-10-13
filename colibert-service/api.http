@@ -1,0 +1,10 @@
+
+POST https://localhost/api/colibert/predict
+Content-Type: application/json
+
+{
+  "contexts": ["First context paragraph"],
+  "queries": ["First query item", "Second query item"]
+}
+
+###

@@ -25,8 +25,9 @@ COUNT_LABELS_BY_NAME = lambda x: f"SELECT COUNT(*) FROM labels WHERE name = '{x}
 
 SELECT_LABEL_BY_ID = lambda x: f"SELECT id FROM labels WHERE id = {x} fetch first 1 rows only;"
 SELECT_NAMES_FROM_LABELS = "SELECT name FROM labels where labels.source_id = %s"
-SELECT_IDS_FROM_LABES = "SELECT id FROM labels where labels.source_id = %s"
-SELECT_DESCRIPTIONS_FROM_LABES = "SELECT description FROM labels where labels.source_id = %s"
+SELECT_IDS_FROM_LABELS = "SELECT id FROM labels where labels.source_id = %s"
+SELECT_DESCRIPTIONS_FROM_LABELS = "SELECT description FROM labels where labels.source_id = %s"
+SELECT_DESCRIPTION_BY_LABEL_ID = "SELECT description FROM labels WHERE id = %s"
 SELECT_ID_FROM_LABELS_BY_NAME = lambda x : f"SELECT id FROM labels WHERE name = '{x}';"
 SELECT_MAX_ID = lambda table: f"SELECT MAX(id) FROM {table}"
 
@@ -39,6 +40,7 @@ SELECT_PASSWORD_BY_NAME ="SELECT password, id, role FROM users WHERE name = %s;"
 SELECT_COMMENTS_BY_ID = lambda x: f"select * from comments where id = {x}"
 SELECT_COMMENT_BY_ID =  lambda x: f"SELECT * FROM comments WHERE id = {x} fetch first 1 rows only"
 GET_PARENT_BY_CHILD = f'SELECT id, text, title, user_id, year, month, day, source_id FROM comments p, (SELECT parent_comment_id FROM comments c WHERE id = %s) as c WHERE p.id = c.parent_comment_id;'
+SELECT_RANDOM_COMMENTS_BY_SOURCE_ID = "SELECT id, text FROM comments WHERE source_id = %s ORDER BY RANDOM() LIMIT %s"
 
 GROUP_COMMENTS_BY_DAY = lambda label, keywords, source_id: f"""
             SELECT day, month, year, Count(*) FROM 
@@ -155,6 +157,9 @@ COUNT_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids: f"""
             ) _ 
             on c.id = _.comment_id
             """
+
+# FACTS
+UPDATE_FACT_BY_COMMENT_ID_LABEL_ID = "UPDATE facts SET confidence = %s WHERE comment_id = %s and label_id = %s"
 
 #GET_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids, skip, limit: f"""
 #            select distinct c.id, c.title, c.text, c.timestamp

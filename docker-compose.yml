@@ -25,6 +25,12 @@ services:
             - ./backend-demo/models:/usr/src/app/models
         depends_on:
             - postgres
+    colibert:
+        build:
+            context: ./colibert-service
+            dockerfile: Dockerfile
+        volumes:
+            - transformers:/root/.cache/transformers/
     meta:
         build:
             context: ./metacomment-service
@@ -65,3 +71,4 @@ services:
             - postgres
 volumes:
     postgres:
+    transformers:

@@ -6,6 +6,11 @@ from classification_classifier import EmbeddingClassifier, get_history_path
 from classification_train import ClassifierTrainer
 from sklearn.metrics import cohen_kappa_score
 from io import StringIO
+from db.queries import *
+import requests
+import itertools
+from apis.service.colibert_client import CoLiBertClient
+import time
 
 from apis.utils.tasks import ForumProcessor
 
@@ -217,6 +222,35 @@ class LabelUpdater(ForumProcessor):
         self.cursor.execute(" UPDATE model SET timestamp=CURRENT_TIMESTAMP, number_training_samples=%s, acc=%s, f1=%s, fit_time=%s, pid=%s WHERE id=%s;", (number_training_samples, acc, f1, int(fit_time), None, self.model_entry_id))
         self.logger.info(f"Update Model Entry: label_id={label_id}, number_training_samples={number_training_samples}")
 
+    def updateColibertLabels(self):
+        self.logger.info(f'Update sample comments with CoLiBERT scores')
+        start = time.time()
+
+        # get label description
+        self.cursor.execute(SELECT_DESCRIPTION_BY_LABEL_ID, (self.label_id,))
+        description = self.cursor.fetchone()[0]
+
+        if not description:
+            return
+
+        # select sample comments
+        self.cursor.execute(SELECT_RANDOM_COMMENTS_BY_SOURCE_ID, (self.source_id, 100))
+        comments = self.cursor.fetchall()
+        comment_ids, comment_texts = zip(*comments)
+
+        # get CoLiBERT outputs
+        score_matrix = CoLiBertClient().score_all_pairs(contexts=[description], queries=comment_texts)
+        scores = [s[0] for s in score_matrix]
+
+        # update scores in DB
+        records = list(zip(scores, comment_ids, itertools.repeat(self.label_id)))
+        self.cursor.executemany(UPDATE_FACT_BY_COMMENT_ID_LABEL_ID, records)
+        self.conn.commit()
+
+        end = time.time()
+        self.logger.info(f'CoLiBERT fact initialization finished. Took {end - start:.01f}s')
+
+
 if __name__ == "__main__":
     # argument parsing
     parser = argparse.ArgumentParser(description='Update category labels.')
@@ -251,6 +285,9 @@ if __name__ == "__main__":
     if args.init_facts:
         # just init all predictions with 0 (necessary, when new labels are inserted)
         labelUpdater.init_facts(commit_now = True)
+
+        # Classify with CoLiBERT
+        labelUpdater.updateColibertLabels()
     else:
         # init model entry 
         labelUpdater.initModelTable()
