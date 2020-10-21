@@ -14,4 +14,5 @@ export default {
         EventBus.$emit(Events.sourceLoaded);
     },
     [Mutations.setSources]: (state, sources) => (state[State.sources] = sources),
+    [Mutations.setCategory]: (state, category) => (state[State.selectedCategory] = category),
 }

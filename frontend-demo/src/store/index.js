@@ -14,6 +14,7 @@ const state = {
     [State.labels]: [],
     [State.source]: "",
     [State.sources]: [],
+    [State.selectedCategory]: '',
     [State.selectedFilters]: {
         [State.selectedLabels]: [],
         [State.keywordfilter]: ''

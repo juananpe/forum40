@@ -166,7 +166,7 @@ export default {
     }
   },
   computed: {
-    ...mapState([State.labels]),
+    ...mapState([State.labels, State.selectedCategory]),
     ...mapGetters([
       Getters.keywordfilter,
       Getters.selectedLabels,
@@ -235,6 +235,12 @@ export default {
         parameters.push(`label_sort_id=${this.label_sort_id}`);
       }
 
+      //add category
+      const category = this[State.selectedCategory];
+      if(category) {
+        parameters.push(`category=${category}`)
+      }
+
       const queryString = parameters.join("&");
 
       return queryString;
@@ -250,6 +256,11 @@ export default {
       this.similar_comments = [];
       this.setSelectedComment({});
       this.loadTable();
+    },
+    [State.selectedCategory]: async function() {
+      this.loading = true;
+      await this.fetchComments();
+      this.loading = false;
     },
     async page() {
       this.setSelectedComment({});

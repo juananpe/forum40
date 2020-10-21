@@ -10,7 +10,8 @@ export const State = {
     selectedComment: 'selectedComment',
     currentJWT: 'currentJWT',
     now: 'now',
-    refreshTokenInterval: 'refreshTokenInterval'
+    refreshTokenInterval: 'refreshTokenInterval',
+    selectedCategory: 'selectedCategory'
 }
 
 export const Getters = {
@@ -27,7 +28,7 @@ export const Getters = {
     timeFrequency: 'timeFrequency',
     getSelectedSource: 'getSelectedSource',
     getLabelname: 'getLabelname',
-    getLabelIdByName: 'getLabelIdByName',
+    getLabelIdByName: 'getLabelIdByName'
 }
 
 export const Mutations = {
@@ -39,7 +40,8 @@ export const Mutations = {
     setTimeFrequency: "setTimeFrequency",
     setLabels: "setLabels",
     setSource: "setSource",
-    setSources: "setSources"
+    setSources: "setSources",
+    setCategory: "setCategory",
 }
 
 export const Actions = {

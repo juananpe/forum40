@@ -12,11 +12,17 @@
         <DataSelector/>
       </v-flex>
     </v-layout>
+    <v-layout>
+      <v-flex xs12>
+        <CategorySelector/>
+      </v-flex>
+    </v-layout>
   </div>
 </template>
 
 <script>
 import DataSelector from "./DataSelector";
+import CategorySelector from "./CategorySelector";
 import { Getters } from "../store/const";
 import { mapGetters } from "vuex";
 export default {
@@ -32,7 +38,8 @@ export default {
 
   methods: {},
   components: {
-    DataSelector
+    DataSelector,
+    CategorySelector
   }
 };
 </script>

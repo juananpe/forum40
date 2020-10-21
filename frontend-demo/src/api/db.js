@@ -22,6 +22,7 @@ export const Endpoint = {
     LOGIN: (username, password) => `db/auth/login/${username}/${password}`,
     LOGOUT: 'db/auth/logout',
     MODELS: (labelId) => `db/models/${labelId}`,
+    CATEGORIES: (labelId) => `db/documents/categories/${labelId}`
 }
 
 class Service {

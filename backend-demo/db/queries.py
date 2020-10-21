@@ -161,6 +161,9 @@ COUNT_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids: f"""
 # FACTS
 UPDATE_FACT_BY_COMMENT_ID_LABEL_ID = "UPDATE facts SET confidence = %s WHERE comment_id = %s and label_id = %s"
 
+# Documents
+GET_CATEGORIES = "SELECT array_agg(distinct cast(metadata as json) -> 'author' -> 'departments'->>0) AS channel FROM documents d where length(metadata::text) > 0 and source_id = %s"
+
 #GET_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids, skip, limit: f"""
 #            select distinct c.id, c.title, c.text, c.timestamp
 #            from 

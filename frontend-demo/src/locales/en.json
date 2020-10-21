@@ -25,6 +25,9 @@
       "seedtext": "New seed text for initial classification"
     }
   },
+  "category": {
+    "menue": "Document category"
+  },
   "granularity": {
     "day": "Day",
     "month": "Month",

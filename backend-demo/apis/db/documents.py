@@ -2,8 +2,8 @@ from flask import request
 from flask_restplus import Resource, reqparse
 
 from apis.db import api
-from db.queries import COUNT_DOCUMENTS
-from db import postgres_con
+from db.queries import COUNT_DOCUMENTS, GET_CATEGORIES
+from db import postgres_con, db_cursor
 from db.db_models import document_parser
 from jwt_auth.token import token_required
 from psycopg2 import DatabaseError
@@ -71,6 +71,17 @@ class Documents(Resource):
         if sources:
             sources['timestamp'] = sources['timestamp'].isoformat()
         return sources, 200
+
+
+@ns.route('/categories/<source_id>/')
+class Categories(Resource):
+    def get(self, source_id):
+        query = GET_CATEGORIES
+        res = []
+        with db_cursor() as cur:
+            cur.execute(query, (source_id,))
+            res = cur.fetchone()[0]
+        return res, 200
 
 @ns.route('/')
 class DocumentsPost(Resource):
