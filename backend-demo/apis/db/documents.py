@@ -78,10 +78,13 @@ class Categories(Resource):
     def get(self, source_id):
         query = GET_CATEGORIES
         res = []
-        with db_cursor() as cur:
+        with db_cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(query, (source_id,))
-            res = cur.fetchone()[0]
-        return res, 200
+            res = cur.fetchall() 
+
+        names = [i['name'] for i in res]
+        
+        return {'names' : names, 'data' : res}, 200
 
 @ns.route('/')
 class DocumentsPost(Resource):

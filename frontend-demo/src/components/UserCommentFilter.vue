@@ -13,8 +13,13 @@
       </v-flex>
     </v-layout>
     <v-layout>
-      <v-flex xs12>
+      <v-flex xs5>
         <CategorySelector/>
+      </v-flex>
+      <v-flex xs7>
+        <h3>{{ $t("time_chart.title") }}</h3>
+        <TimefrequenzRadioGroup />
+        <TimeChart />
       </v-flex>
     </v-layout>
   </div>
@@ -22,6 +27,8 @@
 
 <script>
 import DataSelector from "./DataSelector";
+import TimeChart from "./TimeChart"
+import TimefrequenzRadioGroup from "./TimefrequenzRadioGroup"
 import CategorySelector from "./CategorySelector";
 import { Getters } from "../store/const";
 import { mapGetters } from "vuex";
@@ -39,7 +46,9 @@ export default {
   methods: {},
   components: {
     DataSelector,
-    CategorySelector
+    CategorySelector,
+    TimeChart,
+    TimefrequenzRadioGroup
   }
 };
 </script>

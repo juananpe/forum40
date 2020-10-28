@@ -1,23 +1,54 @@
 <template>
-  <v-autocomplete
-    v-if="showComponent()"
-    :items="categories"
-    :label="$t('category.menue')"
-    @change="valueChanged"
-    dense
-  ></v-autocomplete>
+  <div v-if="showComponent()">
+    <v-layout>
+      <v-flex xs12>
+        <v-autocomplete
+          :items="categories"
+          :label="$t('category.menue')"
+          @change="valueChanged"
+          dense
+        ></v-autocomplete>
+      </v-flex>
+    </v-layout>
+    <v-layout>
+      <v-flex xs12>
+        <v-chart :options="pie" :autoresize="true" />
+      </v-flex>
+    </v-layout>
+  </div>
 </template>
 
 <script>
 import Service, { Endpoint } from "../api/db";
 import { State, Getters, Mutations } from "../store/const";
 import { mapState, mapGetters, mapMutations } from "vuex";
+import ECharts from "vue-echarts";
+import "echarts/lib/chart/pie";
+import "echarts/lib/component/tooltip";
 
 export default {
   name: "CategorySelector",
   data() {
     return {
       categories: [],
+      pie: {
+        series: [
+          {
+            type: "pie",
+            data: [],
+            radius: '60%',
+            label: {
+              show: false,
+              margin: 200,
+              alignTo: 'edge',
+              normal: {
+                formatter: "{b} ({c}%)",
+                position: "outside",
+              },
+            },
+          },
+        ],
+      },
     };
   },
   mounted() {},
@@ -31,7 +62,8 @@ export default {
     },
     fetchCategories(newSelectedId) {
       Service.get(Endpoint.CATEGORIES(newSelectedId)).then(({ data }) => {
-        this.categories = data;
+        this.categories = data.names;
+        this.pie.series[0].data = data.data.sort((a, b) => a.value > b.value);
       });
     },
   },
@@ -40,7 +72,7 @@ export default {
       if (this.showComponent()) {
         this.fetchCategories(newSelectedSource.id);
       } else {
-          this[Mutations.setCategory]("");
+        this[Mutations.setCategory]("");
       }
     },
   },
@@ -51,8 +83,11 @@ export default {
       return this[State.source];
     },
   },
+  components: {
+    "v-chart": ECharts,
+  },
 };
 </script>
 
-<style>
+<style scoped>
 </style>
