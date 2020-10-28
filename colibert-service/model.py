@@ -21,7 +21,7 @@ class TextPairClassificationModel:
         return torch.reshape(preds[:, 1], (len(texts_a), len(texts_b))).detach().numpy()
 
 
-colibert = TextPairClassificationModel('mrm8488/bert-base-german-dbmdz-cased-finetuned-pawsx-de')
+colibert = TextPairClassificationModel('ietz/comment-linking-distilbert-base-german-cased')
 
 
 def get_colibert():
