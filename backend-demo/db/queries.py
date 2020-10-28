@@ -161,6 +161,7 @@ COUNT_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids: f"""
 # FACTS
 UPDATE_FACT_BY_COMMENT_ID_LABEL_ID = "UPDATE facts SET confidence = %s WHERE comment_id = %s and label_id = %s"
 
+# TODO: Count comment distribution instead of article distribution with performance
 # Documents
 GET_CATEGORIES = "SELECT count(*) as value, cast(metadata as json) -> 'author' -> 'departments'->>0 AS name FROM documents d where length(metadata::text) > 0 and source_id = %s group by name ORDER by value"
 
@@ -186,7 +187,11 @@ class Order(Enum):
     ASC = 1
     DESC = 2
     UNCERTAIN = 0
-
+# TODO add category selection via frontend
+#"""
+#select c.id, c.title, c.text, c.timestamp from comments c, documents d
+#where c.source_id = 3 and c.doc_id = d.id and cast(d.metadata as json) -> 'author' -> 'departments'->> 0 = 'Politik'
+#"""
 def GET_ALL_COMMENTS(num_keywords):
     query = f"""select c.id, c.title, c.text, c.timestamp
     from comments c
@@ -209,9 +214,11 @@ def GET_COMMENT_IDS_BY_FILTER(label_sort_id, order, label_ids, num_keywords):
     :param num_keywords: number of keywords
     """
     query = f"""
-    select c.id, c.title, c.text, c.timestamp, f.confidence, f.label_id from comments c, facts f
-    where c.id = f.comment_id
-    and source_id = %s"""
+    SELECT c.id, c.title, c.text, c.timestamp, f.confidence, f.label_id FROM comments c, documents d, facts f 
+    where length(metadata::text) > 0 and d.source_id = %s 
+    and c.doc_id = d.id 
+    and c.id = f.comment_id 
+    and cast(metadata as json) -> 'author' -> 'departments'->> 0 = %s"""
 
     if label_ids:
         query+=" and f.label_id = %s"

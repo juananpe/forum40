@@ -115,6 +115,7 @@ class CommentsGet(Resource):
         order = args.get('order', None)
         label_sort_id = args.get('label_sort_id', None)
         source_id = args.get('source_id', None)
+        category = args.get('category', None)
         user_id = None
         if self:
             user_id = self["user_id"]
@@ -141,7 +142,7 @@ class CommentsGet(Resource):
 
             sort_id = label_sort_id if label_sort_id else label_ids[0]
 
-            cur.execute(comments_query, (source_id, sort_id, *keywords, limit, skip))
+            cur.execute(comments_query, (source_id, category, *label_ids, *keywords, limit, skip))
             comments = cur.fetchall()
             comment_ids = []
             for c in comments:

@@ -14,6 +14,7 @@ comments_parser_sl.add_argument('order', type=int, default=2)
 comments_parser_sl.add_argument('label_sort_id', type=int)
 comments_parser_sl.add_argument('skip', type=int, default=0, required=True)
 comments_parser_sl.add_argument('limit', type=int, default=50, required=True)
+comments_parser_sl.add_argument('category', type=str, required=False)
 
 comments_parser = reqparse.RequestParser()
 comments_parser.add_argument('label', action='append')
