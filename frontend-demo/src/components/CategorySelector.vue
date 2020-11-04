@@ -42,7 +42,7 @@ export default {
               margin: 200,
               alignTo: 'edge',
               normal: {
-                formatter: "{b} ({c}%)",
+                formatter: "{b}\n({c})",
                 position: "outside",
               },
             },
