@@ -1,5 +1,5 @@
 <template>
-  <div v-if="showComponent()">
+  <div>
     <v-layout>
       <v-flex xs12>
         <v-autocomplete
@@ -57,9 +57,6 @@ export default {
     valueChanged(value) {
       this[Mutations.setCategory](value);
     },
-    showComponent() {
-      return this.selectedSource === "SPIEGEL Online";
-    },
     fetchCategories(newSelectedId) {
       Service.get(Endpoint.CATEGORIES(newSelectedId)).then(({ data }) => {
         this.categories = data.names;
@@ -69,7 +66,7 @@ export default {
   },
   watch: {
     [Getters.getSelectedSource](newSelectedSource) {
-      if (this.showComponent()) {
+      if (newSelectedSource) {
         this.fetchCategories(newSelectedSource.id);
       } else {
         this[Mutations.setCategory]("");

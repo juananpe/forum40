@@ -76,15 +76,47 @@ class Documents(Resource):
 @ns.route('/categories/<source_id>/')
 class Categories(Resource):
     def get(self, source_id):
-        query = GET_CATEGORIES
-        res = []
-        with db_cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(query, (source_id,))
-            res = cur.fetchall() 
 
-        names = [i['name'] for i in res]
+        # 1. get all documents
+        #.2. map [document_id: category]
+        # 3. laufen über alle commententare von der source_id
+        # 4. zählen
+
+        GET_ALL_DOCUMENTS = "SELECT id, cast(metadata as json) -> 'author' -> 'departments'->>0 AS category FROM documents WHERE source_id = %s"
+        documents = []
+        document_id_to_category = {}
+        with db_cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(GET_ALL_DOCUMENTS, (source_id,))
+            documents = cur.fetchall()
         
-        return {'names' : names, 'data' : res}, 200
+        for d in documents:
+            document_id_to_category[d['id']] = d['category']
+
+        comments = []
+        with db_cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute('SELECT doc_id FROM comments c WHERE c.source_id = %s', (source_id,))
+            comments = cur.fetchall()
+
+        comments_count = {}
+        for c in comments:
+            document_id = c['doc_id']
+            comment_category = document_id_to_category[document_id]
+            current_count = comments_count.get(comment_category, 0) + 1
+            comments_count[comment_category] = current_count
+
+        result = {
+            'names': [],
+            'data': []
+        }
+        for category,count in comments_count.items():
+            obj = {
+                'value': count,
+                'name' : category
+            }
+            result['names'].append(category)
+            result['data'].append(obj)
+
+        return result, 200
 
 @ns.route('/')
 class DocumentsPost(Resource):
