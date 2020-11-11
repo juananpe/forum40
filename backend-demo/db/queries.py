@@ -206,6 +206,10 @@ def GET_ALL_COMMENTS(num_keywords):
     """
     return query
 
+GET_COMMENTS_PER_CATEGORY = f"""
+    select value, name from count_comments_by_category where source_id = %s 
+"""
+
 def GET_COMMENT_IDS_BY_FILTER(label_sort_id, order, label_ids, num_keywords):
     """
     Returns the query for getting comment ids

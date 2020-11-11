@@ -2,7 +2,7 @@ from flask import request
 from flask_restplus import Resource, reqparse
 
 from apis.db import api
-from db.queries import COUNT_DOCUMENTS, GET_CATEGORIES
+from db.queries import COUNT_DOCUMENTS, GET_CATEGORIES, GET_COMMENTS_PER_CATEGORY
 from db import postgres_con, db_cursor
 from db.db_models import document_parser
 from jwt_auth.token import token_required
@@ -77,38 +77,19 @@ class Documents(Resource):
 class Categories(Resource):
     def get(self, source_id):
 
-        # 1. get all documents
-        #.2. map [document_id: category]
-        # 3. laufen über alle commententare von der source_id
-        # 4. zählen
-
-        GET_ALL_DOCUMENTS = "SELECT id, cast(metadata as json) -> 'author' -> 'departments'->>0 AS category FROM documents WHERE source_id = %s"
+        
         documents = []
-        document_id_to_category = {}
         with db_cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(GET_ALL_DOCUMENTS, (source_id,))
+            cur.execute(GET_COMMENTS_PER_CATEGORY, (source_id,))
             documents = cur.fetchall()
         
-        for d in documents:
-            document_id_to_category[d['id']] = d['category']
-
-        comments = []
-        with db_cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute('SELECT doc_id FROM comments c WHERE c.source_id = %s', (source_id,))
-            comments = cur.fetchall()
-
-        comments_count = {}
-        for c in comments:
-            document_id = c['doc_id']
-            comment_category = document_id_to_category[document_id]
-            current_count = comments_count.get(comment_category, 0) + 1
-            comments_count[comment_category] = current_count
-
         result = {
             'names': [],
             'data': []
         }
-        for category,count in comments_count.items():
+        for d in documents:
+            category = d['name']
+            count = d['value']
             obj = {
                 'value': count,
                 'name' : category
