@@ -210,7 +210,7 @@ GET_COMMENTS_PER_CATEGORY = f"""
     select value, name from count_comments_by_category where source_id = %s 
 """
 
-def GET_COMMENT_IDS_BY_FILTER(label_sort_id, order, label_ids, num_keywords):
+def GET_COMMENT_IDS_BY_FILTER(label_sort_id, category, order, label_ids, num_keywords):
     """
     Returns the query for getting comment ids
     :param label_sort_id: label_id to sort or None, if none sort for date
@@ -219,10 +219,13 @@ def GET_COMMENT_IDS_BY_FILTER(label_sort_id, order, label_ids, num_keywords):
     """
     query = f"""
     SELECT c.id, c.title, c.text, c.timestamp, f.confidence, f.label_id FROM comments c, documents d, facts f 
-    where length(metadata::text) > 0 and d.source_id = %s 
+    where  d.source_id = %s 
     and c.doc_id = d.id 
     and c.id = f.comment_id 
-    and cast(metadata as json) -> 'author' -> 'departments'->> 0 = %s"""
+    """
+
+    if category:
+        query+="and d.category = %s"
 
     if label_ids:
         query+=" and f.label_id = %s"

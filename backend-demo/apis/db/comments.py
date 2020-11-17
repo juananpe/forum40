@@ -98,7 +98,6 @@ def getCommentByIds(id, external_id):
 
     return postgres.fetchone(), True
 
-
 @ns.route('/')
 class CommentsGet(Resource):
     @check_source_id
@@ -136,14 +135,18 @@ class CommentsGet(Resource):
             return comments
         
         # Labels selected
-        comments_query = GET_COMMENT_IDS_BY_FILTER(label_sort_id, order, label_ids, len(keywords))
+        comments_query = GET_COMMENT_IDS_BY_FILTER(label_sort_id, category, order, label_ids, len(keywords))
 
         with db_cursor(cursor_factory=RealDictCursor) as cur:
 
             sort_id = label_sort_id if label_sort_id else label_ids[0]
 
-            cur.execute(comments_query, (source_id, category, *label_ids, *keywords, limit, skip))
+            if category:
+                cur.execute(comments_query, (source_id, category, *label_ids, *keywords, limit, skip))
+            else:
+                cur.execute(comments_query, (source_id, *label_ids, *keywords, limit, skip))
             comments = cur.fetchall()
+
             comment_ids = []
             for c in comments:
                 comment_ids.append(c['id'])
