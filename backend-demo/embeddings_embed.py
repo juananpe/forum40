@@ -58,6 +58,8 @@ class CommentEmbedder(ForumProcessor):
                 self.cursor.execute("""SELECT COUNT(*) from comments WHERE source_id = %s AND embedding IS NULL""", (source_id,))
                 self.n_to_embed = self.cursor.fetchone()[0]
 
+            embed_query += " order by random()"
+
             self.logger.info("Comments to embed: " + str(self.n_to_embed))
             self.batch_i = 0
             self.n_batches = math.ceil(self.n_to_embed / self.batch_size)

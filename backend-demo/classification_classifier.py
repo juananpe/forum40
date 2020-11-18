@@ -5,6 +5,8 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_validate
 from sklearn.model_selection import GridSearchCV
 
+import sys
+
 models_path = "models"
 
 def get_model_path(label_name):
@@ -52,6 +54,9 @@ class EmbeddingClassifier:
             train_Y.append(entry[1])
         train_X = np.array(train_X)
         train_Y = np.array(train_Y)
+
+        print(f'Set of training for label ({label_name}) {train_X.shape}', file=sys.stderr)
+        print(f'Training set label distribution:', np.bincount(train_Y))
 
         # fit procedure
         self.classifier.fit(train_X, train_Y)

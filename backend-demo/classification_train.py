@@ -27,7 +27,7 @@ class ClassifierTrainer(ForumProcessor):
         self.cursor.execute("""SELECT id FROM labels WHERE name=%s""", (self.labelname,))
         self.label_id = self.cursor.fetchone()[0]
         if self.label_id is None:
-            logging.error("Label %s not found" % self.labelname)
+            self.logger.error("Label %s not found" % self.labelname)
             exit(1)
         else:
             self.logger.info("Build classifier model for label: " + self.labelname + " (" + str(self.label_id) + ")")
@@ -39,10 +39,10 @@ class ClassifierTrainer(ForumProcessor):
         n_annotations = self.cursor.fetchone()
 
         if not n_annotations:
-            logging.info("No comments for training found.")
+            self.logger.info("No comments for training found.")
             exit(0)
         else:
-            logging.info("Found %d comments for training." % n_annotations)
+            self.logger.info("Found %d comments for training." % n_annotations)
 
         # select annotations
         self.cursor.execute(
@@ -68,6 +68,11 @@ class ClassifierTrainer(ForumProcessor):
 
         self.logger.info("Length of dataset: " + str(len(annotation_dataset)))
         self.logger.info("Dataset collection duration (seconds): " + str(end - start))
+
+        if not annotation_dataset:
+            self.logger.info("No comments with embedding for training.")
+            exit(0)
+
 
         return annotation_dataset
 
