@@ -47,13 +47,27 @@ class EmbeddingClassifier:
 
     # take at max 3 minutes on the whole data
     def train(self, dataset, label_name):
-        train_X = []
-        train_Y = []
-        for entry in dataset:
-            train_X.append(entry[0])
-            train_Y.append(entry[1])
-        train_X = np.array(train_X)
-        train_Y = np.array(train_Y)
+        # train_X = []
+        # train_Y = []
+        # for entry in dataset:
+        #     train_X.append(entry[0])
+        #     train_Y.append(entry[1])
+        # train_X = np.array(train_X)
+        # train_Y = np.array(train_Y)
+
+        data_len = len(dataset)
+        assert(data_len > 0)
+        emb_dim = len(dataset[0][0])
+
+        print("Embedding dim is:", emb_dim)
+
+        train_X = np.zeros((data_len,emb_dim))
+        train_Y = np.zeros(data_len, dtype=np.int32)
+
+        for i,entry in enumerate(dataset):
+            train_X[i] = entry[0]
+            train_Y[i] = entry[1]
+
 
         print(f'Set of training for label ({label_name}) {train_X.shape}', file=sys.stderr)
         print(f'Training set label distribution:', np.bincount(train_Y))
