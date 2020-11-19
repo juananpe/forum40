@@ -88,9 +88,9 @@ class EmbeddingClassifier:
             train_Y[i] = entry[1]
 
         print("Embedding dim is:", emb_dim)
-        print(f'Set of training for label ({label_name}) {train_X.shape}', file=sys.stderr)
+        print(f'Set of training {train_X.shape}', file=sys.stderr)
         print(f'Training set label distribution:', np.bincount(train_Y))
-        
+
         # fit procedure
         scores = cross_validate(self.classifier, train_X, train_Y, cv=k, scoring=('f1_macro', 'accuracy'))
 
