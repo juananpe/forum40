@@ -4,15 +4,15 @@
       <v-flex xs12>
         <v-autocomplete
           :items="categories"
+          v-model="value"
           :label="$t('category.menue')"
-          @change="valueChanged"
           dense
         ></v-autocomplete>
       </v-flex>
     </v-layout>
     <v-layout>
       <v-flex xs12>
-        <v-chart :options="pie" :autoresize="true" />
+        <v-chart :options="pie" :autoresize="true" @click="chartClicked" />
       </v-flex>
     </v-layout>
   </div>
@@ -63,6 +63,9 @@ export default {
         this.pie.series[0].data = data.data.sort((a, b) => a.value > b.value);
       });
     },
+    chartClicked(event) {
+      this.valueChanged(event.name);
+    }
   },
   watch: {
     [Getters.getSelectedSource](newSelectedSource) {
@@ -79,6 +82,14 @@ export default {
     selectedSource() {
       return this[State.source];
     },
+    value: {
+      get() {
+        return this[State.selectedCategory];
+      },
+      set(value) {
+        this.valueChanged(value)
+      }
+    }
   },
   components: {
     "v-chart": ECharts,
