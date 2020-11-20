@@ -253,7 +253,7 @@ def GET_RUNNING_TRAINING():
 
 def GET_MODEL_INFO():
     return """
-    select * from model where label_id = %s;
+    select * from model where label_id = %s ORDER BY timestamp asc;
     """
 
 def GET_FACTS():
