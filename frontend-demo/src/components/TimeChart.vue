@@ -42,6 +42,9 @@ export default {
     ])
   },
   watch: {
+    [Getters.getSelectedSource]() {
+      this.sourceChanged()
+    },
     timeFrequency() {
       this.updateChart();
     },
@@ -54,32 +57,36 @@ export default {
       this.updateChart();
     }
   },
-  mounted: async function() {
-    var p1 = this.initChart();
-    await Promise.all([p1]);
-    if (this[Getters.selectedLabels].length > 0)
-      this.updateChart_OnLabelChange();
-    else this.resetChartToOrigin();
-  },
   methods: {
+    sourceChanged: async function() {
+      var p1 = this.initChart();
+      await Promise.all([p1]);
+      this.resetChartToOrigin();
+    },
     initChart: async function() {
-      const { data } = await Service.get(Endpoint.LABELS(1));
-      data.labels.push(this.$i18n.t("time_chart.series_total"));
+      var source_id = this[Getters.getSelectedSource].id
+      var response = Service.get(Endpoint.LABELS(source_id));
+      response.then((value) => {
+          value.data.labels.push(this.$i18n.t("time_chart.series_total"));
 
-      data.labels.forEach(labelName => {
-        this.chart_options.legend.selected[labelName] = false;
-        var series = {
-          name: labelName,
-          type: "bar",
-          barGap: "0%",
-          barCategoryGap: "10%",
-          data: [],
-          animationDelay: function(idx) {
-            return idx * 0;
-          }
-        };
-        this.chart_options.series.push(series);
-      });
+        this.chart_options.series = []
+
+          value.data.labels.forEach(labelName => {
+            this.chart_options.legend.selected[labelName] = false;
+            var series = {
+              name: labelName,
+              type: "bar",
+              barGap: "0%",
+              barCategoryGap: "10%",
+              data: [],
+              animationDelay: function(idx) {
+                return idx * 0;
+              }
+            };
+            this.chart_options.series.push(series);
+          })
+
+      })
     },
     addSeriesToChat: function(data, name) {
       var seriesId = this.chart_options.series.findIndex(x => x.name == name);
@@ -95,6 +102,7 @@ export default {
       }
 
       this.chart_options.legend.selected[name] = true;
+
       this.chart_options.series[seriesId].data = data.data;
     },
     resetChartToOrigin: async function() {
