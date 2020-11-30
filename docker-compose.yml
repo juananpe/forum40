@@ -12,6 +12,8 @@ services:
         ports:
             - 443:8081
             - 80:8080
+        volumes:
+            - ./reverseproxy/docker_ssl_proxy:/etc/nginx/conf.d/ssl
     vue:
         build:
             context: ./frontend-demo
