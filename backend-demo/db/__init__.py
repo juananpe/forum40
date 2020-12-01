@@ -1,10 +1,6 @@
-from flask_pymongo import PyMongo
 import psycopg2
 from psycopg2.pool import ThreadedConnectionPool
 from contextlib import contextmanager
-
-## Mongo DB
-mongo = PyMongo() # TODO remove offlang service
 
 
 ## PostgSQL
