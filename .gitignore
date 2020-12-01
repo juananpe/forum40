@@ -7,6 +7,5 @@ __pycache__/
 
 offlang-service/model/wiki.de.bin
 offlang-service/src
-classification-service/model/*.pkl
 
 .idea

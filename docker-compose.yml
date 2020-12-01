@@ -42,15 +42,6 @@ services:
             POSTGRES_PASSWORD: postgres
         ports:
             - 5432:5432
-#    classification:
-#        build:
-#            context: ./classification-service
-#            dockerfile: Dockerfile
-#        volumes:
-#            - ./classification-service:/app
-#            - ./classification-service/models:/app/models
-#        depends_on:
-#            - postgres
     embedding:
         build:
             context: ./embedding-service
