@@ -1,13 +1,12 @@
 version: '2'
 services:
     reverseproxy:
-        build: 
+        build:
             context: ./reverseproxy
             dockerfile: Dockerfile
         depends_on:
             - vue
             - flask
-            - meta
             - embedding
         ports:
             - 443:8081
@@ -31,14 +30,6 @@ services:
             dockerfile: Dockerfile
         volumes:
             - transformers:/root/.cache/transformers/
-    meta:
-        build:
-            context: ./metacomment-service
-            dockerfile: Dockerfile
-        volumes:
-            - ./metacomment-service:/app
-        links:      
-            - postgres
     postgres:
         image: "postgres:11.5"
         shm_size: 1g
