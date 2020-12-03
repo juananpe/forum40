@@ -2,6 +2,8 @@ FROM node:lts-alpine
 
 COPY docker-dev-entrypoint.sh /root/docker-dev-entrypoint.sh
 
+RUN chmod 744 /root/docker-dev-entrypoint.sh
+
 WORKDIR /app
 
 EXPOSE 8080
