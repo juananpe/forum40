@@ -1,21 +1,20 @@
-from flask_restplus import Resource
+from flask_restplus import Resource, Namespace
 from psycopg2 import DatabaseError
 from psycopg2.extras import RealDictCursor
 
-from apis.db import api
 from db import postgres_con
 from db.db_models import source_parser
 from db.queries import COUNT_SOURCES
 from jwt_auth.token import token_required, token_optional
 
-ns = api.namespace('sources', description="sources api")
+ns = Namespace('sources', description="sources api")
 
 
 @ns.route('/')
 class Sources(Resource):
 
     @token_optional
-    @api.doc(security='apikey')
+    @ns.doc(security='apikey')
     def get(self, data):
         role = None
         if self:
@@ -37,9 +36,9 @@ class Sources(Resource):
         sources = postgres.fetchall()
         return sources, 200
 
-    @api.expect(source_parser)
+    @ns.expect(source_parser)
     @token_required
-    @api.doc(security='apikey')
+    @ns.doc(security='apikey')
     def post(self, data):
         args = source_parser.parse_args()
         name = args['name']

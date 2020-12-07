@@ -1,14 +1,13 @@
 import datetime
 import jwt
 from flask import jsonify, make_response
-from flask_restplus import Resource
+from flask_restplus import Resource, Namespace
 
-from apis.db import api
 from db import postgres_con
 from db.queries import SELECT_PASSWORD_BY_NAME
 from jwt_auth.token import token_required, token_optional
 
-ns = api.namespace('auth', description="auth api")
+ns = Namespace('auth', description="auth api")
 
 globalSecret = "eh9Df9G27gahgHJ7g2oGQz6Ug5he6ud5shd"  # TODO hide
 
@@ -16,7 +15,7 @@ globalSecret = "eh9Df9G27gahgHJ7g2oGQz6Ug5he6ud5shd"  # TODO hide
 @ns.route('/test')
 class AuthTest(Resource):
     @token_required
-    @api.doc(security='apikey')
+    @ns.doc(security='apikey')
     def get(self, data):
         user = self["user"]
 
@@ -48,7 +47,7 @@ class AuthLogin(Resource):
 @ns.route('/refreshToken/')
 class AuthRefresh(Resource):
     @token_required
-    @api.doc(security='apikey')
+    @ns.doc(security='apikey')
     def get(self, data):
         user = self["user"]
         user_id = self["user_id"]
@@ -65,7 +64,7 @@ class AuthRefresh(Resource):
 @ns.route('/test/optional/')
 class AuthRefreshs(Resource):
     @token_optional
-    @api.doc(security='apikey')
+    @ns.doc(security='apikey')
     def get(self, data):
         user = None
         if self:

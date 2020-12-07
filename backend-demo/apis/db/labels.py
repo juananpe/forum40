@@ -1,14 +1,13 @@
 import os
-from flask_restplus import Resource
+from flask_restplus import Resource, Namespace
 
-from apis.db import api
 from apis.utils.tasks import SingleProcessManager
 from db import postgres_con
 from db.db_models import label_parser_post
 from db.queries import *
 from jwt_auth.token import token_required
 
-ns = api.namespace('labels', description="labels api")
+ns = Namespace('labels', description="labels api")
 
 # pg config
 pg_host = os.getenv('PG_HOST', 'postgres')
@@ -67,8 +66,8 @@ class LabelsId(Resource):
 @ns.route('/binary/<string:label_name>/<int:source_id>')
 class AddLabel(Resource):
     @token_required
-    @api.doc(security='apikey')
-    @api.expect(label_parser_post)
+    @ns.doc(security='apikey')
+    @ns.expect(label_parser_post)
     def put(self, data, label_name, source_id):
         postgres = postgres_con.cursor()
         postgres.execute(COUNT_LABELS_BY_NAME(label_name))

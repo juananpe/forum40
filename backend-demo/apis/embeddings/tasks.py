@@ -1,13 +1,12 @@
 import os
 from flask import current_app
-from flask_restplus import Resource, fields
+from flask_restplus import Resource, fields, Namespace
 
-from apis.embeddings import api
 from apis.utils.tasks import SingleProcessManager, get_embeddings
 from config import settings
 from embeddings_retrieve import RetrieveComment
 
-ns = api.namespace('embeddings', description="Embeddings-API namespace")
+ns = Namespace('embeddings', description="Embeddings-API namespace")
 
 # pg config
 pg_host = os.getenv('PG_HOST', 'postgres')
@@ -27,7 +26,7 @@ except:
     exit(1)
 
 
-sim_comments_model = api.model('SimComments', {
+sim_comments_model = ns.model('SimComments', {
     'comments': fields.List(
         fields.String,
         example=[
@@ -49,14 +48,14 @@ sim_comments_model = api.model('SimComments', {
 })
 
 # API for comment ids
-id_model = api.model('Id', {
+id_model = ns.model('Id', {
     'ids': fields.List(
         fields.Integer,
         required=True,
         example=[200]
     )
 })
-sim_id_model = api.model('SimId', {
+sim_id_model = ns.model('SimId', {
     'ids': fields.List(
         fields.Integer,
         required=True,
@@ -76,7 +75,7 @@ sim_id_model = api.model('SimId', {
 
 
 # API for service URL
-url_model = api.model('URL', {
+url_model = ns.model('URL', {
     'service_url': fields.String(example='http://ltdemos.informatik.uni-hamburg.de/embedding-service'),
 })
 
@@ -90,9 +89,9 @@ class GetServiceUrlRoute(Resource):
 
 @ns.route('/set-service-url')
 class SetServiceUrlRoute(Resource):
-    @api.expect(url_model)
+    @ns.expect(url_model)
     def post(self):
-        service_url = api.payload.get('service_url', '')
+        service_url = ns.payload.get('service_url', '')
         if service_url:
             os.environ['EMBEDDING_SERVICE_URL'] = service_url
             url = os.getenv('EMBEDDING_SERVICE_URL', settings.EMBEDDING_SERVICE_URL)
@@ -103,9 +102,9 @@ class SetServiceUrlRoute(Resource):
 
 @ns.route('/id')
 class IdEmbedding(Resource):
-    @api.expect(id_model)
+    @ns.expect(id_model)
     def post(self):
-        comments_id = api.payload.get('ids', [])
+        comments_id = ns.payload.get('ids', [])
         all_ids = [int(c) for c in comments_id]
         results = []
         for id in all_ids:
@@ -116,17 +115,17 @@ class IdEmbedding(Resource):
 
 @ns.route('/similar-ids')
 class SimilarIds(Resource):
-    @api.expect(sim_id_model)
+    @ns.expect(sim_id_model)
     def post(self):
 
-        comments_ids = api.payload.get('ids', [])
+        comments_ids = ns.payload.get('ids', [])
 
-        source_id = api.payload.get('source_id', 1)
+        source_id = ns.payload.get('source_id', 1)
         # ensure correct index is loaded for given source id
         if not retriever.load_index(source_id):
             return f"Error: could not find index for source_id {source_id}", 400
 
-        n = api.payload.get('n', 10)
+        n = ns.payload.get('n', 10)
         if n == 0:
             n = 1
         results = []
@@ -139,12 +138,12 @@ class SimilarIds(Resource):
 
 @ns.route('/similar-comments')
 class SimilarComments(Resource):
-    @api.expect(sim_comments_model)
+    @ns.expect(sim_comments_model)
     def post(self):
-        comment_texts = api.payload.get('comments', [])
-        n = api.payload.get('n', 10)
+        comment_texts = ns.payload.get('comments', [])
+        n = ns.payload.get('n', 10)
 
-        source_id = api.payload.get('source_id', 1)
+        source_id = ns.payload.get('source_id', 1)
         # ensure correct index is loaded for given source id
         if not retriever.load_index(source_id):
             return f"Error: could not find index for source_id {source_id}", 400

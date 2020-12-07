@@ -1,14 +1,13 @@
-from flask_restplus import Resource
+from flask_restplus import Resource, Namespace
 from psycopg2 import DatabaseError
 from psycopg2.extras import RealDictCursor
 
-from apis.db import api
 from db import postgres_con, db_cursor
 from db.db_models import document_parser
 from db.queries import COUNT_DOCUMENTS, GET_COMMENTS_PER_CATEGORY
 from jwt_auth.token import token_required
 
-ns = api.namespace('documents', description="documents api")
+ns = Namespace('documents', description="documents api")
 
 
 @ns.route('/count')
@@ -92,9 +91,9 @@ class Categories(Resource):
 
 @ns.route('/')
 class DocumentsPost(Resource):
-    @api.expect(document_parser)
+    @ns.expect(document_parser)
     @token_required
-    @api.doc(security='apikey')
+    @ns.doc(security='apikey')
     def post(self, data):
         args = document_parser.parse_args()
         url = args['url']

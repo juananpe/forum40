@@ -3,19 +3,18 @@ import operator
 from datetime import timedelta, date
 from dateutil.relativedelta import relativedelta
 from flask import request
-from flask_restplus import Resource
+from flask_restplus import Resource, Namespace
 from psycopg2 import DatabaseError
 from psycopg2.extras import RealDictCursor
 from psycopg2.extras import execute_values
 
-from apis.db import api
 from db import postgres_con, db_cursor
 from db.db_models import *
 from db.queries import *
 from jwt_auth.token import token_optional, check_source_id, allow_access_source_id
 from jwt_auth.token import token_required
 
-ns = api.namespace('comments', description="comments api")
+ns = Namespace('comments', description="comments api")
 min_date = date(2016, 6, 1)
 
 
@@ -37,8 +36,8 @@ def getCommentByIds(id, external_id):
 class CommentsGet(Resource):
     @check_source_id
     @token_optional
-    @api.doc(security='apikey')
-    @api.expect(comments_parser_sl)
+    @ns.doc(security='apikey')
+    @ns.expect(comments_parser_sl)
     def get(self, data):
         # get args
         args = comments_parser_sl.parse_args()
@@ -137,8 +136,8 @@ class CommentsGet(Resource):
         return comments
 
     @check_source_id
-    @api.doc(security='apikey')
-    @api.expect(comment_parser_post)
+    @ns.doc(security='apikey')
+    @ns.expect(comment_parser_post)
     @token_required
     def post(self, data):
         args = comment_parser_post.parse_args()
@@ -183,8 +182,8 @@ class CommentsGet(Resource):
 @ns.route('/json')
 class CommentsInsertMany(Resource):
     @token_optional
-    @api.doc(security='apikey')
-    @api.expect(comments_list_parser)
+    @ns.doc(security='apikey')
+    @ns.expect(comments_list_parser)
     def post(self, data):
         comments = request.json
         return insert_new_comments(comments)
@@ -306,7 +305,7 @@ def prepareForVisualisation(data, f):
 
 @check_source_id
 @ns.route('/groupByDay')
-@api.expect(groupByModel)
+@ns.expect(groupByModel)
 class CommentsGroupByDay(Resource):
     def get(self):
         args = groupByModel.parse_args()
@@ -331,7 +330,7 @@ class CommentsGroupByDay(Resource):
 
 @check_source_id
 @ns.route('/groupByMonth')
-@api.expect(groupByModel)
+@ns.expect(groupByModel)
 class CommentsGroupByMonth(Resource):
     def get(self):
         args = groupByModel.parse_args()
@@ -356,7 +355,7 @@ class CommentsGroupByMonth(Resource):
 
 @check_source_id
 @ns.route('/groupByYear')
-@api.expect(groupByModel)
+@ns.expect(groupByModel)
 class CommentsGroupByYear(Resource):
     def get(self):
         args = groupByModel.parse_args()
@@ -383,7 +382,7 @@ class CommentsGroupByYear(Resource):
 class CommentsParent(Resource):
 
     @token_optional
-    @api.doc(security='apikey')
+    @ns.doc(security='apikey')
     def get(self, data, id):
         db_result = None
         with db_cursor(cursor_factory=RealDictCursor) as cur:
@@ -403,7 +402,7 @@ class CommentsParent(Resource):
 class CommentsParentRec(Resource):
 
     @token_optional
-    @api.doc(security='apikey')
+    @ns.doc(security='apikey')
     def get(self, data, id):
         comments = []
 
@@ -449,10 +448,10 @@ class CommentsParentRec(Resource):
 
 
 @ns.route('/<int:comment_id>/')
-@api.expect(comment_parser)
+@ns.expect(comment_parser)
 class Comment(Resource):
     @token_optional
-    @api.doc(security='apikey')
+    @ns.doc(security='apikey')
     def get(self, request, comment_id):
         args = comment_parser.parse_args()
 

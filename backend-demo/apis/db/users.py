@@ -1,10 +1,9 @@
-from flask_restplus import Resource
+from flask_restplus import Resource, Namespace
 
-from apis.db import api
 from db import postgres_con
 from db.queries import COUNT_USERS
 
-ns = api.namespace('users', description="users api")
+ns = Namespace('users', description="users api")
 
 
 @ns.route('/count')

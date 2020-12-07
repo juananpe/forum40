@@ -1,12 +1,11 @@
 import os
-from flask_restplus import Resource, fields
+from flask_restplus import Resource, fields, Namespace
 from logging.config import dictConfig
 
-from apis.classification import api
 from apis.utils.tasks import SingleProcessManager
 from classification_classifier import get_history_path
 
-ns = api.namespace('classification', description="Classification-API namespace")
+ns = Namespace('classification', description="Classification-API namespace")
 
 # pg config
 pg_host = os.getenv('PG_HOST', 'postgres')
@@ -32,7 +31,7 @@ dictConfig({
 })
 
 
-update_model = api.model('update', {
+update_model = ns.model('update', {
     'source_id': fields.Integer(
         description="Source id",
         required=True,
@@ -60,7 +59,7 @@ update_model = api.model('update', {
     )
 })
 
-history_model = api.model('history', {
+history_model = ns.model('history', {
     'labelname': fields.String(
         description='Labelname to update model and machine classification.',
         example='SentimentNegative',
@@ -76,13 +75,13 @@ history_model = api.model('history', {
 
 @ns.route('/update')
 class ClassifierService(Resource):
-    @api.expect(update_model)
+    @ns.expect(update_model)
     def post(self):
-        source_id = api.payload.get('source_id', None)
-        labelname = api.payload.get('labelname', None)
-        optimize = api.payload.get('optimize', False)
-        skip_training = api.payload.get('skip-training', False)
-        skip_confidence = api.payload.get('skip-confidence', False)
+        source_id = ns.payload.get('source_id', None)
+        labelname = ns.payload.get('labelname', None)
+        optimize = ns.payload.get('optimize', False)
+        skip_training = ns.payload.get('skip-training', False)
+        skip_confidence = ns.payload.get('skip-confidence', False)
         if labelname and source_id:
             args = ["--labelname", labelname]
             if skip_confidence:
@@ -115,8 +114,8 @@ class AbortService(Resource):
 class HistoryService(Resource):
     @ns.expect(history_model)
     def post(self):
-        labelname = api.payload.get('labelname', None)
-        n = api.payload.get('n', 100)
+        labelname = ns.payload.get('labelname', None)
+        n = ns.payload.get('n', 100)
         if labelname:
             try:
                 history = []

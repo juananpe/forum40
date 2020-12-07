@@ -1,13 +1,12 @@
 import sys
-from flask_restplus import Resource
+from flask_restplus import Resource, Namespace
 from psycopg2 import DatabaseError
 from psycopg2.extras import RealDictCursor
 
-from apis.db import api
 from db import postgres_con
 from db.queries import *
 
-ns = api.namespace('models', description="models api")
+ns = Namespace('models', description="models api")
 
 
 @ns.route('/<int:label_id>')

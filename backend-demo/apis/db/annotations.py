@@ -1,17 +1,16 @@
 import json
 import requests
 import sys
-from flask_restplus import Resource
+from flask_restplus import Resource, Namespace
 from psycopg2.extras import RealDictCursor
 
-from apis.db import api
 from config import settings
 from db import postgres_con, db_cursor
 from db.db_models import comments_parser_sl
 from db.queries import *
 from jwt_auth.token import token_required
 
-ns = api.namespace('annotations', description="annotations api")
+ns = Namespace('annotations', description="annotations api")
 
 
 @ns.route('/count')
@@ -58,7 +57,7 @@ class GetLabel(Resource):
 
 
 @ns.route('/user/<int:user_id>')
-@api.expect(comments_parser_sl)
+@ns.expect(comments_parser_sl)
 class GetLabelUser(Resource):
     def get(self, user_id):
 
@@ -97,7 +96,7 @@ class GetLabelUser(Resource):
 
 
 @ns.route('/group/')
-@api.expect(comments_parser_sl)
+@ns.expect(comments_parser_sl)
 class GetLabelGroup(Resource):
     def get(self):
 
@@ -160,7 +159,7 @@ def _user_exists(id):
 @ns.route('/<int:comment_id>/<int:label_id>/<int:label>')
 class LabelComment(Resource):
     @token_required
-    @api.doc(security='apikey')
+    @ns.doc(security='apikey')
     def put(self, data, comment_id, label_id, label):
         user_id = self["user_id"]
         label = bool(label)
