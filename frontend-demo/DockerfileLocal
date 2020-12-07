@@ -1,9 +1,10 @@
 FROM node:lts-alpine
 
-# make the 'app' folder the current working directory
+COPY docker-dev-entrypoint.sh /root/docker-dev-entrypoint.sh
+
+RUN chmod 744 /root/docker-dev-entrypoint.sh
+
 WORKDIR /app
 
-# build app for production with minification
 EXPOSE 8080
-
-CMD ["npm", "run", "serve"]
+CMD ["/root/docker-dev-entrypoint.sh"]
