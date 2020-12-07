@@ -1,3 +1,5 @@
+import sys
+
 from flask import jsonify, make_response
 from flask_restplus import Resource
 
@@ -38,7 +40,7 @@ class AuthLogin(Resource):
         postgres.execute(SELECT_PASSWORD_BY_NAME, (username,))
         db_result = postgres.fetchone()
 
-        if not db_result or db_result[0] != password or password == None:
+        if not db_result or db_result[0] != password or password is None:
             return make_response('Could not verify!', 401)
         else:
             user_id = db_result[1]
@@ -68,9 +70,6 @@ class AuthRefresh(Resource):
             globalSecret)  # TODO hide pwd
 
         return jsonify({'token': token.decode('UTF-8'), 'user': user})
-
-
-import sys
 
 
 @ns.route('/test/optional/')

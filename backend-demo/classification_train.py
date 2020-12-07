@@ -1,4 +1,5 @@
-import argparse, logging
+import argparse
+import logging
 
 from collections import Counter
 from timeit import default_timer as timer

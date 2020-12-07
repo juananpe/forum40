@@ -53,18 +53,18 @@ comment_parser_post.add_argument('external_id', required=True)
 
 default_comment = '''
 [{
-	"source_id" : "999",
-	"title": "...",
-	"text": "...",
-	"timestamp" : "2020-02-11T23:42:00+01:00",
-	"external_id" : "42"
+    "source_id" : "999",
+    "title": "...",
+    "text": "...",
+    "timestamp" : "2020-02-11T23:42:00+01:00",
+    "external_id" : "42"
 },
 {
-	"source_id" : "999",
-	"title": "...",
-	"text": "...",
-	"timestamp" : "2020-02-11T23:42:00+01:00",
-	"external_id" : "43"
+    "source_id" : "999",
+    "title": "...",
+    "text": "...",
+    "timestamp" : "2020-02-11T23:42:00+01:00",
+    "external_id" : "43"
 }]
 '''
 

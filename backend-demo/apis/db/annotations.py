@@ -148,21 +148,21 @@ def _comment_exists(id):
     postgres = postgres_con.cursor()
     postgres.execute(SELECT_COMMENT_BY_ID(id))
     db_result = postgres.fetchone()
-    return db_result != None
+    return db_result is not None
 
 
 def _label_exists(id):
     postgres = postgres_con.cursor()
     postgres.execute(SELECT_LABEL_BY_ID(id))
     db_result = postgres.fetchone()
-    return db_result != None
+    return db_result is not None
 
 
 def _user_exists(id):
     postgres = postgres_con.cursor()
     postgres.execute(SELECT_USER_BY_ID(id))
     db_result = postgres.fetchone()
-    return db_result != None
+    return db_result is not None
 
 
 @ns.route('/<int:comment_id>/<int:label_id>/<int:label>')

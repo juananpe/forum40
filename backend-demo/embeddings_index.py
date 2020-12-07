@@ -1,6 +1,7 @@
 # import nmslib
 import hnswlib
-import traceback, argparse
+import traceback
+import argparse
 import math
 import os
 import numpy as np

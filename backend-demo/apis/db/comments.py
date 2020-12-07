@@ -1,3 +1,5 @@
+import sys
+
 from flask import Response, request
 from flask_restplus import Resource, reqparse
 
@@ -52,9 +54,6 @@ def getLabelIdByName(name):
     if db_return:
         return db_return[0]
     return -1
-
-
-import sys
 
 
 def getAllUnlabeledComments(label_ids, keywords, source_ids, skip, limit):

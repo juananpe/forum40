@@ -114,9 +114,9 @@ GET_UNLABELED_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids, skip, li
             where 
                 {opt_keyword_section(keywords)} {opt_and(keywords and source_ids)} {opt_source_section(source_ids, "c.")}
                 {opt_and(keywords or source_ids)}
-            	not exists ( select * from annotations a where c.id = a.comment_id {opt_and(labels)} {opt_label_selection(labels)} )
-            	and 
-            	not exists ( select * from facts f where c.id = f.comment_id {opt_and(labels)} {opt_label_selection(labels)} )
+                not exists ( select * from annotations a where c.id = a.comment_id {opt_and(labels)} {opt_label_selection(labels)} )
+                and 
+                not exists ( select * from facts f where c.id = f.comment_id {opt_and(labels)} {opt_label_selection(labels)} )
             limit {limit} offset {skip}
             """
 
