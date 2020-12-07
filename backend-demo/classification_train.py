@@ -1,12 +1,11 @@
-import argparse
-import logging
-
 from collections import Counter
 from timeit import default_timer as timer
+
+import argparse
 from datetime import datetime
-from classification_classifier import EmbeddingClassifier, get_history_path
 
 from apis.utils.tasks import ForumProcessor
+from classification_classifier import EmbeddingClassifier, get_history_path
 
 
 class ClassifierTrainer(ForumProcessor):

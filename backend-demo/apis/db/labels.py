@@ -1,18 +1,11 @@
-from flask import request, Response
-from flask_restplus import Resource, reqparse
+import os
+from flask_restplus import Resource
 
 from apis.db import api
-from db import postgres_con
-from db.queries import *
-
-from db.db_models import label_parser_post
-
-import os
 from apis.utils.tasks import SingleProcessManager
-
-from bson import json_util
-import json
-
+from db import postgres_con
+from db.db_models import label_parser_post
+from db.queries import *
 from jwt_auth.token import token_required
 
 ns = api.namespace('labels', description="labels api")

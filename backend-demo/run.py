@@ -2,13 +2,11 @@
 from flask import Flask, request
 from flask_cors import CORS
 
-from config import settings
-
-from core.proxy_wrapper import ReverseProxied
-
+from apis.classification import blueprint as classification_blueprint
 from apis.db import blueprint as db_blueprint
 from apis.embeddings import blueprint as embeddings_blueprint
-from apis.classification import blueprint as classification_blueprint
+from config import settings
+from core.proxy_wrapper import ReverseProxied
 
 app = Flask(__name__)
 

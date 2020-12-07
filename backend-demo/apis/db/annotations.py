@@ -1,23 +1,15 @@
-from flask import request
-from flask_restplus import Resource, reqparse, fields
-from apis.db import api
-
-from config import settings
-
-from psycopg2.extras import RealDictCursor
-
-from db import postgres_con, db_cursor
-
-from db.queries import *
-from psycopg2 import DatabaseError
-
-from jwt_auth.token import token_required
-
-from db.db_models import comments_parser_sl
-
-import sys
 import json
 import requests
+import sys
+from flask_restplus import Resource
+from psycopg2.extras import RealDictCursor
+
+from apis.db import api
+from config import settings
+from db import postgres_con, db_cursor
+from db.db_models import comments_parser_sl
+from db.queries import *
+from jwt_auth.token import token_required
 
 ns = api.namespace('annotations', description="annotations api")
 

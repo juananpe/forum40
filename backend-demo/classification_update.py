@@ -1,18 +1,18 @@
-import argparse, math
-
 from timeit import default_timer as timer
+
+import argparse
+import itertools
+import math
+import time
 from datetime import datetime
+from io import StringIO
+from sklearn.metrics import cohen_kappa_score
+
+from apis.service.colibert_client import CoLiBertClient
+from apis.utils.tasks import ForumProcessor
 from classification_classifier import EmbeddingClassifier, get_history_path
 from classification_train import ClassifierTrainer
-from sklearn.metrics import cohen_kappa_score
-from io import StringIO
 from db.queries import *
-import requests
-import itertools
-from apis.service.colibert_client import CoLiBertClient
-import time
-
-from apis.utils.tasks import ForumProcessor
 
 
 class LabelUpdater(ForumProcessor):

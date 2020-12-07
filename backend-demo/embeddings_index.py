@@ -1,10 +1,10 @@
-# import nmslib
-import hnswlib
 import traceback
+
 import argparse
+import hnswlib
 import math
-import os
 import numpy as np
+import os
 import requests
 
 from apis.utils.tasks import ForumProcessor

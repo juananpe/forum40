@@ -1,9 +1,8 @@
-from functools import wraps
-from flask import request
 import jwt
+from flask import request
+from functools import wraps
 
 from db import postgres_con
-import sys
 
 globalSecret = "eh9Df9G27gahgHJ7g2oGQz6Ug5he6ud5shd"  # TODO hide
 

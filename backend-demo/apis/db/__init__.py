@@ -1,16 +1,15 @@
 from flask import Blueprint
 from flask_restplus import Api
 
-from jwt_auth import authorization
-
+from apis.db.annotations import ns as annotations_namespace
 from apis.db.auth import ns as auth_namespace
 from apis.db.comments import ns as comments_namespace
-from apis.db.labels import ns as labels_namespace
-from apis.db.annotations import ns as annotations_namespace
 from apis.db.documents import ns as documents_namespace
+from apis.db.labels import ns as labels_namespace
+from apis.db.models import ns as models_namespace
 from apis.db.sources import ns as sources_namespace
 from apis.db.users import ns as users_namespace
-from apis.db.models import ns as models_namespace
+from jwt_auth import authorization
 
 blueprint = Blueprint('db_api', __name__)
 

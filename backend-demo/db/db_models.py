@@ -1,5 +1,4 @@
 from flask_restplus import reqparse
-from datetime import datetime
 
 groupByModel = reqparse.RequestParser()
 groupByModel.add_argument('label', type=int)

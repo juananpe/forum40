@@ -1,7 +1,7 @@
-import psycopg2
-from psycopg2.pool import ThreadedConnectionPool
 from contextlib import contextmanager
 
+import psycopg2
+from psycopg2.pool import ThreadedConnectionPool
 
 # PostgSQL
 PG_HOST = 'postgres'

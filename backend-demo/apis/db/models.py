@@ -1,13 +1,11 @@
 import sys
-from flask import request
-from flask_restplus import Resource, reqparse, fields
-from apis.db import api
-
-from db import postgres_con
-from db.queries import *
+from flask_restplus import Resource
 from psycopg2 import DatabaseError
 from psycopg2.extras import RealDictCursor
 
+from apis.db import api
+from db import postgres_con
+from db.queries import *
 
 ns = api.namespace('models', description="models api")
 

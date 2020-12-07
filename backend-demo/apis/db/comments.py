@@ -1,34 +1,20 @@
-import sys
-
+import functools
+import json
+import operator
+from bson import json_util
+from datetime import timedelta, date
+from dateutil.relativedelta import relativedelta
 from flask import Response, request
-from flask_restplus import Resource, reqparse
+from flask_restplus import Resource
+from psycopg2 import DatabaseError
+from psycopg2.extras import RealDictCursor
+from psycopg2.extras import execute_values
 
 from apis.db import api
-from db.db_models import *
-
-# from db import postgres
-# from db import postgres_json
 from db import postgres_con, db_cursor
+from db.db_models import *
 from db.queries import *
-
-from psycopg2.extras import execute_values
-import functools
-import operator
-import sys
-
-from psycopg2 import DatabaseError
-
-from psycopg2.extras import RealDictCursor
-
-from datetime import timedelta, date, datetime
-from dateutil.relativedelta import relativedelta
-
 from jwt_auth.token import token_optional, check_source_id, allow_access_source_id
-
-from bson import json_util, ObjectId
-import json
-import sys
-
 from jwt_auth.token import token_required
 
 ns = api.namespace('comments', description="comments api")
@@ -582,8 +568,6 @@ class Comment(Resource):
             user_id = self["user_id"]
 
         query = "select * from comments where id = %s"
-
-        import sys
 
         comment = None
         with db_cursor(cursor_factory=RealDictCursor) as cur:

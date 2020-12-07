@@ -1,7 +1,8 @@
-import pprint
+import argparse
 import hnswlib
 import os
-import argparse
+import pprint
+
 from apis.utils.tasks import ForumTask, concat
 from config.settings import EMBEDDING_INDEX_PATH
 

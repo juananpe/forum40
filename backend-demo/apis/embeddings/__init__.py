@@ -1,7 +1,6 @@
 from flask import Blueprint
 from flask_restplus import Api
 
-from jwt_auth import authorization
 from apis.embeddings.tasks import ns as embeddings_namespace
 
 blueprint = Blueprint('embedding_api', __name__)

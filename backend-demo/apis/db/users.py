@@ -1,8 +1,6 @@
-from flask import request
-from flask_restplus import Resource, reqparse
+from flask_restplus import Resource
 
 from apis.db import api
-
 from db import postgres_con
 from db.queries import COUNT_USERS
 

@@ -1,5 +1,6 @@
-import argparse
 import traceback
+
+import argparse
 import math
 
 from apis.utils.tasks import ForumProcessor, concat

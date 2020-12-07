@@ -1,8 +1,6 @@
 from flask import Blueprint
 from flask_restplus import Api
 
-from jwt_auth import authorization
-
 from apis.classification.tasks import ns as classification_namespace
 
 blueprint = Blueprint('classification_api', __name__)

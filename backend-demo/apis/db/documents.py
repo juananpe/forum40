@@ -1,13 +1,12 @@
-from flask import request
-from flask_restplus import Resource, reqparse
-
-from apis.db import api
-from db.queries import COUNT_DOCUMENTS, GET_CATEGORIES, GET_COMMENTS_PER_CATEGORY
-from db import postgres_con, db_cursor
-from db.db_models import document_parser
-from jwt_auth.token import token_required
+from flask_restplus import Resource
 from psycopg2 import DatabaseError
 from psycopg2.extras import RealDictCursor
+
+from apis.db import api
+from db import postgres_con, db_cursor
+from db.db_models import document_parser
+from db.queries import COUNT_DOCUMENTS, GET_COMMENTS_PER_CATEGORY
+from jwt_auth.token import token_required
 
 ns = api.namespace('documents', description="documents api")
 

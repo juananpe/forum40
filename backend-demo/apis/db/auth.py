@@ -1,22 +1,12 @@
-import sys
-
+import datetime
+import jwt
 from flask import jsonify, make_response
 from flask_restplus import Resource
 
 from apis.db import api
 from db import postgres_con
 from db.queries import SELECT_PASSWORD_BY_NAME
-
-import json
-import datetime
-from bson import ObjectId
-
-from psycopg2.extras import RealDictCursor
-
 from jwt_auth.token import token_required, token_optional
-
-import jwt
-from werkzeug.security import generate_password_hash, check_password_hash
 
 ns = api.namespace('auth', description="auth api")
 

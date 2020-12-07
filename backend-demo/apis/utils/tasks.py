@@ -1,11 +1,10 @@
-import psycopg2
 import logging
-import requests
 import os
+import psycopg2
+import requests
 import subprocess
-import pdb
+from abc import abstractmethod
 from datetime import datetime
-from abc import ABC, abstractmethod
 
 from config import settings
 

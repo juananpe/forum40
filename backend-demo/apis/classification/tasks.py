@@ -1,14 +1,10 @@
 import os
-
-from flask import Flask
+from flask_restplus import Resource, fields
 from logging.config import dictConfig
-from flask_restplus import Api, Resource, fields
-from core.proxy_wrapper import ReverseProxied
-from classification_classifier import get_history_path
 
 from apis.classification import api
-
 from apis.utils.tasks import SingleProcessManager
+from classification_classifier import get_history_path
 
 ns = api.namespace('classification', description="Classification-API namespace")
 

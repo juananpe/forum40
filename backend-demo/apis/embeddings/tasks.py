@@ -1,13 +1,11 @@
 import os
-
-from flask_restplus import Resource, fields
 from flask import current_app
+from flask_restplus import Resource, fields
 
 from apis.embeddings import api
-from config import settings
-
-from embeddings_retrieve import RetrieveComment
 from apis.utils.tasks import SingleProcessManager, get_embeddings
+from config import settings
+from embeddings_retrieve import RetrieveComment
 
 ns = api.namespace('embeddings', description="Embeddings-API namespace")
 

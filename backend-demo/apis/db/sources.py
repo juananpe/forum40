@@ -1,14 +1,12 @@
-from flask import request
-from flask_restplus import Resource, reqparse, fields
-from apis.db import api
-
-from db import postgres_con
-from db.queries import COUNT_SOURCES
-from db.db_models import source_parser
-from jwt_auth.token import token_required, token_optional
+from flask_restplus import Resource
 from psycopg2 import DatabaseError
 from psycopg2.extras import RealDictCursor
-import sys
+
+from apis.db import api
+from db import postgres_con
+from db.db_models import source_parser
+from db.queries import COUNT_SOURCES
+from jwt_auth.token import token_required, token_optional
 
 ns = api.namespace('sources', description="sources api")
 
