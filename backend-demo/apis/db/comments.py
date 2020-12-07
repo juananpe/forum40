@@ -4,8 +4,8 @@ from flask_restplus import Resource, reqparse
 from apis.db import api
 from db.db_models import *
 
-#from db import postgres
-#from db import postgres_json
+# from db import postgres
+# from db import postgres_json
 from db import postgres_con, db_cursor
 from db.queries import *
 
@@ -53,7 +53,9 @@ def getLabelIdByName(name):
         return db_return[0]
     return -1
 
+
 import sys
+
 
 def getAllUnlabeledComments(label_ids, keywords, source_ids, skip, limit):
     query = GET_UNLABELED_COMMENTS_BY_FILTER(label_ids, keywords, source_ids, skip, limit)
@@ -63,6 +65,7 @@ def getAllUnlabeledComments(label_ids, keywords, source_ids, skip, limit):
         cur.execute(query)
         res = cur.fetchall()
     return res
+
 
 def getAllAnnotations(ids, label_ids, user_id):
     annotations = []
@@ -85,6 +88,7 @@ def getAllAnnotations(ids, label_ids, user_id):
                 dic[index].append(i)
     return annotations, dic
 
+
 def getCommentByIds(id, external_id):
     query = f"select id from comments where source_id = '{id}' and external_id = '{external_id}'"
     postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
@@ -97,6 +101,7 @@ def getCommentByIds(id, external_id):
         return {'msg': 'DatabaseError: transaction is aborted'}, False
 
     return postgres.fetchone(), True
+
 
 @ns.route('/')
 class CommentsGet(Resource):
@@ -133,7 +138,7 @@ class CommentsGet(Resource):
                 for c in comments:
                     c['timestamp'] = c['timestamp'].isoformat()
             return comments
-        
+
         # Labels selected
         comments_query = GET_COMMENT_IDS_BY_FILTER(label_sort_id, category, order, label_ids, len(keywords))
 
@@ -152,22 +157,22 @@ class CommentsGet(Resource):
                 comment_ids.append(c['id'])
                 c['timestamp'] = c['timestamp'].isoformat()
 
-        if not comment_ids: # 
+        if not comment_ids:
             return []
 
         facts_query = GET_FACTS()
         with db_cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(facts_query, (tuple(comment_ids), tuple(label_ids)))
             facts = cur.fetchall()
-        
+
         annotations_query = GET_ANNOTATIONS()
         with db_cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(annotations_query, (tuple(comment_ids), tuple(label_ids)))
             annotations = cur.fetchall()
 
-        if user_id: # Get user annotations if user logged in
+        if user_id:  # Get user annotations if user logged in
             with db_cursor(cursor_factory=RealDictCursor) as cur:
-                cur.execute(SELECT_USERS_ANNOTATION, (user_id, tuple(label_ids), tuple(comment_ids) ))
+                cur.execute(SELECT_USERS_ANNOTATION, (user_id, tuple(label_ids), tuple(comment_ids)))
                 user_annotations = cur.fetchall()
 
         label_id = label_sort_id
@@ -178,10 +183,10 @@ class CommentsGet(Resource):
             filtered_facts = list(filter(lambda x: x['comment_id'] == comment_id, facts))
             filtered_annotations = list(filter(lambda x: x['comment_id'] == comment_id, annotations))
             if user_id:
-                filtered_user_annotations = list(filter(lambda x: x['comment_id'] == comment_id, user_annotations)) 
+                filtered_user_annotations = list(filter(lambda x: x['comment_id'] == comment_id, user_annotations))
 
             for label_id in label_ids:
-                facts_for_label = list(filter(lambda x: x['label_id'] == label_id, filtered_facts))            
+                facts_for_label = list(filter(lambda x: x['label_id'] == label_id, filtered_facts))
                 annotation_for_label = list(filter(lambda x: x['label_id'] == label_id, filtered_annotations))
                 if user_id:
                     user_annotation_for_label = list(filter(lambda x: x['label_id'] == label_id, filtered_user_annotations))
@@ -193,14 +198,13 @@ class CommentsGet(Resource):
                     "label_id": label_id,
                     "group_count_true": annotation_for_label[0]['count_true'] if annotation_for_label else None,
                     "group_count_false": annotation_for_label[0]['count_false'] if annotation_for_label else None,
-                    "ai": facts_for_label[0]['confidence']>=0.5 if facts_for_label else None,
+                    "ai": facts_for_label[0]['confidence'] >= 0.5 if facts_for_label else None,
                     "ai_pred": facts_for_label[0]['confidence'] if facts_for_label else None,
                     "user": user_annotation_for_label[0]['label'] if user_annotation_for_label else None
                 }
                 c['annotations'].append(label)
-            
-        return comments
 
+        return comments
 
     @check_source_id
     @api.doc(security='apikey')
@@ -211,7 +215,7 @@ class CommentsGet(Resource):
         doc_id = args['doc_id'] if args.get('doc_id', False) else None
         source_id = args['source_id'] if args.get('source_id', False) else None
         user_id = args['user_id'] if args.get('user_id', False) else None
-        parent_comment_id = args['parent_comment_id']  if args.get('parent_comment_id', False) else None
+        parent_comment_id = args['parent_comment_id'] if args.get('parent_comment_id', False) else None
         status = args['status'] if args.get('status', False) else None
         title = args['title'] if args.get('title', False) else None
         text = args['text'] if args.get('text', False) else None
@@ -221,7 +225,7 @@ class CommentsGet(Resource):
 
         comm, _ = getCommentByIds(source_id, external_id)
         if comm:
-             return {'id': comm['id'], 'source_id': source_id, 'external_id': external_id, 'existed':True}, 200
+            return {'id': comm['id'], 'source_id': source_id, 'external_id': external_id, 'existed': True}, 200
 
         time = timestamp.split('T')[0].split('-')
         if len(time) < 3:
@@ -245,7 +249,7 @@ class CommentsGet(Resource):
 
         return {'id': added_comment[0]}, 200
 
-        
+
 @ns.route('/json')
 class CommentsInsertMany(Resource):
     @token_optional
@@ -260,7 +264,7 @@ def check_comment(args, pk):
     doc_id = args['doc_id'] if args.get('doc_id', False) else None
     source_id = args['source_id'] if args.get('source_id', False) else None
     user_id = args['user_id'] if args.get('user_id', False) else None
-    parent_comment_id = args['parent_comment_id']  if args.get('parent_comment_id', False) else None
+    parent_comment_id = args['parent_comment_id'] if args.get('parent_comment_id', False) else None
     status = args['status'] if args.get('status', False) else None
     title = args['title'] if args.get('title', False) else None
     text = args['text'] if args.get('text', False) else None
@@ -278,10 +282,11 @@ def check_comment(args, pk):
 
     return (pk, doc_id, source_id, user_id, parent_comment_id, status, title, text, embedding, timestamp, external_id, int(time[0]), int(time[1]), int(time[2]))
 
+
 def insert_new_comments(comments):
     if type(comments) != list:
         return {'msg': 'passed data is not a list of json objects'}, 400
-    ## TODO sequence id 
+    # TODO sequence id
     # create pk
     max_id = []
     with db_cursor() as cur:
@@ -303,14 +308,13 @@ def insert_new_comments(comments):
     added_comment = []
     if ress:
         with db_cursor() as cur:
-            added_comment = execute_values(cur,
-                insert_query, 
-                ress)
+            added_comment = execute_values(cur, insert_query, ress)
             added_comment = cur.fetchall()
 
     # get args
     new_comments_ids = functools.reduce(operator.iconcat, added_comment, [])
-    return {'added_comment_ids' : new_comments_ids, 'count' : len(new_comments_ids)}, 200
+    return {'added_comment_ids': new_comments_ids, 'count': len(new_comments_ids)}, 200
+
 
 @api.deprecated
 @ns.route('/unlabeled')
@@ -333,11 +337,12 @@ class CommentsGetUnlabeld(Resource):
         with db_cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(query)
             comments = cur.fetchall()
-        
+
         for i in range(0, len(comments)):
             comments[i]['timestamp'] = comments[i]['timestamp'].isoformat()
 
         return comments
+
 
 @api.deprecated
 @ns.route('/count')
@@ -417,6 +422,7 @@ def prepareForVisualisation(data, f):
     del start_time['count']
     return {"start_time": start_time, "time": time_list, "data": data_list}
 
+
 @check_source_id
 @ns.route('/groupByDay')
 @api.expect(groupByModel)
@@ -441,6 +447,7 @@ class CommentsGroupByDay(Resource):
 
         return prepareForVisualisation(addMissingDays(db_result), lambda d: f"{d['day']}.{d['month']}.{d['year']}")
 
+
 @check_source_id
 @ns.route('/groupByMonth')
 @api.expect(groupByModel)
@@ -464,6 +471,7 @@ class CommentsGroupByMonth(Resource):
             db_result = cur.fetchall()
 
         return prepareForVisualisation(addMissingMonths(db_result), lambda d: f"{d['month']}.{d['year']}")
+
 
 @check_source_id
 @ns.route('/groupByYear')
@@ -496,7 +504,6 @@ class CommentsParent(Resource):
     @token_optional
     @api.doc(security='apikey')
     def get(self, data, id):
-    
         db_result = None
         with db_cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(GET_PARENT_BY_CHILD, (id,))
@@ -505,7 +512,7 @@ class CommentsParent(Resource):
             source_id = db_result['source_id']
             if not allow_access_source_id(source_id, self):
                 return {'error': 'Cannot access comment_id.'}
-        
+
         if not db_result:
             return {'msg': "Error: No such Comment"}
         return db_result
@@ -587,7 +594,6 @@ class Comment(Resource):
             source_id = comment['source_id']
             if not allow_access_source_id(source_id, self):
                 return {'error': 'Cannot access comment_id.'}
-
 
         ids = [comment_id]
 

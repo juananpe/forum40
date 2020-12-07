@@ -43,37 +43,37 @@ update_model = api.model('update', {
         example=1
     ),
     'labelname': fields.String(
-        description = 'Labelname to update model and machine classification.',
-        example = 'SentimentNegative',
-        required = True
+        description='Labelname to update model and machine classification.',
+        example='SentimentNegative',
+        required=True
     ),
-    'optimize' : fields.Boolean(
-        description = 'Perform hyperparameter optimization',
-        default = False,
-        required = False
+    'optimize': fields.Boolean(
+        description='Perform hyperparameter optimization',
+        default=False,
+        required=False
     ),
-    'skip-confidence' : fields.Boolean(
-        description = 'Fast version only updates changing labels, but not confidence scores',
-        default = False,
-        required = False
+    'skip-confidence': fields.Boolean(
+        description='Fast version only updates changing labels, but not confidence scores',
+        default=False,
+        required=False
     ),
-    'skip-training' : fields.Boolean(
-        description = 'Indicate whether training should be skipped',
-        default = False,
-        required = False
+    'skip-training': fields.Boolean(
+        description='Indicate whether training should be skipped',
+        default=False,
+        required=False
     )
 })
 
 history_model = api.model('history', {
     'labelname': fields.String(
-        description = 'Labelname to update model and machine classification.',
-        example = 'SentimentNegative',
-        required = True
+        description='Labelname to update model and machine classification.',
+        example='SentimentNegative',
+        required=True
     ),
-    'n' : fields.Integer(
-        description = 'Number of history entries',
-        example = 100,
-        required = False
+    'n': fields.Integer(
+        description='Number of history entries',
+        example=100,
+        required=False
     )
 })
 
@@ -98,7 +98,7 @@ class ClassifierService(Resource):
             results = process_manager.invoke("update", str(source_id), args)
             return results, 200
         else:
-            return {'error' : 'Something went wrong.'}, 500
+            return {'error': 'Something went wrong.'}, 500
 
 
 @ns.route('/status')
@@ -114,6 +114,7 @@ class AbortService(Resource):
         results = process_manager.abort("update")
         return results, 200
 
+
 @ns.route('/history')
 class HistoryService(Resource):
     @ns.expect(history_model)
@@ -128,12 +129,11 @@ class HistoryService(Resource):
                         history.append(line.strip())
                 history = history[-n:]
                 results = {
-                    'labelname' : labelname,
-                    'history' : history
+                    'labelname': labelname,
+                    'history': history
                 }
                 return results, 200
             except:
                 return {'error': 'Something went wrong.'}, 500
         else:
-            return {'error' : 'No labelname given.'}, 404
-
+            return {'error': 'No labelname given.'}, 404

@@ -24,6 +24,7 @@ pg_port = os.getenv('PG_PORT', '5432')
 process_manager = SingleProcessManager(pg_host, pg_port)
 process_manager.register_process("init_facts", ["classification_update.py", pg_host, pg_port])
 
+
 @ns.route('/<int:source_id>')
 class LabelsGetAll(Resource):
     def get(self, source_id):
@@ -38,11 +39,12 @@ class LabelsGetAll(Resource):
         postgres.execute(SELECT_DESCRIPTIONS_FROM_LABELS, (source_id,))
         descriptions = [t[0] for t in postgres.fetchall()]
 
-        return { 
-            "labels" : d_list,
-            "ids" : i_list,
+        return {
+            "labels": d_list,
+            "ids": i_list,
             "descriptions": descriptions
         }
+
 
 @ns.route('/count')
 class LabelsCount(Resource):
@@ -52,9 +54,10 @@ class LabelsCount(Resource):
         db_return = postgres.fetchone()
 
         if db_return:
-             return {'count': db_return[0]}, 200
-        
-        return {"msg": "Error"}, 400        
+            return {'count': db_return[0]}, 200
+
+        return {"msg": "Error"}, 400
+
 
 @ns.route('/id/<string:name>')
 class LabelsId(Resource):
@@ -65,7 +68,7 @@ class LabelsId(Resource):
         if db_return:
             return {'id': db_return[0]}, 200
         else:
-            return {"msg": f"Label: '{name}' does not exists!"}, 400 
+            return {"msg": f"Label: '{name}' does not exists!"}, 400
 
 
 @ns.route('/binary/<string:label_name>/<int:source_id>')
@@ -83,7 +86,7 @@ class AddLabel(Resource):
 
         if db_result:
             if db_result[0] >= 1:
-                return { 'msg' : 'Label already exists.' } , 400
+                return {'msg': 'Label already exists.'}, 400
 
         postgres.execute(SELECT_MAX_ID('labels'))
         max_id = postgres.fetchone()[0]
@@ -99,4 +102,3 @@ class AddLabel(Resource):
         print(f"Init facts for label {label_name} started as background process")
 
         return "ok", 200
-

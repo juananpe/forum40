@@ -11,6 +11,7 @@ from psycopg2.extras import RealDictCursor
 
 ns = api.namespace('models', description="models api")
 
+
 @ns.route('/<int:label_id>')
 class Models(Resource):
 
@@ -23,7 +24,7 @@ class Models(Resource):
         except DatabaseError:
             postgres_con.rollback()
             return {'msg': 'DatabaseError: transaction is aborted'}, 400
-        
+
         results = cursor.fetchall()
 
         model_infos = []

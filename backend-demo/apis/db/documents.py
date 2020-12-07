@@ -11,15 +11,16 @@ from psycopg2.extras import RealDictCursor
 
 ns = api.namespace('documents', description="documents api")
 
-#document_parser = reqparse.RequestParser()
-#document_parser.add_argument('id', required=True)
-#document_parser.add_argument('url', required=True)
-#document_parser.add_argument('title', required=True)
-#document_parser.add_argument('text', required=True)
-#document_parser.add_argument('timestamp', required=True)
-#document_parser.add_argument('metadata', default="")
-#document_parser.add_argument('source_id', required=True)
-#document_parser.add_argument('external_id', required=True)
+# document_parser = reqparse.RequestParser()
+# document_parser.add_argument('id', required=True)
+# document_parser.add_argument('url', required=True)
+# document_parser.add_argument('title', required=True)
+# document_parser.add_argument('text', required=True)
+# document_parser.add_argument('timestamp', required=True)
+# document_parser.add_argument('metadata', default="")
+# document_parser.add_argument('source_id', required=True)
+# document_parser.add_argument('external_id', required=True)
+
 
 @ns.route('/count')
 class DocumentsCount(Resource):
@@ -29,8 +30,8 @@ class DocumentsCount(Resource):
         db_return = postgres.fetchone()
 
         if db_return:
-             return {'count': db_return[0]}, 200
-        
+            return {'count': db_return[0]}, 200
+
         return {"msg": "Error"}, 400
 
 
@@ -47,6 +48,7 @@ def getDocumentByIds(id, external_id):
 
     return postgres.fetchone(), True
 
+
 def getIdFromDoc(id, external_id):
     query = f"select id from documents where source_id = '{id}' and external_id = '{external_id}'"
     postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
@@ -59,6 +61,7 @@ def getIdFromDoc(id, external_id):
         return {'msg': 'DatabaseError: transaction is aborted'}, False
 
     return postgres.fetchone(), True
+
 
 @ns.route('/<id>/<external_id>')
 class Documents(Resource):
@@ -76,13 +79,11 @@ class Documents(Resource):
 @ns.route('/categories/<source_id>/')
 class Categories(Resource):
     def get(self, source_id):
-
-        
         documents = []
         with db_cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(GET_COMMENTS_PER_CATEGORY, (source_id,))
             documents = cur.fetchall()
-        
+
         result = {
             'names': [],
             'data': []
@@ -92,12 +93,13 @@ class Categories(Resource):
             count = d['value']
             obj = {
                 'value': count,
-                'name' : category
+                'name': category
             }
             result['names'].append(category)
             result['data'].append(obj)
 
         return result, 200
+
 
 @ns.route('/')
 class DocumentsPost(Resource):

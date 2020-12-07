@@ -5,20 +5,19 @@ import math
 from apis.utils.tasks import ForumProcessor, concat
 from apis.utils.tasks import get_embeddings
 
-class CommentEmbedder(ForumProcessor):
 
+class CommentEmbedder(ForumProcessor):
     def __init__(self, embed_all=False, batch_size=8, host="postgres", port=5432):
         super().__init__("embedding", host=host, port=port)
         self.cursor_large = None
         self.embed_all = embed_all
         self.batch_size = batch_size
-        self.batch_i  = 0
+        self.batch_i = 0
         self.n_batches = 0
         self.n_commit = 100
 
     def set_commit_number(self, n_commit):
         self.n_commit = n_commit
-
 
     def process_batch(self, comment_batch):
         comment_texts = [concat(c[1], c[2]) for c in comment_batch if c[1] or c[2]]
@@ -76,7 +75,6 @@ class CommentEmbedder(ForumProcessor):
         if self.cursor_large:
             self.cursor_large.close()
 
-
     def embed_batch(self):
 
         # increase batch counter
@@ -108,7 +106,7 @@ class CommentEmbedder(ForumProcessor):
             self.logger.info(message)
             if self.batch_i % 10 == 0:
                 self.update_state(self.batch_i, message)
-        
+
         self.logger.info("Final commit to DB ...")
         self.conn.commit()
         self.close_cursor()
@@ -121,8 +119,8 @@ if __name__ == '__main__':
                         help='DB host (default: localhost)')
     parser.add_argument('port', type=int, default=5432, nargs='?',
                         help='DB port (default: 5432)')
-    parser.add_argument('source_id', type=int, default=1, nargs='?', 
-                        help='Source id of the comment (default 1)')                        
+    parser.add_argument('source_id', type=int, default=1, nargs='?',
+                        help='Source id of the comment (default 1)')
 
     parser.add_argument('--embed-all', dest='all', default=False, action='store_true',
                         help='(Re-)embed all data (default: False)')

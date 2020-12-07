@@ -7,9 +7,9 @@ from classification_classifier import EmbeddingClassifier, get_history_path
 
 from apis.utils.tasks import ForumProcessor
 
-class ClassifierTrainer(ForumProcessor):
 
-    def __init__(self, labelname, classifier = None, host="postgres", port=5432):
+class ClassifierTrainer(ForumProcessor):
+    def __init__(self, labelname, classifier=None, host="postgres", port=5432):
         super().__init__("classification", host=host, port=port)
         self.labelname = labelname
         self.label_id = None
@@ -19,7 +19,6 @@ class ClassifierTrainer(ForumProcessor):
             self.classifier = EmbeddingClassifier()
 
     def get_trainingdata(self):
-
         start = timer()
 
         # get label id
@@ -73,10 +72,9 @@ class ClassifierTrainer(ForumProcessor):
             self.logger.info("No comments with embedding for training.")
             exit(0)
 
-
         return annotation_dataset
 
-    def train(self, annotation_dataset=None, optimize=False, cv = True):
+    def train(self, annotation_dataset=None, optimize=False, cv=True):
         if annotation_dataset is None:
             annotation_dataset = self.get_trainingdata()
 
@@ -86,7 +84,7 @@ class ClassifierTrainer(ForumProcessor):
         step = 0
 
         # find best C parameter
-        if (optimize):
+        if optimize:
             self.logger.info("Hyperparameter optimzation started")
             start = timer()
             params = [0.01, 0.05, 0.1, 0.5, 1, 5, 10]
@@ -154,8 +152,6 @@ class ClassifierTrainer(ForumProcessor):
             'f1': f1,
             'fit_time': fit_time
         }
-
-
 
 
 if __name__ == "__main__":

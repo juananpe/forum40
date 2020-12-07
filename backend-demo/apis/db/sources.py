@@ -78,8 +78,9 @@ class SourcesByName(Resource):
         sources = postgres.fetchone()
         if sources:
             return sources, 200
-        else: 
+        else:
             return {"id": None}, 200
+
 
 @ns.route('/count')
 class SourcesCount(Resource):

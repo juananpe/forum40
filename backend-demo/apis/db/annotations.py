@@ -21,6 +21,7 @@ import requests
 
 ns = api.namespace('annotations', description="annotations api")
 
+
 @ns.route('/count')
 class SourcesCount(Resource):
     def get(self):
@@ -32,9 +33,10 @@ class SourcesCount(Resource):
             db_return = cur.fetchone()
 
         if db_return:
-             return {'count': db_return[0]}, 200
-        
+            return {'count': db_return[0]}, 200
+
         return {"msg": "Error"}, 400
+
 
 @ns.route('/count_facts/')
 class SourcesCountF(Resource):
@@ -46,14 +48,14 @@ class SourcesCountF(Resource):
             db_return = cur.fetchone()
 
         if db_return:
-             return {'count': db_return[0]}, 200
-        
+            return {'count': db_return[0]}, 200
+
         return {"msg": "Error"}, 400
+
 
 @ns.route('/<int:comment_id>')
 class GetLabel(Resource):
     def get(self, comment_id):
-        
         query = f"SELECT label_id, user_id, label FROM Annotations WHERE comment_id = {comment_id}"
         db_return = []
         with db_cursor(cursor_factory=RealDictCursor) as cur:
@@ -80,7 +82,7 @@ class GetLabelUser(Resource):
         comments_where_sec = ''
         if 'keyword' in args and args['keyword']:
             searchwords = ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
-            comments_where_sec += 'WHERE ' +  searchwords
+            comments_where_sec += 'WHERE ' + searchwords
 
         query = f"""
             SELECT _.id, array_agg(_.agg) as group_annotation FROM
@@ -119,7 +121,7 @@ class GetLabelGroup(Resource):
         comments_where_sec = ''
         if 'keyword' in args and args['keyword']:
             searchwords = ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
-            comments_where_sec += 'WHERE ' +  searchwords
+            comments_where_sec += 'WHERE ' + searchwords
 
         query = f"""
         SELECT _.id, _.title, _.text, _.timestamp, array_agg(_.agg) as group_annotation FROM
@@ -141,11 +143,13 @@ class GetLabelGroup(Resource):
 
         return db_return
 
+
 def _comment_exists(id):
     postgres = postgres_con.cursor()
     postgres.execute(SELECT_COMMENT_BY_ID(id))
     db_result = postgres.fetchone()
     return db_result != None
+
 
 def _label_exists(id):
     postgres = postgres_con.cursor()
@@ -153,17 +157,19 @@ def _label_exists(id):
     db_result = postgres.fetchone()
     return db_result != None
 
+
 def _user_exists(id):
     postgres = postgres_con.cursor()
     postgres.execute(SELECT_USER_BY_ID(id))
     db_result = postgres.fetchone()
     return db_result != None
 
+
 @ns.route('/<int:comment_id>/<int:label_id>/<int:label>')
 class LabelComment(Resource):
     @token_required
     @api.doc(security='apikey')
-    def put(self, data, comment_id ,label_id, label):
+    def put(self, data, comment_id, label_id, label):
         user_id = self["user_id"]
         label = bool(label)
 
@@ -184,11 +190,11 @@ class LabelComment(Resource):
             cur.execute(query)
             db_result = cur.fetchone()
 
-        if not db_result: # No Annotation found
+        if not db_result:  # No Annotation found
             with db_cursor() as cur:
                 cur.execute(INSERT_ANNOTATION(label_id, comment_id, user_id, label))
 
-        elif db_result['label'] != label: # Update
+        elif db_result['label'] != label:  # Update
             with db_cursor() as cur:
                 cur.execute(UPDATE_ANNOTATION(label_id, comment_id, user_id, label))
         else:
@@ -200,9 +206,8 @@ class LabelComment(Resource):
 
         with db_cursor() as cur:
             cur.execute(GET_ANNOTATED_COMMENTS(), (label_id,))
-            current_pos_annotated_samples,current_neg_annotated_samples = cur.fetchone()
+            current_pos_annotated_samples, current_neg_annotated_samples = cur.fetchone()
             current_annotated_samples = current_pos_annotated_samples + current_neg_annotated_samples
-
 
         # get number training samples of previous model
         with db_cursor() as cur:
@@ -224,9 +229,9 @@ class LabelComment(Resource):
 
         # trigger training check
         if not training_runnninng \
-        and new_training_samples >= settings.NUMBER_SAMPLES_FOR_NEXT_TRAINING \
-        and current_pos_annotated_samples >= 10 \
-        and current_neg_annotated_samples >= 10:
+                and new_training_samples >= settings.NUMBER_SAMPLES_FOR_NEXT_TRAINING \
+                and current_pos_annotated_samples >= 10 \
+                and current_neg_annotated_samples >= 10:
             print(f'New training for label_id {label_id}', file=sys.stderr)
 
             with db_cursor() as cur:
@@ -236,11 +241,11 @@ class LabelComment(Resource):
 
             # trigger new training
             headers = {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
             }
 
-            payload={
+            payload = {
                 "source_id": source_id,
                 "labelname": label_name,
                 "optimize": False,
@@ -260,7 +265,7 @@ class LabelComment(Resource):
             "annotations": current_annotated_samples,
             "triggered_training": triggered_training,
             "training_running": training_runnninng,
-            "samples_left_for_new_training":samples_left_for_new_training,
-            "numbers_pos_samples_missing":10-current_pos_annotated_samples if current_pos_annotated_samples < 10 else 0,
+            "samples_left_for_new_training": samples_left_for_new_training,
+            "numbers_pos_samples_missing": 10-current_pos_annotated_samples if current_pos_annotated_samples < 10 else 0,
             "numbers_neg_samples_missing": 10 - current_neg_annotated_samples if current_neg_annotated_samples < 10 else 0
         }, 200

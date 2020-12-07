@@ -8,6 +8,7 @@ from db.queries import COUNT_USERS
 
 ns = api.namespace('users', description="users api")
 
+
 @ns.route('/count')
 class UsersCount(Resource):
     def get(self):
@@ -16,6 +17,6 @@ class UsersCount(Resource):
         db_return = postgres.fetchone()
 
         if db_return:
-             return {'count': db_return[0]}, 200
-        
+            return {'count': db_return[0]}, 200
+
         return {"msg": "Error"}, 400

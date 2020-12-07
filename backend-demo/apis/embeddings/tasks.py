@@ -77,10 +77,9 @@ sim_id_model = api.model('SimId', {
 })
 
 
-
 # API for service URL
 url_model = api.model('URL', {
-    'service_url': fields.String(example = 'http://ltdemos.informatik.uni-hamburg.de/embedding-service'),
+    'service_url': fields.String(example='http://ltdemos.informatik.uni-hamburg.de/embedding-service'),
 })
 
 
@@ -89,6 +88,7 @@ class GetServiceUrlRoute(Resource):
     def get(self):
         url = os.getenv('EMBEDDING_SERVICE_URL', settings.EMBEDDING_SERVICE_URL)
         return {'embedding service url': url}
+
 
 @ns.route('/set-service-url')
 class SetServiceUrlRoute(Resource):
@@ -101,6 +101,7 @@ class SetServiceUrlRoute(Resource):
             return {'embedding service url': url}
         else:
             return "Empty url", 400
+
 
 @ns.route('/id')
 class IdEmbedding(Resource):
@@ -153,7 +154,7 @@ class SimilarComments(Resource):
         # get embedding
         embeddings, status = get_embeddings(comment_texts)
         if not status:
-            return {'message' : embeddings}, 500
+            return {'message': embeddings}, 500
         results = []
         for embedding in embeddings:
             nn_ids = retriever.get_nearest_for_embedding(embedding)
@@ -161,10 +162,11 @@ class SimilarComments(Resource):
 
         return results, 200
 
+
 @ns.route('/reload-index/<source_id>')
 class ReloadIndex(Resource):
     def get(self, source_id):
-        if not retriever.load_index(source_id, force_reload = True):
+        if not retriever.load_index(source_id, force_reload=True):
             return f"Error: could not find index for source_id {source_id}", 400
         else:
             return f"Index for source id {source_id} reloaded", 200
@@ -197,9 +199,9 @@ class TaskAbort(Resource):
         results = process_manager.abort(taskname)
         return results, 200
 
+
 @ns.route('/tasks/clear')
 class TasksClear(Resource):
     def get(self):
         results = process_manager.clear()
         return results, 200
-

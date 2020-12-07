@@ -18,7 +18,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 ns = api.namespace('auth', description="auth api")
 
-globalSecret = "eh9Df9G27gahgHJ7g2oGQz6Ug5he6ud5shd" # TODO hide
+globalSecret = "eh9Df9G27gahgHJ7g2oGQz6Ug5he6ud5shd"  # TODO hide
+
 
 @ns.route('/test')
 class AuthTest(Resource):
@@ -27,29 +28,29 @@ class AuthTest(Resource):
     def get(self, data):
         user = self["user"]
 
-        return {"ok": user }, 200
+        return {"ok": user}, 200
+
 
 @ns.route('/login/<string:username>/<string:password>')
 class AuthLogin(Resource):
     def get(self, username, password):
-
         postgres = postgres_con.cursor()
         postgres.execute(SELECT_PASSWORD_BY_NAME, (username,))
         db_result = postgres.fetchone()
 
         if not db_result or db_result[0] != password or password == None:
             return make_response('Could not verify!', 401)
-        else :
+        else:
             user_id = db_result[1]
             role = db_result[2]
             token = jwt.encode({
-                'user' : username,
-                'user_id' : user_id,
+                'user': username,
+                'user_id': user_id,
                 'role': role,
-                'exp' : datetime.datetime.utcnow() + datetime.timedelta(minutes=60)}, 
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60)},
                 globalSecret
             )
-            return jsonify({'token' : token.decode('UTF-8'), 'user' : username, 'user_id' : user_id})
+            return jsonify({'token': token.decode('UTF-8'), 'user': username, 'user_id': user_id})
 
 
 @ns.route('/refreshToken/')
@@ -61,14 +62,16 @@ class AuthRefresh(Resource):
         user_id = self["user_id"]
 
         token = jwt.encode({
-            'user' : user, 
-            'user_id' : user_id,
-            'exp' : datetime.datetime.utcnow() + datetime.timedelta(minutes=60)}, 
-            globalSecret) # TODO hide pwd
+            'user': user,
+            'user_id': user_id,
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60)},
+            globalSecret)  # TODO hide pwd
 
-        return jsonify({'token' : token.decode('UTF-8'), 'user' : user})
+        return jsonify({'token': token.decode('UTF-8'), 'user': user})
+
 
 import sys
+
 
 @ns.route('/test/optional/')
 class AuthRefreshs(Resource):

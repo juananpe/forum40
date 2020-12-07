@@ -5,19 +5,23 @@ import jwt
 from db import postgres_con
 import sys
 
-globalSecret = "eh9Df9G27gahgHJ7g2oGQz6Ug5he6ud5shd" # TODO hide
+globalSecret = "eh9Df9G27gahgHJ7g2oGQz6Ug5he6ud5shd"  # TODO hide
+
 
 def returnErrorMsg(msg):
-    return {'message' : msg}, 401
+    return {'message': msg}, 401
+
 
 def checkIfTokenExists(token):
     return token is not None
 
+
 def checkIfTokenIsValidAndGetData(token):
     try:
         return True, jwt.decode(token, globalSecret)
-    except: 
+    except:
         return False, None
+
 
 def checkIfUserIsAuthorised(token, data):
     postgres = postgres_con.cursor()
@@ -27,6 +31,7 @@ def checkIfUserIsAuthorised(token, data):
     if not db_result or db_result == 0:
         return False
     return True
+
 
 """def checkIfTheUSerIsLoggedIn(token, data):
         tokens_coll = mongo.cx["admin"].Tokens
@@ -55,6 +60,7 @@ def is_source_id_protected(source_id):
     isProtected = db_result[0]
     return isProtected
 
+
 def allow_access_source_id(source_id, token_dict):
     is_protected = is_source_id_protected(source_id)
     if is_protected:
@@ -65,7 +71,6 @@ def allow_access_source_id(source_id, token_dict):
         else:
             return False
     return True
-
 
 
 def check_source_id(func):
@@ -80,13 +85,12 @@ def check_source_id(func):
     return decorated
 
 
-
 def token_required(func):
     @wraps(func)
     def decorated(*args, **kwargs):
         token = request.headers['x-access-token'] if 'x-access-token' in request.headers else None
         data = None
-        
+
         if not checkIfTokenExists(token):
             return returnErrorMsg('Token is missing.')
 
@@ -97,8 +101,8 @@ def token_required(func):
         if not checkIfUserIsAuthorised(token, data):
             return returnErrorMsg('Access denied.')
 
-        #if not checkIfTheUSerIsLoggedIn(token, data):
-        #    return returnErrorMsg('The token is invalid because the user is not logged in or the token has been updated.')
+        # if not checkIfTheUSerIsLoggedIn(token, data):
+        #     return returnErrorMsg('The token is invalid because the user is not logged in or the token has been updated.')
 
         return func(data, *args, **kwargs)
 

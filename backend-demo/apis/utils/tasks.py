@@ -29,8 +29,8 @@ ch.setFormatter(formatter)
 # add ch to logger
 logger.addHandler(ch)
 
-class ForumTask:
 
+class ForumTask:
     def __init__(self, taskname, host="postgres", port=5432):
         self.taskname = taskname
         self.logger = logger
@@ -51,7 +51,6 @@ class ForumTask:
             exit(1)
 
         self.cursor = self.conn.cursor()
-
 
     def __del__(self):
         if self.cursor:
@@ -79,7 +78,6 @@ class ForumProcessor(ForumTask):
             self.cursor.close()
             self.conn.close()
 
-
     def set_total(self, total_steps):
         self.total_steps = total_steps
 
@@ -100,9 +98,7 @@ class ForumProcessor(ForumTask):
         pass
 
 
-
 class SingleProcessManager:
-
     def __init__(self, pg_host, pg_port):
 
         # task names must be consistent with ForumTask.tasknames
@@ -118,18 +114,15 @@ class SingleProcessManager:
 
         self.history = ForumTask("task_history", pg_host, pg_port)
 
-
     def register_process(self, name, command):
         self.commands[name] = command
         self.processes[name] = 0
 
-
     def tasks(self):
         result = {
-            "tasks" : list(self.commands.keys())
+            "tasks": list(self.commands.keys())
         }
         return result
-
 
     def poll(self):
         for task in self.processes.keys():
@@ -139,9 +132,7 @@ class SingleProcessManager:
                     # unset registered task
                     self.processes[task] = 0
 
-
-    def invoke(self, task, source_id, arguments = []):
-
+    def invoke(self, task, source_id, arguments=[]):
         # check arguments (only 2 allowed of max length 32 characters)
         arg_lengths = [len(arg) for arg in arguments]
         if arguments and (len(arguments) > 6 or max(arg_lengths) > 32):
@@ -153,7 +144,7 @@ class SingleProcessManager:
             # check for terminated tasks
             self.poll()
 
-            if not self.processes[task] or task == 'update': # allow update task in parallel
+            if not self.processes[task] or task == 'update':  # allow update task in parallel
 
                 # start process
                 popen_command = ["python"] + self.commands[task] + [source_id] + arguments
@@ -163,15 +154,15 @@ class SingleProcessManager:
                 self.processes[task] = proc
 
                 result = {
-                    "message" : f"Task {task} started for source_id {source_id}.",
-                    "pid" : proc.pid
+                    "message": f"Task {task} started for source_id {source_id}.",
+                    "pid": proc.pid
                 }
 
             else:
 
                 result = {
-                    "message" : f"Task {task} is still running.",
-                    "pid" : self.processes[task].pid
+                    "message": f"Task {task} is still running.",
+                    "pid": self.processes[task].pid
                 }
 
             return result
@@ -179,9 +170,7 @@ class SingleProcessManager:
         except KeyError:
             message = f"Unknown task {task}"
             logger.error(message)
-            return { "error" : message}
-
-
+            return {"error": message}
 
     def abort(self, task):
         try:
@@ -192,12 +181,12 @@ class SingleProcessManager:
                 pid = self.processes[task].pid
                 self.processes[task].terminate()
                 result = {
-                    "message" : f"Task {task} stopped.",
-                    "pid" : pid
+                    "message": f"Task {task} stopped.",
+                    "pid": pid
                 }
             else:
                 result = {
-                    "message" : f"Task {task} is not running."
+                    "message": f"Task {task} is not running."
                 }
 
             return result
@@ -205,11 +194,9 @@ class SingleProcessManager:
         except KeyError:
             message = f"Unknown task {task}"
             logger.error(message)
-            return { "error" : message}
+            return {"error": message}
 
-
-
-    def status(self, task, n = 50):
+    def status(self, task, n=50):
         try:
             # check for terminated tasks
             self.poll()
@@ -231,14 +218,14 @@ class SingleProcessManager:
                     status_log = "\n".join([str(e) for e in status_entries])
 
                 result = {
-                    "task" : task,
-                    "pid" : pid,
-                    "progress" : progress,
-                    "log" : status_log
+                    "task": task,
+                    "pid": pid,
+                    "progress": progress,
+                    "log": status_log
                 }
             else:
                 result = {
-                    "message" : f"Task {task} is not running."
+                    "message": f"Task {task} is not running."
                 }
 
             return result
@@ -246,8 +233,7 @@ class SingleProcessManager:
         except KeyError:
             message = f"Unknown task {task}"
             logger.error(message)
-            return { "error" : message}
-
+            return {"error": message}
 
     def clear(self):
         # check for terminated tasks
@@ -300,12 +286,11 @@ def slugify(value):
 
 
 def get_embeddings(string_list):
-
     url = os.getenv('EMBEDDING_SERVICE_URL', settings.EMBEDDING_SERVICE_URL)
 
     response = requests.post(
         url,
-        json={"texts" : string_list},
+        json={"texts": string_list},
         headers={'Accept': 'application/json', 'Content-Type': 'application/json'}
     )
 

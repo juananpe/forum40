@@ -18,6 +18,7 @@ app.config['RESTPLUS_VALIDATE'] = settings.RESTPLUS_VALIDATE
 app.config['SWAGGER_UI_DOC_EXPANSION'] = settings.SWAGGER_UI_DOC_EXPANSION
 app.config['JWT_SECRET_KEY'] = settings.JWT_SECRET_KEY
 
+
 # main page
 @app.route("/")
 def hello():
@@ -26,6 +27,7 @@ def hello():
            '<a href="{0}api/classification">Classification-API</a> </br>' \
            '<a href="{0}api/similarity">Similarity-API</a> </br>' \
            '<a href="{0}api/embedding">Embedding-API</a> </br>'.format(url)
+
 
 # add blueprints
 app.register_blueprint(db_blueprint, url_prefix='/db')

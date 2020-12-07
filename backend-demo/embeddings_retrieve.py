@@ -14,12 +14,12 @@ class RetrieveComment(ForumTask):
         self.id_comment_mapping = {}
         self.loaded_index_source_id = None
 
-    def load_index(self, source_id, force_reload = False):
+    def load_index(self, source_id, force_reload=False):
         # only load index, if it not has been loaded before
         if not force_reload and self.loaded_index_source_id == source_id:
             return True
 
-        self.index = hnswlib.Index(space = 'cosine', dim = 768)
+        self.index = hnswlib.Index(space='cosine', dim=768)
         index_filename = os.path.join(EMBEDDING_INDEX_PATH, "hnsw_" + str(source_id) + ".index")
         self.logger.info(f"Loading index {index_filename}")
         try:
@@ -40,18 +40,18 @@ class RetrieveComment(ForumTask):
         embedding = self.cursor.fetchone()[0]
         return embedding
 
-    def get_nearest_for_id(self, id, n = 10, include_distance = False):
+    def get_nearest_for_id(self, id, n=10, include_distance=False):
         if type(id) != int:
             id = int(id)
         query_embedding = self.get_embedding(id)
-        ids, distances = self.index.knn_query(query_embedding, k = (n + 1))
+        ids, distances = self.index.knn_query(query_embedding, k=(n + 1))
         if include_distance:
             return ids[0].tolist(), distances[0].tolist()
         else:
             return ids[0].tolist()
 
-    def get_nearest_for_embedding(self, embedding, n = 10, include_distance = False):
-        ids, distances = self.index.knn_query(embedding, k = (n + 1))
+    def get_nearest_for_embedding(self, embedding, n=10, include_distance=False):
+        ids, distances = self.index.knn_query(embedding, k=(n + 1))
         if include_distance:
             return ids[0].tolist(), distances[0].tolist()
         else:
@@ -66,7 +66,6 @@ class RetrieveComment(ForumTask):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(description='Nearest neighbor comment retrieval')
     parser.add_argument('--host', type=str, default='localhost', nargs='?',
                         help='DB host')
