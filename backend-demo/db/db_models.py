@@ -37,7 +37,6 @@ document_parser.add_argument('source_id', required=True)
 document_parser.add_argument('external_id', required=True)
 
 comment_parser_post = reqparse.RequestParser()
-# id
 comment_parser_post.add_argument('doc_id', default="")
 comment_parser_post.add_argument('source_id', required=True, default="")
 comment_parser_post.add_argument('user_id', default="")

@@ -3,7 +3,6 @@ from enum import Enum
 # USERS
 COUNT_USERS = "SELECT COUNT(*) FROM users;"
 SELECT_USER_BY_ID = lambda x: f"SELECT * FROM users WHERE id = {x} fetch first 1 rows only;"
-SELECT_USER_ID_BY_USER_NAME = "SELECT id FROM users WHERE name = %s fetch first 1 rows only;"
 
 # Sources
 COUNT_SOURCES = "SELECT COUNT(*) FROM sources;"
@@ -13,7 +12,6 @@ COUNT_DOCUMENTS = "SELECT COUNT(*) FROM documents;"
 
 # Annotations
 COUNT_ANNOTATIONS = "SELECT COUNT(*) FROM annotations;"
-SELECT_ANNOTATION_BY_COMMENTID = lambda x: f"SELECT label_id, user_id, label FROM annotations WHERE comment_id = {x}"
 SELECT_LABEL_FROM_ANNOTATIONS_BY_IDS = lambda label_id, comment_id, user_id: f"SELECT label FROM annotations WHERE label_id = {label_id} AND comment_id = {comment_id} AND user_id = '{user_id}';"
 INSERT_ANNOTATION = lambda label_id, comment_id, user_id, label: f"INSERT INTO annotations (label_id, comment_id, user_id, label) VALUES ({label_id}, {comment_id}, {user_id}, {label})"
 UPDATE_ANNOTATION = lambda label_id, comment_id, user_id, label: f"UPDATE annotations SET label = {label} WHERE label_id = {label_id} AND comment_id = {comment_id} AND user_id = '{user_id}'"
@@ -38,7 +36,6 @@ INSERT_LABEL = "INSERT INTO labels (id, type, name, source_id, description) VALU
 SELECT_PASSWORD_BY_NAME = "SELECT password, id, role FROM users WHERE name = %s;"
 
 # Comments
-SELECT_COMMENTS_BY_ID = lambda x: f"select * from comments where id = {x}"
 SELECT_COMMENT_BY_ID = lambda x: f"SELECT * FROM comments WHERE id = {x} fetch first 1 rows only"
 GET_PARENT_BY_CHILD = f'SELECT id, text, title, user_id, year, month, day, source_id FROM comments p, (SELECT parent_comment_id FROM comments c WHERE id = %s) as c WHERE p.id = c.parent_comment_id;'
 SELECT_RANDOM_COMMENTS_BY_SOURCE_ID = "SELECT id, text FROM comments WHERE source_id = %s ORDER BY RANDOM() LIMIT %s"
@@ -94,21 +91,6 @@ GROUP_ALL_COMMENTS_BY_YEAR = lambda keywords, source_id: f'''
             ORDER BY year
 '''
 
-GET_COMMENTS_BY_FILTER_draft = lambda labels, keywords, source_ids, skip, limit: f"""
-            select c.id, c.title, c.text, c.timestamp from
-                (
-                    select distinct coalesce(a.comment_id, f.comment_id) as id from 
-                        (select distinct comment_id, label_id from facts {opt_where(labels)} {opt_label_selection(labels)} {opt_and_label_eq_true(labels)} ) as a
-                        full outer join
-                        (select distinct comment_id, label_id from annotations {opt_where(labels)} {opt_label_selection(labels)} {opt_and_label_eq_true(labels)} ) as f
-                        on a.comment_id = f.comment_id and a.label_id = f.label_id
-                        order by id
-                        limit {limit} offset {skip}
-                ) a,
-                (select * from comments {opt_where(keywords or source_ids)} {opt_keyword_section(keywords)} {opt_and(keywords and source_ids)} {opt_source_section(source_ids)}) as c
-                where a.id = c.id
-            """
-
 GET_UNLABELED_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids, skip, limit: f"""
             select c.id, c.title, c.text, c.timestamp from comments c 
             where 
@@ -162,40 +144,11 @@ COUNT_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids: f"""
 # FACTS
 UPDATE_FACT_BY_COMMENT_ID_LABEL_ID = "UPDATE facts SET confidence = %s WHERE comment_id = %s and label_id = %s"
 
-# TODO: Count comment distribution instead of article distribution with performance
-# Documents
-GET_CATEGORIES = "SELECT count(*) as value, cast(metadata as json) -> 'author' -> 'departments'->>0 AS name FROM documents d where length(metadata::text) > 0 and source_id = %s group by name ORDER by value"
-
-# GET_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids, skip, limit: f"""
-#             select distinct c.id, c.title, c.text, c.timestamp
-#             from
-#             (select * from comments {opt_where(keywords or source_ids)} {opt_keyword_section(keywords)} {opt_and(keywords and source_ids)} {opt_source_section(source_ids)} ) c
-#             right join
-#                 (
-#                     select coalesce(a.comment_id, f.comment_id) as id
-#                     from annotations a
-#                     full join facts f on
-#                     a.comment_id = f.comment_id and a.label_id = f.label_id
-#                     where ( a."label" or f."label") {opt_label_coalesce_AF_in(labels)}
-#
-#                     limit {limit} offset {skip}
-#                 ) l
-#             on c.id = l.id
-#             order by c.id
-#             """
-
 
 class Order(Enum):
     ASC = 1
     DESC = 2
     UNCERTAIN = 0
-
-
-# TODO add category selection via frontend
-# """
-# select c.id, c.title, c.text, c.timestamp from comments c, documents d
-# where c.source_id = 3 and c.doc_id = d.id and cast(d.metadata as json) -> 'author' -> 'departments'->> 0 = 'Politik'
-# """
 
 
 def GET_ALL_COMMENTS(num_keywords):
@@ -332,10 +285,6 @@ def opt_source_section(ids, prefix=''):
 
 def opt_label_selection(labels):
     return f'label_id IN ({", ".join(i for i in labels)})' if labels else ''
-
-
-def opt_label_coalesce_AF_in(labels):
-    return f'and coalesce(a.label_id, f.label_id) iN ({", ".join(i for i in labels)})' if labels else ''
 
 
 def opt_label_selection_single(label):

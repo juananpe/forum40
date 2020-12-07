@@ -32,16 +32,6 @@ def checkIfUserIsAuthorised(token, data):
     return True
 
 
-"""def checkIfTheUSerIsLoggedIn(token, data):
-        tokens_coll = mongo.cx["admin"].Tokens
-        token_mongo = tokens_coll.find_one({"user" : data["user"]})
-
-        if not token_mongo or not token_mongo["token"] or str(token_mongo["token"], 'utf-8') != token:
-            return False
-        return True
-"""
-
-
 def check_source_id_access(source_id, token):
     success, data = checkIfTokenIsValidAndGetData(token)
     if success:
@@ -63,7 +53,6 @@ def is_source_id_protected(source_id):
 def allow_access_source_id(source_id, token_dict):
     is_protected = is_source_id_protected(source_id)
     if is_protected:
-        role = None
         if token_dict:
             role = token_dict.get('role', None)
             return role == 'admin'
@@ -88,7 +77,6 @@ def token_required(func):
     @wraps(func)
     def decorated(*args, **kwargs):
         token = request.headers['x-access-token'] if 'x-access-token' in request.headers else None
-        data = None
 
         if not checkIfTokenExists(token):
             return returnErrorMsg('Token is missing.')
@@ -100,9 +88,6 @@ def token_required(func):
         if not checkIfUserIsAuthorised(token, data):
             return returnErrorMsg('Access denied.')
 
-        # if not checkIfTheUSerIsLoggedIn(token, data):
-        #     return returnErrorMsg('The token is invalid because the user is not logged in or the token has been updated.')
-
         return func(data, *args, **kwargs)
 
     return decorated
@@ -112,7 +97,6 @@ def token_optional(func):
     @wraps(func)
     def decorated(*args, **kwargs):
         token = request.headers['x-access-token'] if 'x-access-token' in request.headers else None
-        data = None
 
         success, data = checkIfTokenIsValidAndGetData(token)
 

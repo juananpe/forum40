@@ -101,18 +101,8 @@ class ForumProcessor(ForumTask):
 
 class SingleProcessManager:
     def __init__(self, pg_host, pg_port):
-
-        # task names must be consistent with ForumTask.tasknames
         self.commands = {}
-        # {
-        #     "embedding": ["embed_comments.py", pg_host, pg_port],
-        #     "train": ["train.py", pg_host, pg_port],
-        #     "update": ["update.py", pg_host, pg_port]
-        # }
-
-        # init process registry
         self.processes = {}
-
         self.history = ForumTask("task_history", pg_host, pg_port)
 
     def register_process(self, name, command):
@@ -271,19 +261,6 @@ def concat(title: str, text: str) -> str:
     title = title if title else ''
     text = text if text else ''
     return (title + ' ' + text).strip()
-
-
-def slugify(value):
-    """
-    Normalizes string, converts to lowercase, removes non-alpha characters,
-    and converts spaces to hyphens.
-    """
-    import unicodedata
-    value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
-    value = unicode(re.sub('[^\w\s-]', '', value).strip().lower())
-    value = unicode(re.sub('[-\s]+', '-', value))
-    # ...
-    return value
 
 
 def get_embeddings(string_list):

@@ -10,16 +10,6 @@ from jwt_auth.token import token_required
 
 ns = api.namespace('documents', description="documents api")
 
-# document_parser = reqparse.RequestParser()
-# document_parser.add_argument('id', required=True)
-# document_parser.add_argument('url', required=True)
-# document_parser.add_argument('title', required=True)
-# document_parser.add_argument('text', required=True)
-# document_parser.add_argument('timestamp', required=True)
-# document_parser.add_argument('metadata', default="")
-# document_parser.add_argument('source_id', required=True)
-# document_parser.add_argument('external_id', required=True)
-
 
 @ns.route('/count')
 class DocumentsCount(Resource):

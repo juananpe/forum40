@@ -1,10 +1,8 @@
 import functools
-import json
 import operator
-from bson import json_util
 from datetime import timedelta, date
 from dateutil.relativedelta import relativedelta
-from flask import Response, request
+from flask import request
 from flask_restplus import Resource
 from psycopg2 import DatabaseError
 from psycopg2.extras import RealDictCursor
@@ -19,59 +17,6 @@ from jwt_auth.token import token_required
 
 ns = api.namespace('comments', description="comments api")
 min_date = date(2016, 6, 1)
-
-
-def convertObjectToJSonResponse(obj):
-    return Response(json.dumps(obj, default=json_util.default), mimetype='application/json')
-
-
-def convertCursorToJSonResponse(cursor):
-    return convertObjectToJSonResponse(list(cursor))
-
-
-def getLabelIdByName(name):
-    query = SELECT_ID_FROM_LABELS_BY_NAME(name)
-
-    db_return = []
-    with db_cursor(cursor_factory=RealDictCursor) as cur:
-        cur.execute(query)
-        db_return = cur.fetchone()
-
-    if db_return:
-        return db_return[0]
-    return -1
-
-
-def getAllUnlabeledComments(label_ids, keywords, source_ids, skip, limit):
-    query = GET_UNLABELED_COMMENTS_BY_FILTER(label_ids, keywords, source_ids, skip, limit)
-
-    res = []
-    with db_cursor(cursor_factory=RealDictCursor) as cur:
-        cur.execute(query)
-        res = cur.fetchall()
-    return res
-
-
-def getAllAnnotations(ids, label_ids, user_id):
-    annotations = []
-    dic = {}
-    if label_ids:
-        query_comments = GET_ANNOTATIONS_BY_FILTER(ids, label_ids, user_id)
-
-        annotations = []
-        with db_cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(query_comments)
-            annotations = cur.fetchall()
-
-        # convert annotations + facts to dic
-        for i in annotations:
-            index = i['comment_id']
-            if index in dic:
-                dic[index].append(i)
-            else:
-                dic[index] = list()
-                dic[index].append(i)
-    return annotations, dic
 
 
 def getCommentByIds(id, external_id):
