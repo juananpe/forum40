@@ -74,7 +74,7 @@ class LabelUpdater(ForumProcessor):
         self.logger.info("Predict new labels for: " + self.labelname + " (" + str(self.label_id) + ")")
 
         # init facts entry for all
-        self.logger.info("Ensuring a fact entry for each comment for label %s" % (self.labelname,))
+        self.logger.info(f"Ensuring a fact entry for each comment for label {self.labelname}")
         facts_query = """INSERT INTO facts (SELECT c.id, %s, false, 0, 0 FROM comments c LEFT JOIN (SELECT * FROM facts WHERE label_id = %s) AS f ON c.id = f.comment_id WHERE c.source_id = %s AND f.comment_id IS NULL)"""
         self.cursor.execute(
             facts_query,
@@ -146,7 +146,7 @@ class LabelUpdater(ForumProcessor):
             self.classifier.load_from_disk(labelname)
         except:
             self.logger.error(
-                "Could not load classifier model for label %s. Run train.py first to create a model" % labelname)
+                f"Could not load classifier model for label {labelname}. Run train.py first to create a model")
             exit(1)
 
         # make sure there is a fact entry for this label for every comment of a source
@@ -161,7 +161,7 @@ class LabelUpdater(ForumProcessor):
 
         # process comments batch by batch
         while self.process_batch():
-            message = "Completed batch %d of %d." % (self.batch_i, n_total)
+            message = f"Completed batch {self.batch_i} of {n_total}."
             self.logger.info(message)
             self.update_state(self.batch_i, message)
 
@@ -179,7 +179,7 @@ class LabelUpdater(ForumProcessor):
         # stability
         kappa_score = cohen_kappa_score(self.labels_old, self.labels_new)
         self.stability = kappa_score
-        message = "Stability: %.3f" % (kappa_score,)
+        message = f"Stability: {kappa_score:.3f}"
         self.logger.info(message)
         self.update_state(self.batch_i + 1, message)
 
@@ -192,20 +192,23 @@ class LabelUpdater(ForumProcessor):
         # some useful information and status tracking
         end = timer()
         duration = end - start
-        message = "%d label updates finished after %.3f seconds." % (self.n_facts, duration)
+        message = f"{self.n_facts:d} label updates finished after {duration:.3f} seconds."
         self.logger.info(message)
         self.update_state(self.batch_i + 3, message)
 
         # update history
         with open(get_history_path(self.labelname), 'a', encoding="UTF-8") as f:
-            # append history file: timestamp, task, label, training set size, cv acc, cv f1, stability score, duration
-            f.write("%s;update;%s;%d;0;0;%.3f;%.1f\n" % (
-                datetime.today().isoformat(),
-                self.labelname,
-                self.n_facts,
-                self.stability,
-                duration
-            ))
+            # append history file
+            f.write(";".join([
+                datetime.today().isoformat(),  # timestamp
+                "update",  # task
+                self.labelname,  # label
+                str(self.n_facts),  # training set size
+                "0",  # cv acc
+                "0",  # cv f1
+                f"{self.stability:.3f}",  # stability score
+                f"{duration:.1f}",  # duration
+            ]))
 
     def initModelTable(self):
         self.cursor.execute(" INSERT INTO model (label_id, timestamp, pid) VALUES(%s, CURRENT_TIMESTAMP, %s) RETURNING id;", (self.label_id, self.pid))

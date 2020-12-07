@@ -125,7 +125,7 @@ class SimilarIds(Resource):
         source_id = api.payload.get('source_id', 1)
         # ensure correct index is loaded for given source id
         if not retriever.load_index(source_id):
-            return "Error: could not find index for source_id %d" % source_id, 400
+            return f"Error: could not find index for source_id {source_id}", 400
 
         n = api.payload.get('n', 10)
         if n == 0:
@@ -148,7 +148,7 @@ class SimilarComments(Resource):
         source_id = api.payload.get('source_id', 1)
         # ensure correct index is loaded for given source id
         if not retriever.load_index(source_id):
-            return "Error: could not find index for source_id %d" % source_id, 400
+            return f"Error: could not find index for source_id {source_id}", 400
 
         # get embedding
         embeddings, status = get_embeddings(comment_texts)
@@ -165,9 +165,9 @@ class SimilarComments(Resource):
 class ReloadIndex(Resource):
     def get(self, source_id):
         if not retriever.load_index(source_id, force_reload = True):
-            return "Error: could not find index for source_id %s" % source_id, 400
+            return f"Error: could not find index for source_id {source_id}", 400
         else:
-            return "Index for source id %s reloaded" % source_id, 200
+            return f"Index for source id {source_id} reloaded", 200
 
 
 @ns.route('/tasks')

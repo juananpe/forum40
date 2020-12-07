@@ -96,7 +96,7 @@ class AddLabel(Resource):
         # init facts
         args = ["--labelname", label_name, "--init-facts-only"]
         results = process_manager.invoke("init_facts", str(source_id), args)
-        print("Init facts for label %s started as background process" % label_name)
-        
-        return "ok", 200 
-                
+        print(f"Init facts for label {label_name} started as background process")
+
+        return "ok", 200
+

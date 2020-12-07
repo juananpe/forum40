@@ -72,7 +72,7 @@ if __name__ == "__main__":
     new_source = Sources(id = source_id, name = "Der Standard", domain = "derstandard.at")
     session.add(new_source)
     session.commit()
-    logging.info("Inserted source %s with id %d" % (new_source.name, new_source.id))
+    logging.info(f"Inserted source {new_source.name} with id {new_source.id}")
 
     # commentators
     Commentators = Base.classes.users
@@ -87,7 +87,7 @@ if __name__ == "__main__":
         commentator_lookup[commentator] = commentator_id
         bulk.append({"id" : commentator_id, "external_id" : commentator, "name" : commentator})
     session.execute(Commentators.__table__.insert(), bulk)
-    logging.info("Inserted %d commentators" % (commentator_id - users_id))
+    logging.info(f"Inserted {commentator_id - users_id} commentators")
 
     # documents
     Documents = Base.classes.documents
@@ -100,7 +100,7 @@ if __name__ == "__main__":
         session.add(new_document)
         document_lookup[document["ID_Article"]] = i
     session.commit()
-    logging.info("Inserted %d documents" % (i - doc_id))
+    logging.info(f"Inserted {i - doc_id:d} documents")
 
     # labels
     Labels = Base.classes.labels
@@ -112,7 +112,7 @@ if __name__ == "__main__":
         session.add(new_label)
         label_lookup[label["Name"]] = i
     session.commit()
-    logging.info("Inserted %d labels" % (i-label_id))
+    logging.info(f"Inserted {i - label_id:d} labels")
 
     # comments
     Comments = Base.classes.comments
@@ -157,7 +157,7 @@ if __name__ == "__main__":
     if bulk:
         session.execute(Comments.__table__.insert(), bulk)
     session.commit()
-    logging.info("Inserted %d comments" % (comment_id - com_id))
+    logging.info(f"Inserted {comment_id - com_id} comments")
 
     # annotations
     print(label_lookup)
@@ -172,7 +172,7 @@ if __name__ == "__main__":
         session.add(new_annotation)
         i += 1
     session.commit()
-    logging.info("Inserted %d annotations" % i)
+    logging.info(f"Inserted {i} annotations")
 
 logging.info("Run indexing ...")
 

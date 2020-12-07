@@ -51,7 +51,7 @@ class CommentIndexer(ForumProcessor):
 
             # cursor without withholding, since we do not commit any db updates
             cursor_large = self.conn.cursor(name = 'large_embedding', withhold=True)
-            cursor_large.execute("SELECT id FROM comments WHERE source_id = %d AND embedding IS NOT NULL" % self.source_id)
+            cursor_large.execute("SELECT id FROM comments WHERE source_id = %d AND embedding IS NOT NULL", (self.source_id,))
 
             new_embeddings_added = False
 
@@ -60,7 +60,7 @@ class CommentIndexer(ForumProcessor):
                 # keep track of progress
                 batch_i += 1
                 processed_comments = batch_i * self.batch_size
-                message = "Batch %d of %d (comments: %d)" % (batch_i, n_batches, processed_comments)
+                message = f"Batch {batch_i} of {n_batches} (comments: {processed_comments})"
                 self.logger.info(message)
                 self.update_state(batch_i, message)
 
@@ -95,7 +95,7 @@ class CommentIndexer(ForumProcessor):
                     new_ids, new_embeddings = zip(*new_tuples)
 
                     # add batch to index
-                    self.logger.info("Adding %d embeddings to the index" % len(new_embeddings))
+                    self.logger.info(f"Adding {len(new_embeddings):d} embeddings to the index")
                     self.index.add_items(np.array(new_embeddings), new_ids)
 
                     new_embeddings_added = True
@@ -116,7 +116,7 @@ class CommentIndexer(ForumProcessor):
         if new_embeddings_added:
             self.update_state(batch_i + 1, "Create index (this may take a while)")
             self.index.save_index(self.index_filename)
-            message = "Indexing finished and saved to %s" % self.index_filename
+            message = f"Indexing finished and saved to {self.index_filename}"
             self.logger.info(message)
         else:
             self.logger.info("There are no new embeddings to index.")
@@ -148,7 +148,7 @@ if __name__ == '__main__':
         if response.ok:
             print(response.json())
         else:
-            print("Index not reloaded via api call %s" % url)
+            print(f"Index not reloaded via api call {url}")
             print(response.reason)
     except:
         print("Error: Something went wrong during index reloading ...")

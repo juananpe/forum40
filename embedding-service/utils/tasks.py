@@ -44,7 +44,7 @@ class ForumTask:
                 password=DB_PASSWORD
             )
         except:
-            self.logger.error("Could not connect to database (%s:***@%s:%s/%s)" % (DB_USER, host, port, DB_NAME))
+            self.logger.error(f"Could not connect to database ({DB_USER}:***@{host}:{port}/{DB_NAME})")
             exit(1)
 
         self.cursor = self.conn.cursor()
@@ -156,19 +156,19 @@ class SingleProcessManager:
                 self.processes[task] = proc
 
                 result = {
-                    "message" : "Task %s started." % task,
+                    "message" : f"Task {task} started.",
                     "pid" : proc.pid
                 }
             else:
                 result = {
-                    "message" : "Task %s is still running." % task,
+                    "message" : f"Task {task} is still running.",
                     "pid" : self.processes[task].pid
                 }
 
             return result
 
         except KeyError:
-            message = "Unknown task %s" % task
+            message = f"Unknown task {task}"
             logger.error(message)
             return { "error" : message}
 
@@ -183,18 +183,18 @@ class SingleProcessManager:
                 pid = self.processes[task].pid
                 self.processes[task].terminate()
                 result = {
-                    "message" : "Task %s stopped." % task,
+                    "message" : f"Task {task} stopped.",
                     "pid" : pid
                 }
             else:
                 result = {
-                    "message" : "Task %s is not running." % task
+                    "message" : f"Task {task} is not running."
                 }
 
             return result
 
         except KeyError:
-            message = "Unknown task %s" % task
+            message = f"Unknown task {task}"
             logger.error(message)
             return { "error" : message}
 
@@ -229,13 +229,13 @@ class SingleProcessManager:
                 }
             else:
                 result = {
-                    "message" : "Task %s is not running." % task
+                    "message" : f"Task {task} is not running."
                 }
 
             return result
 
         except KeyError:
-            message = "Unknown task %s" % task
+            message = f"Unknown task {task}"
             logger.error(message)
             return { "error" : message}
 

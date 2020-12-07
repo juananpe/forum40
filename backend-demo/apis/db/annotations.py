@@ -169,13 +169,13 @@ class LabelComment(Resource):
 
         # Check Args
         if not _comment_exists(comment_id):
-            return {"msg": "No Comments with id: {0}".format(comment_id)}, 400
+            return {"msg": f"No Comments with id: {comment_id}"}, 400
 
         if not _label_exists(label_id):
-            return {"msg": "No Label with id: {0}".format(label_id)}, 400
+            return {"msg": f"No Label with id: {label_id}"}, 400
 
         if not _user_exists(user_id):
-            return {"msg": "No User with id: {0}".format(user_id)}, 400
+            return {"msg": f"No User with id: {user_id}"}, 400
 
         query = SELECT_LABEL_FROM_ANNOTATIONS_BY_IDS(label_id, comment_id, user_id)
 
@@ -191,7 +191,7 @@ class LabelComment(Resource):
         elif db_result['label'] != label: # Update
             with db_cursor() as cur:
                 cur.execute(UPDATE_ANNOTATION(label_id, comment_id, user_id, label))
-        else: 
+        else:
             pass
 
         postgres_con.commit()
@@ -212,7 +212,7 @@ class LabelComment(Resource):
                 previous_number_training_samples = result[0]
             else:
                 previous_number_training_samples = 0
-            
+
         new_training_samples = current_annotated_samples - previous_number_training_samples
 
         # is training in progress?

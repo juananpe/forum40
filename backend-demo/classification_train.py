@@ -27,7 +27,7 @@ class ClassifierTrainer(ForumProcessor):
         self.cursor.execute("""SELECT id FROM labels WHERE name=%s""", (self.labelname,))
         self.label_id = self.cursor.fetchone()[0]
         if self.label_id is None:
-            self.logger.error("Label %s not found" % self.labelname)
+            self.logger.error(f"Label {self.labelname} not found")
             exit(1)
         else:
             self.logger.info("Build classifier model for label: " + self.labelname + " (" + str(self.label_id) + ")")
@@ -42,7 +42,7 @@ class ClassifierTrainer(ForumProcessor):
             self.logger.info("No comments for training found.")
             exit(0)
         else:
-            self.logger.info("Found %d comments for training." % n_annotations)
+            self.logger.info(f"Found {n_annotations:d} comments for training.")
 
         # select annotations
         self.cursor.execute(
@@ -95,7 +95,7 @@ class ClassifierTrainer(ForumProcessor):
             best_acc = 0
             self.set_total(1 + len(params))
             for step, C in enumerate(params):
-                message = "Testing C = %.3f" % C
+                message = f"Testing C = {C:.3f}"
                 self.update_state(step + 1, message)
                 self.logger.info(message)
                 self.classifier.setC(C)
@@ -106,12 +106,12 @@ class ClassifierTrainer(ForumProcessor):
                     best_F1 = f1_score
                     best_acc = accuracy
                     best_C = C
-            self.logger.info("Optimal C = %.3f" % best_C)
-            self.logger.info("Performance: accuracy = %.3f, F1 = %.3f" % (best_acc, best_F1))
+            self.logger.info(f"Optimal C = {best_C:.3f}")
+            self.logger.info(f"Performance: accuracy = {best_acc:.3f}, F1 = {best_F1:.3f}")
             # set best C parameter
             self.classifier.setC(C)
             end = timer()
-            self.logger.info("Hyperparameter optimzation finished after " + str(end - start) + " seconds.")
+            self.logger.info(f"Hyperparameter optimzation finished after {str(end - start)} seconds.")
 
         # train final model
         step += 1
@@ -133,15 +133,17 @@ class ClassifierTrainer(ForumProcessor):
             self.update_state(step, message)
             acc, f1, fit_time, _ = self.classifier.cross_validation(annotation_dataset, k=10)
             with open(get_history_path(self.labelname), 'a', encoding="UTF-8") as f:
-                # append history file: timestamp, task, label, training set size, cv acc, cv f1, stability score, duration
-                result_string = "%s;training;%s;%d;%.3f;%.3f;0;%.1f" % (
-                    datetime.today().isoformat(),
-                    self.labelname,
-                    len(annotation_dataset),
-                    acc,
-                    f1,
-                    fit_time
-                )
+                # append history file
+                result_string = ";".join([
+                    datetime.today().isoformat(),  # timestamp
+                    "training",  # task
+                    self.labelname,  # label
+                    str(len(annotation_dataset)),  # training set size
+                    f"{acc:.3f}",  # cv acc
+                    f"{f1:.3f}",  # cv f1
+                    "0",  # stability score
+                    f"{fit_time:.1f}",  # duration
+                ])
                 f.write(result_string + "\n")
                 self.logger.info(result_string)
                 self.update_state(step, result_string)

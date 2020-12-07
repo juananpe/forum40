@@ -439,7 +439,7 @@ class CommentsGroupByDay(Resource):
             cur.execute(query)
             db_result = cur.fetchall()
 
-        return prepareForVisualisation(addMissingDays(db_result), lambda d: "{}.{}.{}".format(d['day'], d['month'], d['year']))
+        return prepareForVisualisation(addMissingDays(db_result), lambda d: f"{d['day']}.{d['month']}.{d['year']}")
 
 @check_source_id
 @ns.route('/groupByMonth')
@@ -463,7 +463,7 @@ class CommentsGroupByMonth(Resource):
             cur.execute(query)
             db_result = cur.fetchall()
 
-        return prepareForVisualisation(addMissingMonths(db_result), lambda d: "{}.{}".format(d['month'], d['year']))
+        return prepareForVisualisation(addMissingMonths(db_result), lambda d: f"{d['month']}.{d['year']}")
 
 @check_source_id
 @ns.route('/groupByYear')
@@ -487,7 +487,7 @@ class CommentsGroupByYear(Resource):
             cur.execute(query)
             db_result = cur.fetchall()
 
-        return prepareForVisualisation(addMissingYears(db_result), lambda d: "{}".format(d['year']))
+        return prepareForVisualisation(addMissingYears(db_result), lambda d: f"{d['year']}")
 
 
 @ns.route('/parent/<string:id>/')

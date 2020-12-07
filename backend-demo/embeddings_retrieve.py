@@ -21,16 +21,16 @@ class RetrieveComment(ForumTask):
 
         self.index = hnswlib.Index(space = 'cosine', dim = 768)
         index_filename = os.path.join(EMBEDDING_INDEX_PATH, "hnsw_" + str(source_id) + ".index")
-        self.logger.info("Loading index %s" % index_filename)
+        self.logger.info(f"Loading index {index_filename}")
         try:
             self.index.load_index(index_filename)
             # set ef 300 from construction time
             self.index.set_ef(300)
-            self.logger.info("Loaded index with %d entries" % self.index.get_current_count())
+            self.logger.info(f"Loaded index with {self.index.get_current_count():d} entries")
             self.loaded_index_source_id = source_id
             return True
         except:
-            self.logger.error("No index of embeddings found in %s" % index_filename)
+            self.logger.error(f"No index of embeddings found in {index_filename}")
             return False
 
     def get_embedding(self, id):
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     embeddings = retriever.get_embedding(comment_id)
 
     if not embeddings:
-        print("Error: no embedding for id %d in database" % comment_id)
+        print(f"Error: no embedding for id {comment_id} in database")
         exit(1)
 
     retriever.logger.info("Length of the embedding: " + str(len(embeddings)))
