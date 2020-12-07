@@ -15,11 +15,6 @@ comments_parser_sl.add_argument('skip', type=int, default=0, required=True)
 comments_parser_sl.add_argument('limit', type=int, default=50, required=True)
 comments_parser_sl.add_argument('category', type=str, required=False)
 
-comments_parser = reqparse.RequestParser()
-comments_parser.add_argument('label', action='append')
-comments_parser.add_argument('keyword', action='append')
-comments_parser.add_argument('source_id', action='append')
-
 comment_parser = reqparse.RequestParser()
 comment_parser.add_argument('label', action='append')
 

@@ -246,55 +246,6 @@ def insert_new_comments(comments):
     return {'added_comment_ids': new_comments_ids, 'count': len(new_comments_ids)}, 200
 
 
-@api.deprecated
-@ns.route('/unlabeled')
-@api.expect(comments_parser_sl)
-class CommentsGetUnlabeld(Resource):
-
-    def get(self):
-        # get args
-        args = comments_parser_sl.parse_args()
-        skip = args["skip"]
-        limit = args["limit"]
-        label_ids = args.get('label', None)
-        keywords = args.get('keyword', None)
-        source_ids = args.get('source_id', None)
-
-        # get all comments
-        query = GET_UNLABELED_COMMENTS_BY_FILTER(label_ids, keywords, source_ids, skip, limit)
-
-        comments = []
-        with db_cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(query)
-            comments = cur.fetchall()
-
-        for i in range(0, len(comments)):
-            comments[i]['timestamp'] = comments[i]['timestamp'].isoformat()
-
-        return comments
-
-
-@api.deprecated
-@ns.route('/count')
-@api.expect(comments_parser)
-class CommentsCount(Resource):
-    def get(self):
-        args = comments_parser.parse_args()
-
-        labels = args['label'] if 'label' in args else None
-        keywords = args['keyword'] if 'keyword' in args else None
-        source_ids = args['source_id'] if 'source_id' in args else None
-
-        query = COUNT_COMMENTS_BY_FILTER(labels, keywords, source_ids)
-
-        count = None
-        with db_cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(query)
-            count = cur.fetchone()
-
-        return {'count': count}
-
-
 def addMissingDays(data):
     min_ = min_date
     missing = []

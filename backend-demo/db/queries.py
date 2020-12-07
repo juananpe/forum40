@@ -91,17 +91,6 @@ GROUP_ALL_COMMENTS_BY_YEAR = lambda keywords, source_id: f'''
             ORDER BY year
 '''
 
-GET_UNLABELED_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids, skip, limit: f"""
-            select c.id, c.title, c.text, c.timestamp from comments c 
-            where 
-                {opt_keyword_section(keywords)} {opt_and(keywords and source_ids)} {opt_source_section(source_ids, "c.")}
-                {opt_and(keywords or source_ids)}
-                not exists ( select * from annotations a where c.id = a.comment_id {opt_and(labels)} {opt_label_selection(labels)} )
-                and 
-                not exists ( select * from facts f where c.id = f.comment_id {opt_and(labels)} {opt_label_selection(labels)} )
-            limit {limit} offset {skip}
-            """
-
 GET_ANNOTATIONS_BY_FILTER = lambda ids, labels, user_id: f"""
             select coalesce(a.comment_id, f.comment_id) as comment_id, coalesce(a.label_id, f.label_id) as label_id, a.count_true as group_count_true, 
             a.count_false as group_count_false, f.label as ai, f.confidence as ai_pred {opt_user_sec_head(user_id)} from 
@@ -117,28 +106,6 @@ GET_ANNOTATIONS_BY_FILTER = lambda ids, labels, user_id: f"""
             ON a.comment_id = f.comment_id and a.label_id = f.label_id
             {opt_user_sec_body(user_id)}
             order by a.comment_id, a.label_id
-            """
-
-COUNT_COMMENTS_BY_FILTER = lambda labels, keywords, source_ids: f"""
-            select count(*) from
-            (
-                select * from comments {opt_where(keywords or source_ids)} {opt_keyword_section(keywords)} {opt_and(keywords and source_ids)} {opt_source_section(source_ids)}
-            ) as c
-            inner join 
-            (
-                select coalesce(l.cid_a, l.cid_f) as comment_id from 
-                (
-                    (
-                        select distinct comment_id as cid_a from annotations {opt_where(labels)} {opt_label_selection(labels)} {opt_and_label_eq_true(labels)} 
-                    ) as a
-                    full outer join
-                    (
-                        select distinct comment_id as cid_f from facts {opt_where(labels)} {opt_label_selection(labels)} {opt_and_label_eq_true(labels)} 
-                    ) as f on a.cid_a = f.cid_f
-                ) as l
-                order by comment_id
-            ) _ 
-            on c.id = _.comment_id
             """
 
 # FACTS
