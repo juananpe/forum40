@@ -4,23 +4,10 @@ from psycopg2.extras import RealDictCursor
 
 from db import postgres_con, db_cursor
 from db.db_models import document_parser
-from db.queries import COUNT_DOCUMENTS, GET_COMMENTS_PER_CATEGORY
+from db.queries import GET_COMMENTS_PER_CATEGORY
 from jwt_auth.token import token_required
 
 ns = Namespace('documents', description="documents api")
-
-
-@ns.route('/count')
-class DocumentsCount(Resource):
-    def get(self):
-        postgres = postgres_con.cursor()
-        postgres.execute(COUNT_DOCUMENTS)
-        db_return = postgres.fetchone()
-
-        if db_return:
-            return {'count': db_return[0]}, 200
-
-        return {"msg": "Error"}, 400
 
 
 def getDocumentByIds(id, external_id):
@@ -49,19 +36,6 @@ def getIdFromDoc(id, external_id):
         return {'msg': 'DatabaseError: transaction is aborted'}, False
 
     return postgres.fetchone(), True
-
-
-@ns.route('/<id>/<external_id>')
-class Documents(Resource):
-
-    def get(self, id, external_id):
-        sources, succ = getDocumentByIds(id, external_id)
-        if not succ:
-            return sources, 400
-
-        if sources:
-            sources['timestamp'] = sources['timestamp'].isoformat()
-        return sources, 200
 
 
 @ns.route('/categories/<source_id>/')

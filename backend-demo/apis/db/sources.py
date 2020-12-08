@@ -4,7 +4,6 @@ from psycopg2.extras import RealDictCursor
 
 from db import postgres_con
 from db.db_models import source_parser
-from db.queries import COUNT_SOURCES
 from jwt_auth.token import token_required, token_optional
 
 ns = Namespace('sources', description="sources api")
@@ -77,16 +76,3 @@ class SourcesByName(Resource):
             return sources, 200
         else:
             return {"id": None}, 200
-
-
-@ns.route('/count')
-class SourcesCount(Resource):
-    def get(self):
-        postgres = postgres_con.cursor()
-        postgres.execute(COUNT_SOURCES)
-        db_return = postgres.fetchone()
-
-        if db_return:
-            return {'count': db_return[0]}, 200
-
-        return {"msg": "Error"}, 400

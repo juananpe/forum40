@@ -1,17 +1,9 @@
 from enum import Enum
 
 # USERS
-COUNT_USERS = "SELECT COUNT(*) FROM users;"
 SELECT_USER_BY_ID = lambda x: f"SELECT * FROM users WHERE id = {x} fetch first 1 rows only;"
 
-# Sources
-COUNT_SOURCES = "SELECT COUNT(*) FROM sources;"
-
-# Documents
-COUNT_DOCUMENTS = "SELECT COUNT(*) FROM documents;"
-
 # Annotations
-COUNT_ANNOTATIONS = "SELECT COUNT(*) FROM annotations;"
 SELECT_LABEL_FROM_ANNOTATIONS_BY_IDS = lambda label_id, comment_id, user_id: f"SELECT label FROM annotations WHERE label_id = {label_id} AND comment_id = {comment_id} AND user_id = '{user_id}';"
 INSERT_ANNOTATION = lambda label_id, comment_id, user_id, label: f"INSERT INTO annotations (label_id, comment_id, user_id, label) VALUES ({label_id}, {comment_id}, {user_id}, {label})"
 UPDATE_ANNOTATION = lambda label_id, comment_id, user_id, label: f"UPDATE annotations SET label = {label} WHERE label_id = {label_id} AND comment_id = {comment_id} AND user_id = '{user_id}'"
@@ -19,7 +11,6 @@ SELECT_USERS_ANNOTATION = "SELECT a.label, a.label_id, a.comment_id FROM annotat
 
 
 # Labels
-COUNT_LABELS = "SELECT COUNT(*) FROM labels"
 COUNT_LABELS_BY_NAME = lambda x: f"SELECT COUNT(*) FROM labels WHERE name = '{x}';"
 
 SELECT_LABEL_BY_ID = lambda x: f"SELECT id FROM labels WHERE id = {x} fetch first 1 rows only;"
@@ -27,7 +18,6 @@ SELECT_NAMES_FROM_LABELS = "SELECT name FROM labels where labels.source_id = %s"
 SELECT_IDS_FROM_LABELS = "SELECT id FROM labels where labels.source_id = %s"
 SELECT_DESCRIPTIONS_FROM_LABELS = "SELECT description FROM labels where labels.source_id = %s"
 SELECT_DESCRIPTION_BY_LABEL_ID = "SELECT description FROM labels WHERE id = %s"
-SELECT_ID_FROM_LABELS_BY_NAME = lambda x: f"SELECT id FROM labels WHERE name = '{x}';"
 SELECT_MAX_ID = lambda table: f"SELECT MAX(id) FROM {table}"
 
 INSERT_LABEL = "INSERT INTO labels (id, type, name, source_id, description) VALUES(%s, %s, %s, %s, %s)"

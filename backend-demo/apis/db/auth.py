@@ -5,7 +5,7 @@ from flask_restplus import Resource, Namespace
 
 from db import postgres_con
 from db.queries import SELECT_PASSWORD_BY_NAME
-from jwt_auth.token import token_required, token_optional
+from jwt_auth.token import token_required
 
 ns = Namespace('auth', description="auth api")
 
@@ -59,15 +59,3 @@ class AuthRefresh(Resource):
             globalSecret)  # TODO hide pwd
 
         return jsonify({'token': token.decode('UTF-8'), 'user': user})
-
-
-@ns.route('/test/optional/')
-class AuthRefreshs(Resource):
-    @token_optional
-    @ns.doc(security='apikey')
-    def get(self, data):
-        user = None
-        if self:
-            user = self["user"]
-
-        return {'User': user}

@@ -6,127 +6,16 @@ from psycopg2.extras import RealDictCursor
 
 from config import settings
 from db import postgres_con, db_cursor
-from db.db_models import comments_parser_sl
 from db.queries import *
 from jwt_auth.token import token_required
 
 ns = Namespace('annotations', description="annotations api")
 
 
-@ns.route('/count')
-class SourcesCount(Resource):
-    def get(self):
-        query = COUNT_ANNOTATIONS
-
-        db_return = []
-        with db_cursor() as cur:
-            cur.execute(query)
-            db_return = cur.fetchone()
-
-        if db_return:
-            return {'count': db_return[0]}, 200
-
-        return {"msg": "Error"}, 400
-
-
-@ns.route('/count_facts/')
-class SourcesCountF(Resource):
-    def get(self):
-        query = 'SELECT COUNT(*) FROM facts'
-        db_return = []
-        with db_cursor() as cur:
-            cur.execute(query)
-            db_return = cur.fetchone()
-
-        if db_return:
-            return {'count': db_return[0]}, 200
-
-        return {"msg": "Error"}, 400
-
-
 @ns.route('/<int:comment_id>')
 class GetLabel(Resource):
     def get(self, comment_id):
         query = f"SELECT label_id, user_id, label FROM Annotations WHERE comment_id = {comment_id}"
-        db_return = []
-        with db_cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(query)
-            db_return = cur.fetchall()
-
-        return db_return
-
-
-@ns.route('/user/<int:user_id>')
-@ns.expect(comments_parser_sl)
-class GetLabelUser(Resource):
-    def get(self, user_id):
-
-        args = comments_parser_sl.parse_args()
-        skip = args["skip"]
-        limit = args["limit"]
-
-        annotations_where_sec = ''
-        if 'label' in args and args['label']:
-            labelIds = ' WHERE label_id IN ({0})'.format(", ".join(i for i in args['label']))
-            annotations_where_sec += labelIds
-
-        comments_where_sec = ''
-        if 'keyword' in args and args['keyword']:
-            searchwords = ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
-            comments_where_sec += 'WHERE ' + searchwords
-
-        query = f"""
-            SELECT _.id, array_agg(_.agg) as group_annotation FROM
-            (
-                SELECT c.id, ARRAY[a.label_id, a.label::int] as agg
-                    FROM (SELECT * FROM comments {comments_where_sec} LIMIT {limit} OFFSET {skip}) AS c 
-                    LEFT OUTER JOIN 
-                    (SELECT * FROM annotations {annotations_where_sec}) AS a
-                    ON c.id = a.comment_id
-                    WHERE a.user_id = '{user_id}'
-                    GROUP BY c.id, a.label_id, a.label
-            ) _ 
-            GROUP BY _.id
-        """
-        db_return = []
-        with db_cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(query)
-            db_return = cur.fetchall()
-        return db_return
-
-
-@ns.route('/group/')
-@ns.expect(comments_parser_sl)
-class GetLabelGroup(Resource):
-    def get(self):
-
-        args = comments_parser_sl.parse_args()
-        skip = args["skip"]
-        limit = args["limit"]
-
-        annotations_where_sec = ''
-        if 'label' in args and args['label']:
-            labelIds = ' WHERE label_id IN ({0})'.format(", ".join(i for i in args['label']))
-            annotations_where_sec += labelIds
-
-        comments_where_sec = ''
-        if 'keyword' in args and args['keyword']:
-            searchwords = ' OR '.join("text LIKE '%{0}%'".format(x) for x in args['keyword'])
-            comments_where_sec += 'WHERE ' + searchwords
-
-        query = f"""
-        SELECT _.id, _.title, _.text, _.timestamp, array_agg(_.agg) as group_annotation FROM
-        (
-            SELECT c.id, c.title, c.text, c.timestamp, ARRAY[a.label_id, count(a.label or null), count(not a.label or null)] as agg
-                FROM (SELECT * FROM comments {comments_where_sec} LIMIT {limit} OFFSET {skip}) AS c 
-                LEFT OUTER JOIN 
-                (SELECT * FROM annotations {annotations_where_sec}) AS a
-                ON c.id = a.comment_id
-                GROUP BY c.id, a.label_id, c.title, c.text, c.timestamp
-        ) _ 
-        GROUP BY _.id, _.title, _.text, _.timestamp
-        """
-
         db_return = []
         with db_cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(query)
