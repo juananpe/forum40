@@ -1,8 +1,9 @@
-FROM python:3.6
+FROM python:3.9
 
 # system packages
-RUN apt-get update
-RUN apt-get install -y python-pybind11
+RUN apt-get update && apt-get install -y \
+  python-pybind11 \
+  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/app
 
