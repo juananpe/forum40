@@ -130,6 +130,7 @@ CREATE TABLE IF NOT EXISTS public.annotations (
 	comment_id int8 NOT NULL,
 	user_id varchar NOT NULL DEFAULT 'anonymous',
 	"label" bool NOT NULL,
+	UNIQUE (label_id, comment_id, user_id),
 	CONSTRAINT annotations_pk PRIMARY KEY (id)
 );
 
