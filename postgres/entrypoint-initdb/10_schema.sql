@@ -67,7 +67,8 @@ CREATE TABLE IF NOT EXISTS public.documents (
 	metadata text NULL,
 	source_id int8 NULL,
 	embedding float8[] NULL,
-	CONSTRAINT documents_pk PRIMARY KEY (id)
+	CONSTRAINT documents_pk PRIMARY KEY (id),
+    UNIQUE (source_id, external_id)
 );
 
 CREATE MATERIALIZED VIEW IF NOT EXISTS public.count_comments_by_category
@@ -101,7 +102,8 @@ CREATE TABLE IF NOT EXISTS public."comments" (
 	"year" int2 NULL,
 	"month" int2 NULL,
 	"day" int2 NULL,
-	CONSTRAINT comments_pk PRIMARY KEY (id)
+	CONSTRAINT comments_pk PRIMARY KEY (id),
+	UNIQUE (source_id, external_id)
 );
 
 
