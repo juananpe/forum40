@@ -3,9 +3,8 @@ from flask_restplus import Resource, Namespace
 
 from apis.utils.tasks import SingleProcessManager
 from apis.utils.transformation import slice_dicts
-from db import postgres_con, with_database, Database
+from db import with_database, Database
 from db.db_models import label_parser_post
-from db.queries import *
 from jwt_auth.token import token_required
 
 ns = Namespace('labels', description="labels api")
@@ -22,7 +21,7 @@ process_manager.register_process("init_facts", ["classification_update.py", pg_h
 class LabelsGetAll(Resource):
     @with_database
     def get(self, db: Database, source_id):
-        labels = list(db.labels.find_all_by_source_id(source_id))
+        labels = db.labels.find_all_by_source_id(source_id)
         return slice_dicts(labels, {'labels': 'name', 'ids': 'id', 'descriptions': 'description'})
 
 
@@ -31,29 +30,26 @@ class AddLabel(Resource):
     @token_required
     @ns.doc(security='apikey')
     @ns.expect(label_parser_post)
-    def put(self, data, label_name, source_id):
-        postgres = postgres_con.cursor()
-        postgres.execute(COUNT_LABELS_BY_NAME(label_name))
-        db_result = postgres.fetchone()
+    @with_database
+    def put(self, db: Database, data, label_name, source_id):
+        if db.labels.is_name_taken(label_name):
+            return {'msg': 'Label already exists.'}, 400
 
         args = label_parser_post.parse_args()
         description = args.get('description', None)
 
-        if db_result:
-            if db_result[0] >= 1:
-                return {'msg': 'Label already exists.'}, 400
+        db.labels.insert_label({
+            'type': 'classification',
+            'name': label_name,
+            'source_id': source_id,
+            'description': description,
+        })
 
-        postgres.execute(SELECT_MAX_ID('labels'))
-        max_id = postgres.fetchone()[0]
-
-        label_id = max_id + 1
-
-        postgres.execute(INSERT_LABEL, (label_id, 'classification', label_name, source_id, description))
-        postgres_con.commit()
+        db.acc.commit()
 
         # init facts
         args = ["--labelname", label_name, "--init-facts-only"]
-        results = process_manager.invoke("init_facts", str(source_id), args)
+        process_manager.invoke("init_facts", str(source_id), args)
         print(f"Init facts for label {label_name} started as background process")
 
         return "ok", 200

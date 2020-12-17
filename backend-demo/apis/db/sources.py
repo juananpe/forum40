@@ -1,8 +1,6 @@
 from flask_restplus import Resource, Namespace
-from psycopg2 import DatabaseError
-from psycopg2.extras import RealDictCursor
 
-from db import postgres_con
+from db import with_database, Database
 from db.db_models import source_parser
 from jwt_auth.token import token_required, token_optional
 
@@ -13,66 +11,29 @@ ns = Namespace('sources', description="sources api")
 class Sources(Resource):
 
     @token_optional
+    @with_database
     @ns.doc(security='apikey')
-    def get(self, data):
-        role = None
-        if self:
-            role = self.get('role', None)
-        query = "select * from sources s"
-
-        if role != 'admin':
-            query += " where not s.protected"
-
-        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
-        try:
-            postgres.execute(query)
-            postgres_con.commit()
-
-        except DatabaseError:
-            postgres_con.rollback()
-            return {'msg': 'DatabaseError: transaction is aborted'}, 400
-
-        sources = postgres.fetchall()
-        return sources, 200
+    def get(self, db: Database):
+        is_admin = self.get('role', None) == 'admin'
+        sources = db.sources.find_all(include_protected=is_admin)
+        return list(sources), 200
 
     @ns.expect(source_parser)
     @token_required
+    @with_database
     @ns.doc(security='apikey')
-    def post(self, data):
+    def post(self, db: Database, data):
         args = source_parser.parse_args()
-        name = args['name']
-        domain = args['domain']
-        postgres = postgres_con.cursor()
-        insert_query = "INSERT INTO sources (name, domain) VALUES (%s, %s) RETURNING id;"
-
-        try:
-            postgres.execute(insert_query, (name, domain))
-            postgres_con.commit()
-
-        except DatabaseError:
-            postgres_con.rollback()
-            return {'msg': 'DatabaseError: transaction is aborted'}, 400
-
-        added_source = postgres.fetchone()
-        return {'id': added_source[0]}, 200
+        id_ = db.sources.insert(args)
+        return {'id': id_}, 200
 
 
 @ns.route('/<name>')
 class SourcesByName(Resource):
+    @with_database
+    def get(self, db: Database, name):
+        source = db.sources.find_by_name(name)
+        if source is None:
+            return '', 404
 
-    def get(self, name):
-        query = f"select id from sources where name = '{name}'"
-        postgres = postgres_con.cursor(cursor_factory=RealDictCursor)
-        try:
-            postgres.execute(query)
-            postgres_con.commit()
-
-        except DatabaseError:
-            postgres_con.rollback()
-            return {'msg': 'DatabaseError: transaction is aborted'}, 400
-
-        sources = postgres.fetchone()
-        if sources:
-            return sources, 200
-        else:
-            return {"id": None}, 200
+        return source, 200

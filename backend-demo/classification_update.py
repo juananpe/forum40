@@ -12,7 +12,6 @@ from apis.service.colibert_client import CoLiBertClient
 from apis.utils.tasks import ForumProcessor
 from classification_classifier import EmbeddingClassifier, get_history_path
 from classification_train import ClassifierTrainer
-from db.queries import *
 
 
 class LabelUpdater(ForumProcessor):
@@ -225,14 +224,14 @@ class LabelUpdater(ForumProcessor):
         start = time.time()
 
         # get label description
-        self.cursor.execute(SELECT_DESCRIPTION_BY_LABEL_ID, (self.label_id,))
+        self.cursor.execute("SELECT description FROM labels WHERE id = %s", (self.label_id,))
         description = self.cursor.fetchone()[0]
 
         if not description:
             return
 
         # select sample comments
-        self.cursor.execute(SELECT_RANDOM_COMMENTS_BY_SOURCE_ID, (self.source_id, 100))
+        self.cursor.execute("SELECT id, text FROM comments WHERE source_id = %s ORDER BY RANDOM() LIMIT %s", (self.source_id, 100))
         comments = self.cursor.fetchall()
         comment_ids, comment_texts = zip(*comments)
 
@@ -242,7 +241,7 @@ class LabelUpdater(ForumProcessor):
 
         # update scores in DB
         records = list(zip(scores, comment_ids, itertools.repeat(self.label_id)))
-        self.cursor.executemany(UPDATE_FACT_BY_COMMENT_ID_LABEL_ID, records)
+        self.cursor.executemany("UPDATE facts SET confidence = %s WHERE comment_id = %s and label_id = %s", records)
         self.conn.commit()
 
         end = time.time()

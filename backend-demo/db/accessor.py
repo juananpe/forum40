@@ -9,6 +9,8 @@ class CursorType:
     DICT: Cursor[Dict] = RealDictCursor
 
 
+_no_default = object()
+
 T = TypeVar('T')
 
 
@@ -33,14 +35,17 @@ class DatabaseAccessor:
             cur.execute(sql, args)
             while len(items := cur.fetchmany(size=batch_size)) > 0:
                 for item in items:
-                    print('Yielding', item)
                     yield item
             return cur.fetchall()
 
-    def fetch_value(self, sql: str, args: Optional[QueryArgs] = None):
+    def fetch_value(self, sql: str, args: Optional[QueryArgs] = None, default=_no_default):
         with self.create_cursor(type_=CursorType.TUPLE) as cur:
             cur.execute(sql, args)
-            return cur.fetchone()[0]
+            result = cur.fetchone()
+            if result is None and default is _no_default:
+                raise Exception('Query did not return a result and no default is set')
+
+            return result[0] if result is not None else default
 
     def commit(self):
         self.__conn.commit()

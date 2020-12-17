@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+
 from contextlib import contextmanager
 
 import wrapt
@@ -8,7 +10,7 @@ from db.accessor import DatabaseAccessor
 from db.connection import db_pool
 from db.driver import Connection
 from db.repositories import AnnotationRepository, DocumentRepository, ModelRepository, \
-    CommentRepository, LabelRepository, SourceRepository, UserRepository
+    CommentRepository, LabelRepository, SourceRepository, UserRepository, FactsRepository
 
 
 class Database:
@@ -36,6 +38,10 @@ class Database:
     @property
     def documents(self) -> DocumentRepository:
         return DocumentRepository(accessor=self.acc)
+
+    @property
+    def facts(self) -> FactsRepository:
+        return FactsRepository(accessor=self.acc)
 
     @property
     def models(self) -> ModelRepository:

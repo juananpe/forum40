@@ -22,6 +22,16 @@ def checkIfTokenIsValidAndGetData(token):
         return False, None
 
 
+def create_token(user_id: int, user_name: str, user_role: str) -> str:
+    return jwt.encode({
+        'user': user_name,
+        'user_id': user_id,
+        'role': user_role,
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60)},
+        globalSecret
+    ).decode('UTF-8')
+
+
 def checkIfUserIsAuthorised(token, data):
     postgres = postgres_con.cursor()
     postgres.execute("SELECT COUNT(*) FROM users WHERE name = '{0}';".format(data["user"]))
