@@ -5,6 +5,8 @@ stages:
 
 step-deploy-prod:
   stage: deploy
+  only:
+    - master
   before_script:
     - 'which ssh-agent || ( apk update && apk add openssh-client)'
 
@@ -33,4 +35,3 @@ step-deploy-prod:
 
   script:
     - ssh -tt gitlabrunner@mast-se.informatik.uni-hamburg.de "~/forum40/deployment.sh"
-  
