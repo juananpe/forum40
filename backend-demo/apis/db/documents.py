@@ -32,10 +32,8 @@ class DocumentsPost(Resource):
     @ns.doc(security='apikey')
     def post(self, db: Database, token_data: TokenData):
         args = document_parser.parse_args()
-        source_id = args['source_id']
-        external_id = args['external_id']
 
-        if (id_ := db.documents.find_id_by_external_id(source_id, external_id)) is not None:
+        if (id_ := db.documents.find_id_by_external_id(args['source_id'], args['external_id'])) is not None:
             return {'id': id_}, 409
 
         id_ = db.documents.insert(args)

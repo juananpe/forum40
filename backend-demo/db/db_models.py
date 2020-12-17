@@ -2,21 +2,21 @@ from flask_restplus import reqparse, inputs
 
 groupByModel = reqparse.RequestParser()
 groupByModel.add_argument('label', type=int, default=None)
-groupByModel.add_argument('keyword', action='append')
+groupByModel.add_argument('keyword', action='append', default=lambda: [])
 groupByModel.add_argument('source_id', type=int, required=True)
 
 comments_parser_sl = reqparse.RequestParser()
-comments_parser_sl.add_argument('label', action='append', type=int)
-comments_parser_sl.add_argument('keyword', action='append')
+comments_parser_sl.add_argument('label', action='append', type=int, default=lambda: [])
+comments_parser_sl.add_argument('keyword', action='append', default=lambda: [])
 comments_parser_sl.add_argument('source_id', type=int, required=True)
 comments_parser_sl.add_argument('order', type=int, default=2)
-comments_parser_sl.add_argument('label_sort_id', type=int)
+comments_parser_sl.add_argument('label_sort_id', type=int, default=None)
 comments_parser_sl.add_argument('skip', type=int, default=0, required=True)
 comments_parser_sl.add_argument('limit', type=int, default=50, required=True)
-comments_parser_sl.add_argument('category', type=str, required=False)
+comments_parser_sl.add_argument('category', type=str, default=None)
 
 comment_parser = reqparse.RequestParser()
-comment_parser.add_argument('label', action='append')
+comment_parser.add_argument('label', action='append', default=lambda: [])
 
 source_parser = reqparse.RequestParser()
 source_parser.add_argument('name', required=True)

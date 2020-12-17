@@ -1,3 +1,4 @@
+import sys
 from collections import defaultdict
 
 from datetime import timedelta, date
@@ -29,18 +30,18 @@ class CommentsGet(Resource):
         # get args
         args = comments_parser_sl.parse_args()
 
-        if (label_sort_id := args.get('label_sort_id', None)) is None:
+        if (label_sort_id := args['label_sort_id']) is None:
             sorting = TimestampSorting(Order.desc)
         else:
-            order = args.get('order', None)
-            sort_order = [UncertaintyOrder, Order.asc, Order.desc][order]
+            order_num = args['order']
+            sort_order = [UncertaintyOrder, Order.asc, Order.desc][order_num]
             sorting = FactSorting(label_sort_id, order=sort_order)
 
         comments = list(db.comments.find_all_by_query(
-            source_id=args.get('source_id', None),
-            keywords=args.get('keyword', []),
+            source_id=args['source_id'],
+            keywords=args['keyword'],
             sorting=sorting,
-            document_category=args.get('category', None),
+            document_category=args['category'],
             limit=args["limit"],
             offset=args["skip"],
             fields=comment_fields(content=True, metadata=True),
@@ -48,7 +49,7 @@ class CommentsGet(Resource):
         load_annotations(
             db=db,
             comments=comments,
-            label_ids=args.get('label', []),
+            label_ids=args['label'],
             user_id=token_data['user_id'] if token_data is not None else None,
         )
 
@@ -236,7 +237,7 @@ class Comment(Resource):
         load_annotations(
             db=db,
             comments=[comment],
-            label_ids=args['label'] if 'label' in args else [],
+            label_ids=args['label'],
             user_id=token_data['user_id'] if token_data else None,
         )
 
@@ -244,6 +245,9 @@ class Comment(Resource):
 
 
 def load_annotations(db: Database, comments: List[Dict], label_ids: List[int], user_id: Optional[int] = None):
+    if len(label_ids) == 0:
+        return
+
     comment_ids = [comment['id'] for comment in comments]
 
     def key_by(items: Iterable[Dict]) -> Dict[Tuple[int, int], Optional[Dict]]:

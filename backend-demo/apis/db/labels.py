@@ -36,20 +36,19 @@ class AddLabel(Resource):
             return {'msg': 'Label already exists.'}, 400
 
         args = label_parser_post.parse_args()
-        description = args.get('description', None)
 
         db.labels.insert_label({
             'type': 'classification',
             'name': label_name,
             'source_id': source_id,
-            'description': description,
+            'description': args['description'],
         })
 
         db.acc.commit()
 
         # init facts
-        args = ["--labelname", label_name, "--init-facts-only"]
-        process_manager.invoke("init_facts", str(source_id), args)
+        process_args = ["--labelname", label_name, "--init-facts-only"]
+        process_manager.invoke("init_facts", str(source_id), process_args)
         print(f"Init facts for label {label_name} started as background process")
 
         return "ok", 200
