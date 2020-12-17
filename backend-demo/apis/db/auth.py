@@ -2,7 +2,7 @@ from flask import jsonify, make_response
 from flask_restplus import Resource, Namespace
 
 from db import with_database, Database
-from jwt_auth.token import token_required, create_token
+from jwt_auth.token import token_required, create_token, TokenData
 
 ns = Namespace('auth', description="auth api")
 
@@ -11,8 +11,8 @@ ns = Namespace('auth', description="auth api")
 class AuthTest(Resource):
     @token_required
     @ns.doc(security='apikey')
-    def get(self, data):
-        user = self["user"]
+    def get(self, token_data: TokenData):
+        user = token_data["user"]
 
         return {"ok": user}, 200
 
@@ -41,9 +41,9 @@ class AuthLogin(Resource):
 class AuthRefresh(Resource):
     @token_required
     @ns.doc(security='apikey')
-    def get(self, data):
-        user = self["user"]
-        user_id = self["user_id"]
+    def get(self, token_data: TokenData):
+        user = token_data['user']
+        user_id = token_data['user_id']
 
         return jsonify({
             'user': user,
@@ -51,6 +51,6 @@ class AuthRefresh(Resource):
             'token': create_token(
                 user_id=user_id,
                 user_name=user,
-                user_role=user['role'],
+                user_role=token_data['role'],
             ),
         })

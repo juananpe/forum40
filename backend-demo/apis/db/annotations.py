@@ -5,7 +5,7 @@ from flask_restplus import Resource, Namespace
 
 from config import settings
 from db import Database, with_database
-from jwt_auth.token import token_required
+from jwt_auth.token import token_required, TokenData
 
 ns = Namespace('annotations', description="annotations api")
 
@@ -22,8 +22,8 @@ class LabelComment(Resource):
     @token_required
     @with_database
     @ns.doc(security='apikey')
-    def put(self, db: Database, data, comment_id, label_id, value):
-        user_id = self["user_id"]
+    def put(self, db: Database, token_data: TokenData, comment_id, label_id, value):
+        user_id = token_data["user_id"]
         value = bool(value)
 
         # Check Args

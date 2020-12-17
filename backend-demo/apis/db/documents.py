@@ -2,7 +2,7 @@ from flask_restplus import Resource, Namespace
 
 from db import Database, with_database
 from db.db_models import document_parser
-from jwt_auth.token import token_required
+from jwt_auth.token import token_required, TokenData
 
 ns = Namespace('documents', description="documents api")
 
@@ -26,11 +26,11 @@ class Categories(Resource):
 
 @ns.route('/')
 class DocumentsPost(Resource):
-    @ns.expect(document_parser)
     @token_required
-    @ns.doc(security='apikey')
     @with_database
-    def post(self, db: Database, data):
+    @ns.expect(document_parser)
+    @ns.doc(security='apikey')
+    def post(self, db: Database, token_data: TokenData):
         args = document_parser.parse_args()
         source_id = args['source_id']
         external_id = args['external_id']

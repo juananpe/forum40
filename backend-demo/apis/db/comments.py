@@ -11,7 +11,7 @@ from db.db_models import comments_parser_sl, comment_parser_post, comments_list_
     groupByModel, comment_parser
 from db.repositories.comments import TimestampSorting, Order, FactSorting, UncertaintyOrder, \
     Granularity, comment_fields
-from jwt_auth.token import token_optional, check_source_id, allow_access_source_id
+from jwt_auth.token import token_optional, check_source_id, allow_access_source_id, TokenData
 from jwt_auth.token import token_required
 
 ns = Namespace('comments', description="comments api")
@@ -22,10 +22,10 @@ min_date = date(2016, 6, 1)
 class CommentsGet(Resource):
     @check_source_id
     @token_optional
+    @with_database
     @ns.doc(security='apikey')
     @ns.expect(comments_parser_sl)
-    @with_database
-    def get(self, db: Database, data):
+    def get(self, db: Database, token_data: Optional[TokenData]):
         # get args
         args = comments_parser_sl.parse_args()
 
@@ -49,17 +49,17 @@ class CommentsGet(Resource):
             db=db,
             comments=comments,
             label_ids=args.get('label', []),
-            user_id=self['user_id'] if self else None,
+            user_id=token_data['user_id'] if token_data is not None else None,
         )
 
         return comments
 
     @check_source_id
-    @ns.doc(security='apikey')
-    @ns.expect(comment_parser_post)
     @token_required
     @with_database
-    def post(self, db: Database, data):
+    @ns.doc(security='apikey')
+    @ns.expect(comment_parser_post)
+    def post(self, db: Database, token_data: TokenData):
         args = comment_parser_post.parse_args()
         source_id = args['source_id']
         external_id = args['external_id']
@@ -76,10 +76,10 @@ class CommentsGet(Resource):
 @ns.route('/json')
 class CommentsInsertMany(Resource):
     @token_optional
+    @with_database
     @ns.doc(security='apikey')
     @ns.expect(comments_list_parser)
-    @with_database
-    def post(self, db: Database, data):
+    def post(self, db: Database, token_data: Optional[TokenData]):
         comments = request.json
         for comment in comments:
             comment['timestamp'] = inputs.datetime_from_iso8601(comment['timestamp'])
@@ -204,14 +204,14 @@ class CommentsGroupByYear(Resource):
 class CommentsParentRec(Resource):
 
     @token_optional
-    @ns.doc(security='apikey')
     @with_database
-    def get(self, db: Database, data, id):
+    @ns.doc(security='apikey')
+    def get(self, db: Database, token_data: Optional[TokenData], id):
         comments = list(db.comments.find_all_parents(id))
 
         if len(comments) == 0:
             return '', 404
-        elif not allow_access_source_id(comments[0]['source_id'], self):
+        elif not allow_access_source_id(comments[0]['source_id'], token_data):
             return '', 401
 
         return {
@@ -224,20 +224,20 @@ class CommentsParentRec(Resource):
 @ns.expect(comment_parser)
 class Comment(Resource):
     @token_optional
-    @ns.doc(security='apikey')
     @with_database
-    def get(self, db: Database, request, comment_id):
+    @ns.doc(security='apikey')
+    def get(self, db: Database, token_data: TokenData, comment_id):
         args = comment_parser.parse_args()
 
         comment = db.comments.find_by_id(comment_id, fields=comment_fields(content=True, metadata=True))
-        if not allow_access_source_id(comment['source_id'], self):
+        if not allow_access_source_id(comment['source_id'], token_data):
             return '', 401
 
         load_annotations(
             db=db,
             comments=[comment],
             label_ids=args['label'] if 'label' in args else [],
-            user_id=self['user_id'] if self else None,
+            user_id=token_data['user_id'] if token_data else None,
         )
 
         return comment

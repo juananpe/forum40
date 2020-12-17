@@ -5,7 +5,7 @@ from apis.utils.tasks import SingleProcessManager
 from apis.utils.transformation import slice_dicts
 from db import with_database, Database
 from db.db_models import label_parser_post
-from jwt_auth.token import token_required
+from jwt_auth.token import token_required, TokenData
 
 ns = Namespace('labels', description="labels api")
 
@@ -28,10 +28,10 @@ class LabelsGetAll(Resource):
 @ns.route('/binary/<string:label_name>/<int:source_id>')
 class AddLabel(Resource):
     @token_required
+    @with_database
     @ns.doc(security='apikey')
     @ns.expect(label_parser_post)
-    @with_database
-    def put(self, db: Database, data, label_name, source_id):
+    def put(self, db: Database, token_data: TokenData, label_name, source_id):
         if db.labels.is_name_taken(label_name):
             return {'msg': 'Label already exists.'}, 400
 
