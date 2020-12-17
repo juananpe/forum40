@@ -1,3 +1,8 @@
+import datetime
+from flask.blueprints import BlueprintSetupState
+from typing import Any
+
+import json
 from flask import Blueprint
 from flask_restplus import Api
 
@@ -10,7 +15,22 @@ from apis.db.models import ns as models_namespace
 from apis.db.sources import ns as sources_namespace
 from jwt_auth import authorization
 
+
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, o: Any) -> Any:
+        if isinstance(o, datetime.datetime):
+            return o.isoformat()
+        else:
+            return super().default(o)
+
+
 blueprint = Blueprint('db_api', __name__)
+
+
+@blueprint.record
+def record_json_encoder(setup_state: BlueprintSetupState):
+    setup_state.app.config['RESTPLUS_JSON'] = {'cls': CustomJSONEncoder}
+
 
 api = Api(authorizations=authorization, version='1.0', title='User-Comments-API', description="An API for usercomments")
 api.init_app(blueprint)

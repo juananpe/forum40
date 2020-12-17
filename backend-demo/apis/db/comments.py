@@ -1,4 +1,3 @@
-import sys
 from collections import defaultdict
 
 from datetime import timedelta, date
@@ -27,7 +26,6 @@ class CommentsGet(Resource):
     @ns.doc(security='apikey')
     @ns.expect(comments_parser_sl)
     def get(self, db: Database, token_data: Optional[TokenData]):
-        # get args
         args = comments_parser_sl.parse_args()
 
         if (label_sort_id := args['label_sort_id']) is None:
@@ -216,7 +214,7 @@ class CommentsParentRec(Resource):
             return '', 401
 
         return {
-            "comments": reversed([c | {'timestamp': c['timestamp'].isoformat()} for c in comments]),
+            "comments": reversed(comments),
             "size": len(comments)
         }
 
