@@ -157,7 +157,7 @@ class CommentsGroupByDay(Resource):
             granularity=Granularity.MONTH,
             source_id=args['source_id'],
             label_id=args['label'],
-            keywords=args['keywords'],
+            keywords=args['keyword'],
         ))
 
         return prepareForVisualisation(addMissingDays(db_result), lambda d: f"{d['day']}.{d['month']}.{d['year']}")
@@ -175,7 +175,7 @@ class CommentsGroupByMonth(Resource):
             granularity=Granularity.MONTH,
             source_id=args['source_id'],
             label_id=args['label'],
-            keywords=args['keywords'],
+            keywords=args['keyword'],
         ))
 
         return prepareForVisualisation(addMissingMonths(db_result), lambda d: f"{d['month']}.{d['year']}")
@@ -193,7 +193,7 @@ class CommentsGroupByYear(Resource):
             granularity=Granularity.MONTH,
             source_id=args['source_id'],
             label_id=args['label'],
-            keywords=args['keywords'],
+            keywords=args['keyword'],
         ))
 
         return prepareForVisualisation(addMissingYears(db_result), lambda d: f"{d['year']}")

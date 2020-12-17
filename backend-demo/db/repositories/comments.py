@@ -159,7 +159,7 @@ class CommentRepository(BaseRepository):
             .from_(comments) \
             .select(pfn.Count('*').as_('count'), *fields) \
             .where(comments.source_id == args.add(source_id)) \
-            .rollup(*fields)
+            .groupby(*fields)
 
         for keyword in keywords or []:
             arg = args.add(f'%{keyword}%')
