@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 import os
 from flask_restplus import Resource, fields, Namespace
 from logging.config import dictConfig
@@ -91,23 +93,23 @@ class ClassifierService(Resource):
             if skip_training:
                 args.append("--skip-train")
             results = process_manager.invoke("update", str(source_id), args)
-            return results, 200
+            return results, HTTPStatus.OK
         else:
-            return {'error': 'Something went wrong.'}, 500
+            return {'error': 'Something went wrong.'}, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 @ns.route('/status')
 class StatusService(Resource):
     def get(self):
         results = process_manager.status("update")
-        return results, 200
+        return results, HTTPStatus.OK
 
 
 @ns.route('/abort')
 class AbortService(Resource):
     def get(self):
         results = process_manager.abort("update")
-        return results, 200
+        return results, HTTPStatus.OK
 
 
 @ns.route('/history')
@@ -127,8 +129,8 @@ class HistoryService(Resource):
                     'labelname': labelname,
                     'history': history
                 }
-                return results, 200
+                return results, HTTPStatus.OK
             except:
-                return {'error': 'Something went wrong.'}, 500
+                return {'error': 'Something went wrong.'}, HTTPStatus.INTERNAL_SERVER_ERROR
         else:
-            return {'error': 'No labelname given.'}, 404
+            return {'error': 'No labelname given.'}, HTTPStatus.NOT_FOUND

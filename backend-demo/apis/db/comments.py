@@ -1,4 +1,5 @@
 from collections import defaultdict
+from http import HTTPStatus
 
 from datetime import timedelta, date
 from dateutil.relativedelta import relativedelta
@@ -66,10 +67,10 @@ class CommentsGet(Resource):
         ext_id_fields = {'source_id': source_id, 'external_id': external_id}
 
         if (id_ := db.comments.find_id_by_external_id(source_id, external_id)) is not None:
-            return {'id': id_} | ext_id_fields, 409
+            return {'id': id_} | ext_id_fields, HTTPStatus.CONFLICT
 
         id_ = db.comments.insert(args)
-        return {'id': id_} | ext_id_fields, 200
+        return {'id': id_} | ext_id_fields, HTTPStatus.OK
 
 
 @ns.route('/json')
@@ -84,7 +85,7 @@ class CommentsInsertMany(Resource):
             comment['timestamp'] = inputs.datetime_from_iso8601(comment['timestamp'])
 
         ids = db.comments.insert_many(comments)
-        return {'ids': ids}, 200
+        return {'ids': ids}, HTTPStatus.OK
 
 
 def addMissingDays(data):
@@ -209,9 +210,9 @@ class CommentsParentRec(Resource):
         comments = list(db.comments.find_all_parents(id))
 
         if len(comments) == 0:
-            return '', 404
+            return '', HTTPStatus.NOT_FOUND
         elif not allow_access_source_id(comments[0]['source_id'], token_data):
-            return '', 401
+            return '', HTTPStatus.UNAUTHORIZED
 
         return {
             "comments": reversed(comments),
@@ -230,7 +231,7 @@ class Comment(Resource):
 
         comment = db.comments.find_by_id(comment_id, fields=comment_fields(content=True, metadata=True))
         if not allow_access_source_id(comment['source_id'], token_data):
-            return '', 401
+            return '', HTTPStatus.UNAUTHORIZED
 
         load_annotations(
             db=db,

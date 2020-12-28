@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from flask_restplus import Resource, Namespace
 
 from db import with_database, Database
@@ -10,4 +12,4 @@ class Models(Resource):
     @with_database
     def get(self, db: Database, label_id):
         models = db.models.find_all_by_label_id(label_id)
-        return models, 200
+        return models, HTTPStatus.OK

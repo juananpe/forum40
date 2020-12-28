@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 import os
 from flask_restplus import Resource, Namespace
 
@@ -33,7 +35,7 @@ class AddLabel(Resource):
     @ns.expect(label_parser_post)
     def put(self, db: Database, token_data: TokenData, label_name, source_id):
         if db.labels.is_name_taken(label_name):
-            return {'msg': 'Label already exists.'}, 400
+            return {'msg': 'Label already exists.'}, HTTPStatus.CONFLICT
 
         args = label_parser_post.parse_args()
 
@@ -51,4 +53,4 @@ class AddLabel(Resource):
         process_manager.invoke("init_facts", str(source_id), process_args)
         print(f"Init facts for label {label_name} started as background process")
 
-        return "ok", 200
+        return '', HTTPStatus.NO_CONTENT

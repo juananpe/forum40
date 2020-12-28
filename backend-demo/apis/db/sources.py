@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from typing import Optional
 
 from flask_restplus import Resource, Namespace
@@ -18,7 +20,7 @@ class Sources(Resource):
     def get(self, db: Database, token_data: Optional[TokenData]):
         is_admin = token_data is not None and token_data['role'] == 'admin'
         sources = db.sources.find_all(include_protected=is_admin)
-        return list(sources), 200
+        return list(sources), HTTPStatus.OK
 
     @token_required
     @with_database
@@ -27,7 +29,7 @@ class Sources(Resource):
     def post(self, db: Database, token_data: TokenData):
         args = source_parser.parse_args()
         id_ = db.sources.insert(args)
-        return {'id': id_}, 200
+        return {'id': id_}, HTTPStatus.OK
 
 
 @ns.route('/<name>')
@@ -36,6 +38,6 @@ class SourcesByName(Resource):
     def get(self, db: Database, name):
         source = db.sources.find_by_name(name)
         if source is None:
-            return '', 404
+            return '', HTTPStatus.NOT_FOUND
 
-        return source, 200
+        return source, HTTPStatus.OK

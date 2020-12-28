@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 import json
 import requests
 import sys
@@ -28,13 +30,13 @@ class LabelComment(Resource):
 
         # Check Args
         if not db.comments.exists(comment_id):
-            return {"msg": f"Comment does not exist"}, 404
+            return {"msg": f"Comment does not exist"}, HTTPStatus.NOT_FOUND
 
         if not db.labels.exists(label_id):
-            return {"msg": f"Label does not exist"}, 404
+            return {"msg": f"Label does not exist"}, HTTPStatus.NOT_FOUND
 
         if not db.users.exists(user_id):
-            return {"msg": f"User does not exist"}, 404
+            return {"msg": f"User does not exist"}, HTTPStatus.NOT_FOUND
 
         db.annotations.set_annotation_for_user_comment_label(user_id, comment_id, label_id, value)
         db.acc.commit()
@@ -72,4 +74,4 @@ class LabelComment(Resource):
 
         return {
             "annotations": annotation_count.num_total,
-        }, 200
+        }, HTTPStatus.OK

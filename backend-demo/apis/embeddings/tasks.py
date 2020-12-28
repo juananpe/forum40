@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 import os
 from flask import current_app
 from flask_restplus import Resource, fields, Namespace
@@ -97,7 +99,7 @@ class SetServiceUrlRoute(Resource):
             url = os.getenv('EMBEDDING_SERVICE_URL', settings.EMBEDDING_SERVICE_URL)
             return {'embedding service url': url}
         else:
-            return "Empty url", 400
+            return "Empty url", HTTPStatus.BAD_REQUEST
 
 
 @ns.route('/id')
@@ -110,7 +112,7 @@ class IdEmbedding(Resource):
         for id in all_ids:
             embedding = retriever.get_embedding(id)
             results.append(embedding)
-        return results, 200
+        return results, HTTPStatus.OK
 
 
 @ns.route('/similar-ids')
@@ -123,7 +125,7 @@ class SimilarIds(Resource):
         source_id = ns.payload.get('source_id', 1)
         # ensure correct index is loaded for given source id
         if not retriever.load_index(source_id):
-            return f"Error: could not find index for source_id {source_id}", 400
+            return f"Error: could not find index for source_id {source_id}", HTTPStatus.BAD_REQUEST
 
         n = ns.payload.get('n', 10)
         if n == 0:
@@ -133,7 +135,7 @@ class SimilarIds(Resource):
             ids = retriever.get_nearest_for_id(_id, n=n)
             results.append(ids)
 
-        return results, 200
+        return results, HTTPStatus.OK
 
 
 @ns.route('/similar-comments')
@@ -146,59 +148,59 @@ class SimilarComments(Resource):
         source_id = ns.payload.get('source_id', 1)
         # ensure correct index is loaded for given source id
         if not retriever.load_index(source_id):
-            return f"Error: could not find index for source_id {source_id}", 400
+            return f"Error: could not find index for source_id {source_id}", HTTPStatus.BAD_REQUEST
 
         # get embedding
         embeddings, status = get_embeddings(comment_texts)
         if not status:
-            return {'message': embeddings}, 500
+            return {'message': embeddings}, HTTPStatus.INTERNAL_SERVER_ERROR
         results = []
         for embedding in embeddings:
             nn_ids = retriever.get_nearest_for_embedding(embedding)
             results.append([retriever.get_comment_text(id) for id in nn_ids])
 
-        return results, 200
+        return results, HTTPStatus.OK
 
 
 @ns.route('/reload-index/<source_id>')
 class ReloadIndex(Resource):
     def get(self, source_id):
         if not retriever.load_index(source_id, force_reload=True):
-            return f"Error: could not find index for source_id {source_id}", 400
+            return f"Error: could not find index for source_id {source_id}", HTTPStatus.BAD_REQUEST
         else:
-            return f"Index for source id {source_id} reloaded", 200
+            return f"Index for source id {source_id} reloaded", HTTPStatus.OK
 
 
 @ns.route('/tasks')
 class Tasks(Resource):
     def get(self):
         results = process_manager.tasks()
-        return results, 200
+        return results, HTTPStatus.OK
 
 
 @ns.route('/tasks/<taskname>')
 class TaskStatus(Resource):
     def get(self, taskname):
         results = process_manager.status(taskname)
-        return results, 200
+        return results, HTTPStatus.OK
 
 
 @ns.route('/tasks/<taskname>/invoke/<source_id>')
 class TaskInvoke(Resource):
     def get(self, taskname, source_id):
         results = process_manager.invoke(taskname, source_id)
-        return results, 200
+        return results, HTTPStatus.OK
 
 
 @ns.route('/tasks/<taskname>/abort')
 class TaskAbort(Resource):
     def get(self, taskname):
         results = process_manager.abort(taskname)
-        return results, 200
+        return results, HTTPStatus.OK
 
 
 @ns.route('/tasks/clear')
 class TasksClear(Resource):
     def get(self):
         results = process_manager.clear()
-        return results, 200
+        return results, HTTPStatus.OK

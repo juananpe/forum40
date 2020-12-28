@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from flask_restplus import Resource, Namespace
 
 from db import Database, with_database
@@ -21,7 +23,7 @@ class Categories(Resource):
             ],
         }
 
-        return result, 200
+        return result, HTTPStatus.OK
 
 
 @ns.route('/')
@@ -34,8 +36,8 @@ class DocumentsPost(Resource):
         args = document_parser.parse_args()
 
         if (id_ := db.documents.find_id_by_external_id(args['source_id'], args['external_id'])) is not None:
-            return {'id': id_}, 409
+            return {'id': id_}, HTTPStatus.CONFLICT
 
         id_ = db.documents.insert(args)
 
-        return {'id': id_}, 200
+        return {'id': id_}, HTTPStatus.OK

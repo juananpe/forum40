@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from flask import jsonify, make_response
 from flask_restplus import Resource, Namespace
 
@@ -14,7 +16,7 @@ class AuthTest(Resource):
     def get(self, token_data: TokenData):
         user = token_data["user"]
 
-        return {"ok": user}, 200
+        return {"ok": user}, HTTPStatus.OK
 
 
 @ns.route('/login/<string:username>/<string:password>')
@@ -24,7 +26,7 @@ class AuthLogin(Resource):
         user = db.users.find_by_name(username)
 
         if user is None or user['password'] is None or user['password'] != password:
-            return make_response('Wrong username or password', 401)
+            return make_response('Wrong username or password', HTTPStatus.UNAUTHORIZED)
 
         return jsonify({
             'user': user['name'],

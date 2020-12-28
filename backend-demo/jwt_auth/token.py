@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from typing import TypedDict, Tuple, Optional
 
 import datetime
@@ -18,7 +20,7 @@ class TokenData(TypedDict):
 
 
 def returnErrorMsg(msg):
-    return {'message': msg}, 401
+    return {'message': msg}, HTTPStatus.UNAUTHORIZED
 
 
 def checkIfTokenExists(token):
