@@ -9,7 +9,7 @@ from flask import request
 
 from db import postgres_con
 
-globalSecret = "eh9Df9G27gahgHJ7g2oGQz6Ug5he6ud5shd"  # TODO hide
+GLOBAL_SECRET = "eh9Df9G27gahgHJ7g2oGQz6Ug5he6ud5shd"  # TODO hide
 
 
 class TokenData(TypedDict):
@@ -19,17 +19,17 @@ class TokenData(TypedDict):
     exp: datetime.datetime
 
 
-def returnErrorMsg(msg):
+def return_error_msg(msg):
     return {'message': msg}, HTTPStatus.UNAUTHORIZED
 
 
-def checkIfTokenExists(token):
+def check_if_token_exists(token):
     return token is not None
 
 
-def checkIfTokenIsValidAndGetData(token: str) -> Tuple[bool, Optional[TokenData]]:
+def check_if_token_is_valid_and_get_data(token: str) -> Tuple[bool, Optional[TokenData]]:
     try:
-        return True, jwt.decode(token, globalSecret)
+        return True, jwt.decode(token, GLOBAL_SECRET)
     except:
         return False, None
 
@@ -40,10 +40,10 @@ def create_token(user_id: int, user_name: str, user_role: str) -> str:
         user_id=user_id,
         role=user_role,
         exp=datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
-    ), globalSecret).decode('UTF-8')
+    ), GLOBAL_SECRET).decode('UTF-8')
 
 
-def checkIfUserIsAuthorised(token, data):
+def check_if_user_is_authorised(token, data):
     postgres = postgres_con.cursor()
     postgres.execute("SELECT COUNT(*) FROM users WHERE name = %s", (data["user"],))
     db_result = postgres.fetchone()
@@ -54,7 +54,7 @@ def checkIfUserIsAuthorised(token, data):
 
 
 def check_source_id_access(source_id, token):
-    success, data = checkIfTokenIsValidAndGetData(token)
+    success, data = check_if_token_is_valid_and_get_data(token)
     if success:
         role = data.get('role', '')
         if role == 'admin':
@@ -67,8 +67,8 @@ def is_source_id_protected(source_id):
     postgres = postgres_con.cursor()
     postgres.execute("SELECT protected FROM sources WHERE id=%s", (source_id,))
     db_result = postgres.fetchone()
-    isProtected = db_result[0]
-    return isProtected
+    is_protected = db_result[0]
+    return is_protected
 
 
 def allow_access_source_id(source_id, token_data: Optional[TokenData]):
@@ -82,7 +82,7 @@ def check_source_id(wrapped, instance, args, kwargs):
     if source_id:
         token = request.headers['x-access-token'] if 'x-access-token' in request.headers else None
         if not check_source_id_access(source_id, token):
-            return returnErrorMsg('Cannot access source_id.')
+            return return_error_msg('Cannot access source_id.')
     return wrapped(*args, **kwargs)
 
 
@@ -90,15 +90,15 @@ def check_source_id(wrapped, instance, args, kwargs):
 def token_required(wrapped, instance, args, kwargs):
     token = request.headers['x-access-token'] if 'x-access-token' in request.headers else None
 
-    if not checkIfTokenExists(token):
-        return returnErrorMsg('Token is missing.')
+    if not check_if_token_exists(token):
+        return return_error_msg('Token is missing.')
 
-    success, data = checkIfTokenIsValidAndGetData(token)
+    success, data = check_if_token_is_valid_and_get_data(token)
     if not success:
-        return returnErrorMsg('Token is invalid.')
+        return return_error_msg('Token is invalid.')
 
-    if not checkIfUserIsAuthorised(token, data):
-        return returnErrorMsg('Access denied.')
+    if not check_if_user_is_authorised(token, data):
+        return return_error_msg('Access denied.')
 
     return wrapped(data, *args, **kwargs)
 
@@ -107,6 +107,6 @@ def token_required(wrapped, instance, args, kwargs):
 def token_optional(wrapped, instance, args, kwargs):
     token = request.headers['x-access-token'] if 'x-access-token' in request.headers else None
 
-    success, data = checkIfTokenIsValidAndGetData(token)
+    success, data = check_if_token_is_valid_and_get_data(token)
 
     return wrapped(data, *args, **kwargs)

@@ -43,7 +43,7 @@ class EmbeddingClassifier:
             classifier = pickle.load(file)
         self.classifier = classifier
 
-    def setC(self, C):
+    def set_c(self, C):
         self.classifier.C = C
 
     # take at max 3 minutes on the whole data

@@ -1,9 +1,9 @@
 from flask_restplus import reqparse, inputs
 
-groupByModel = reqparse.RequestParser()
-groupByModel.add_argument('label', type=int, default=None)
-groupByModel.add_argument('keyword', action='append', default=lambda: [])
-groupByModel.add_argument('source_id', type=int, required=True)
+group_by_model = reqparse.RequestParser()
+group_by_model.add_argument('label', type=int, default=None)
+group_by_model.add_argument('keyword', action='append', default=lambda: [])
+group_by_model.add_argument('source_id', type=int, required=True)
 
 comments_parser_sl = reqparse.RequestParser()
 comments_parser_sl.add_argument('label', action='append', type=int, default=lambda: [])

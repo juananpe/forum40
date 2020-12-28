@@ -136,7 +136,7 @@ class LabelUpdater(ForumProcessor):
         # look at next batch
         return True
 
-    def updateLabels(self):
+    def update_labels(self):
         start = timer()
 
         # load model
@@ -222,7 +222,7 @@ class LabelUpdater(ForumProcessor):
                 f"{duration:.1f}",  # duration
             ]))
 
-    def initModelTable(self):
+    def init_model_table(self):
         self.cursor.execute(
             'INSERT INTO model (label_id, timestamp, pid) VALUES (%s, CURRENT_TIMESTAMP, %s) RETURNING id',
             (self.label_id, self.pid),
@@ -230,7 +230,7 @@ class LabelUpdater(ForumProcessor):
         self.model_entry_id = self.cursor.fetchone()[0]
         self.logger.info(f"Init Model Entry: label_id={self.label_id}, pid={self.pid}")
 
-    def updateModelTable(self, model_details):
+    def update_model_table(self, model_details):
         label_id = self.label_id
         number_training_samples = model_details['number_training_samples']
         acc = model_details['acc']
@@ -245,7 +245,7 @@ class LabelUpdater(ForumProcessor):
         )
         self.logger.info(f"Update Model Entry: label_id={label_id}, number_training_samples={number_training_samples}")
 
-    def updateColibertLabels(self):
+    def update_colibert_labels(self):
         self.logger.info(f'Update sample comments with CoLiBERT scores')
         start = time.time()
 
@@ -302,25 +302,25 @@ if __name__ == "__main__":
     source_id = args.source_id
     optimize = args.optimize
 
-    classifierTrainer = ClassifierTrainer(labelname, host=args.host, port=args.port)
-    labelUpdater = LabelUpdater(source_id, labelname, host=args.host, port=args.port, skip_confidence=args.skip_confidence)
+    classifier_trainer = ClassifierTrainer(labelname, host=args.host, port=args.port)
+    label_updater = LabelUpdater(source_id, labelname, host=args.host, port=args.port, skip_confidence=args.skip_confidence)
 
     if args.init_facts:
         # just init all predictions with 0 (necessary, when new labels are inserted)
-        labelUpdater.init_facts(commit_now=True)
+        label_updater.init_facts(commit_now=True)
 
         # Classify with CoLiBERT
-        labelUpdater.updateColibertLabels()
+        label_updater.update_colibert_labels()
     else:
         # init model entry
-        labelUpdater.initModelTable()
+        label_updater.init_model_table()
 
         if not args.skip_train:
             # train model
-            model_details = classifierTrainer.train(optimize=optimize, cv=True)
+            model_details = classifier_trainer.train(optimize=optimize, cv=True)
 
             # update model entry
-            labelUpdater.updateModelTable(model_details)
+            label_updater.update_model_table(model_details)
 
         # update predictions
-        labelUpdater.updateLabels()
+        label_updater.update_labels()

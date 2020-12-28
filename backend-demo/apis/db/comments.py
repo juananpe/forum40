@@ -9,7 +9,7 @@ from typing import List, Dict, Optional, Iterable, Tuple
 
 from db import with_database, Database
 from db.db_models import comments_parser_sl, comment_parser_post, comments_list_parser, \
-    groupByModel, comment_parser
+    group_by_model, comment_parser
 from db.repositories.comments import TimestampSorting, Order, FactSorting, UncertaintyOrder, \
     Granularity, comment_fields
 from jwt_auth.token import token_optional, check_source_id, allow_access_source_id, TokenData
@@ -88,7 +88,7 @@ class CommentsInsertMany(Resource):
         return {'ids': ids}, HTTPStatus.OK
 
 
-def addMissingDays(data):
+def add_missing_days(data):
     min_ = min_date
     missing = []
     for el in data:
@@ -101,7 +101,7 @@ def addMissingDays(data):
     return sorted(data, key=lambda x: (x['year'], x['month'], x['day']))
 
 
-def addMissingMonths(data):
+def add_missing_months(data):
     if len(data) == 0:
         return data
 
@@ -117,7 +117,7 @@ def addMissingMonths(data):
     return sorted(data, key=lambda x: (x['year'], x['month']))
 
 
-def addMissingYears(data):
+def add_missing_years(data):
     if len(data) == 0:
         return data
 
@@ -132,7 +132,7 @@ def addMissingYears(data):
     return sorted(data, key=lambda x: (x['year']))
 
 
-def prepareForVisualisation(data, f):
+def prepare_for_visualisation(data, f):
     if len(data) == 0:
         return {"start_time": None, "time": [], "data": []}
 
@@ -148,11 +148,11 @@ def prepareForVisualisation(data, f):
 
 @check_source_id
 @ns.route('/groupByDay')
-@ns.expect(groupByModel)
+@ns.expect(group_by_model)
 class CommentsGroupByDay(Resource):
     @with_database
     def get(self, db: Database):
-        args = groupByModel.parse_args()
+        args = group_by_model.parse_args()
 
         db_result = list(db.comments.count_by_timestamp_query(
             granularity=Granularity.MONTH,
@@ -161,16 +161,16 @@ class CommentsGroupByDay(Resource):
             keywords=args['keyword'],
         ))
 
-        return prepareForVisualisation(addMissingDays(db_result), lambda d: f"{d['day']}.{d['month']}.{d['year']}")
+        return prepare_for_visualisation(add_missing_days(db_result), lambda d: f"{d['day']}.{d['month']}.{d['year']}")
 
 
 @check_source_id
 @ns.route('/groupByMonth')
-@ns.expect(groupByModel)
+@ns.expect(group_by_model)
 class CommentsGroupByMonth(Resource):
     @with_database
     def get(self, db: Database):
-        args = groupByModel.parse_args()
+        args = group_by_model.parse_args()
 
         db_result = list(db.comments.count_by_timestamp_query(
             granularity=Granularity.MONTH,
@@ -179,16 +179,16 @@ class CommentsGroupByMonth(Resource):
             keywords=args['keyword'],
         ))
 
-        return prepareForVisualisation(addMissingMonths(db_result), lambda d: f"{d['month']}.{d['year']}")
+        return prepare_for_visualisation(add_missing_months(db_result), lambda d: f"{d['month']}.{d['year']}")
 
 
 @check_source_id
 @ns.route('/groupByYear')
-@ns.expect(groupByModel)
+@ns.expect(group_by_model)
 class CommentsGroupByYear(Resource):
     @with_database
     def get(self, db: Database):
-        args = groupByModel.parse_args()
+        args = group_by_model.parse_args()
 
         db_result = list(db.comments.count_by_timestamp_query(
             granularity=Granularity.MONTH,
@@ -197,7 +197,7 @@ class CommentsGroupByYear(Resource):
             keywords=args['keyword'],
         ))
 
-        return prepareForVisualisation(addMissingYears(db_result), lambda d: f"{d['year']}")
+        return prepare_for_visualisation(add_missing_years(db_result), lambda d: f"{d['year']}")
 
 
 @ns.route('/parent_recursive/<string:id>/')

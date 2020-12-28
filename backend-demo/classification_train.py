@@ -96,7 +96,7 @@ class ClassifierTrainer(ForumProcessor):
                 message = f"Testing C = {C:.3f}"
                 self.update_state(step + 1, message)
                 self.logger.info(message)
-                self.classifier.setC(C)
+                self.classifier.set_c(C)
                 accuracy, f1_score, fit_time, score_time = self.classifier.cross_validation(
                     annotation_dataset
                 )
@@ -107,7 +107,7 @@ class ClassifierTrainer(ForumProcessor):
             self.logger.info(f"Optimal C = {best_C:.3f}")
             self.logger.info(f"Performance: accuracy = {best_acc:.3f}, F1 = {best_F1:.3f}")
             # set best C parameter
-            self.classifier.setC(C)
+            self.classifier.set_c(C)
             end = timer()
             self.logger.info(f"Hyperparameter optimzation finished after {str(end - start)} seconds.")
 
@@ -172,6 +172,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     labelname = args.labelname
 
-    classifierTrainer = ClassifierTrainer(labelname, host=args.host, port=args.port)
+    classifier_trainer = ClassifierTrainer(labelname, host=args.host, port=args.port)
 
-    classifierTrainer.train(optimize=args.optimize, cv=args.cv)
+    classifier_trainer.train(optimize=args.optimize, cv=args.cv)
