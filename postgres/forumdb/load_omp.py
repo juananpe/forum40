@@ -1,205 +1,143 @@
-import sqlite3
-import logging
-import datetime
-import argparse
-
+from collections import defaultdict
 from timeit import default_timer as timer
+
+import datetime
+import logging
+import psycopg2
+import sqlite3
+from operator import itemgetter
+from psycopg2.extras import execute_values
 from tqdm import tqdm
 
-import forumdb.Constants as Const
-import forumdb.pg_tools as tools
+from forumdb.constants import OmpTables, OMP_DB_FILE, PG_USER, PG_DB
+from forumdb.tools import dict_factory, insert, Inserter, omp_data
 
-from sqlalchemy import create_engine
-from sqlalchemy.ext.automap import automap_base
-from sqlalchemy.orm import Session
+logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.DEBUG)
 
-logging.basicConfig(
-    format='%(asctime)s : %(levelname)s : %(message)s', level=logging.DEBUG)
-
-# Sqlite
-sql_conn = sqlite3.connect(Const.OMP_DB_FILE)
-sql_conn.row_factory = tools.dict_factory
-logging.info(f'Sqlite3 connection to file: {Const.OMP_DB_FILE}')
-
-# keine foreign keys
-# keine unique constraints
-# primary keys nach insert
-# indexes nach insert
-# labelgroup sentiment: pos neg and what else?
+# TODO: External IDs
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Import OMP Database.')
-    parser.add_argument('-d', '--drop-tables', dest='drop_tables', default=False, action='store_true',
-                        help='Drop existing public schema and tables in OMP database')
-    parser.add_argument('-e', '--with-embeddings', dest='with_embeddings', default=False, action='store_true',
-                        help='Import OMP database (Der Standard) with pre-generated embeddings')
-    args = parser.parse_args()
+    sql_conn = sqlite3.connect(OMP_DB_FILE)
+    sql_conn.row_factory = dict_factory
+    logging.info(f'Connected to import source {OMP_DB_FILE}')
 
-    db = create_engine(Const.PG_URL)
-    connection = db.connect()
-    logging.info(f'Connected to Postgres database {Const.PG_URL}')
+    conn = psycopg2.connect(dbname=PG_DB, user=PG_USER)
+    logging.info(f'Connected to import target {PG_USER}@{PG_DB}')
 
     start = timer()
 
-    # if args.drop_tables:
-    #     tools.run_sql_file(connection, "pg_drop.sql")
-    #     logging.info("Schema public and tables dropped")
-
-    # init database schema
-    # tools.run_sql_file(connection, "pg_schema.sql")
-    Base = automap_base()
-    Base.prepare(db, reflect=True)
-    session = Session(db)
-    logging.info("Schema public created")
-
-    users_id = session.execute("SELECT MAX(id) from users").fetchone()[0]
-    doc_id = session.execute("SELECT MAX(id) from documents").fetchone()[0]
-    com_id = session.execute("SELECT MAX(id) from comments").fetchone()[0]
-    label_id = session.execute("SELECT MAX(id) from labels").fetchone()[0]
-    source_id = session.execute("SELECT MAX(id) from sources").fetchone()[0]
-    users_id = 0 if users_id is None else users_id
-    doc_id = 0 if doc_id is None else doc_id
-    com_id = 0 if com_id is None else com_id
-    label_id = 0 if label_id is None else label_id
-    source_id = 1 if source_id is None else source_id + 1
-
-    # connect to sqlite
-    omp = tools.omp_data(sql_conn)
+    # load omp data
+    omp = omp_data(sql_conn)
 
     # sources
-    Sources = Base.classes.sources
-    new_source = Sources(id = source_id, name = "Der Standard", domain = "derstandard.at")
-    session.add(new_source)
-    session.commit()
-    logging.info(f"Inserted source {new_source.name} with id {new_source.id}")
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO sources (name, domain) "
+        "VALUES ('Der Standard', 'standard.at') "
+        "RETURNING id"
+    )
+    source_id = cur.fetchone()[0]
+    cur.close()
+    logging.info(f'Importing to new source with ID {source_id}')
 
     # commentators
-    Commentators = Base.classes.users
-    commentators = set()
-    for post in omp[Const.POSTS]:
-        commentators.add(post['ID_User'])
-    commentator_lookup = {}
-    commentator_id = users_id
-    bulk = []
-    for commentator in tqdm(commentators):
-        commentator_id += 1
-        commentator_lookup[commentator] = commentator_id
-        bulk.append({"id" : commentator_id, "external_id" : commentator, "name" : commentator})
-    session.execute(Commentators.__table__.insert(), bulk)
-    logging.info(f"Inserted {commentator_id - users_id} commentators")
+    omp_user_ids = set(post['ID_User'] for post in omp[OmpTables.POSTS])
+    user_lookup = insert(
+        conn,
+        "INSERT INTO users (external_id, name) VALUES %s RETURNING id",
+        {id_: (id_, id_) for id_ in omp_user_ids},
+        unit='User',
+    )
 
     # documents
-    Documents = Base.classes.documents
-    document_lookup = {}
-    i = doc_id
-    for document in tqdm(omp[Const.ARTICLES]):
-        i += 1
-        cat = document["Path"].split('/')[1] if '/' in document["Path"] else document["Path"]
-        new_document = Documents(id = i, category=cat, url = document["Path"], title = document["Title"], text = document["Body"], timestamp = document["publishingDate"], source_id = new_source.id)
-        session.add(new_document)
-        document_lookup[document["ID_Article"]] = i
-    session.commit()
-    logging.info(f"Inserted {i - doc_id:d} documents")
+    document_lookup = insert(
+        conn,
+        "INSERT INTO documents (category, url, title, text, timestamp, source_id) VALUES %s RETURNING id",
+        {art['ID_Article']: (
+            art["Path"].split('/')[1] if '/' in art["Path"] else art["Path"],  # category
+            art["Path"],  # url
+            art["Title"],  # title
+            art["Body"],  # text
+            art["publishingDate"],  # timestamp
+            source_id,  # source_id
+        ) for art in omp[OmpTables.ARTICLES]},
+        unit='Document'
+    )
 
     # labels
-    Labels = Base.classes.labels
-    label_lookup = {}
-    i = label_id
-    for label in omp[Const.CATEGORIES]:
-        i += 1
-        new_label = Labels(id = i, name = label["Name"], type = "classification", order = label["Ord"], source_id = new_source.id)
-        session.add(new_label)
-        label_lookup[label["Name"]] = i
-    session.commit()
-    logging.info(f"Inserted {i - label_id:d} labels")
+    label_lookup = insert(
+        conn,
+        "INSERT INTO labels (name, type, \"order\", source_id) VALUES %s RETURNING id",
+        {cat["Name"]: (cat["Name"], "classification", cat["Ord"], source_id)
+         for cat in omp[OmpTables.CATEGORIES]},
+        unit='Label',
+    )
 
     # comments
-    Comments = Base.classes.comments
-    comment_lookup = {}
-    i = 0
-    bulk = []
-    comment_id = com_id
-    for comment in tqdm(omp[Const.POSTS]):
-        comment_id += 1
-        comment_lookup[comment["ID_Post"]] = comment_id
-        comment_date = datetime.datetime.strptime(comment["CreatedAt"], '%Y-%m-%d %H:%M:%S.%f')
-        new_comment = {
-            "id" : comment_id,
-            "doc_id" : document_lookup[comment["ID_Article"]],
-            "source_id" : new_source.id,
-            "user_id" : commentator_lookup[comment["ID_User"]],
-            "parent_comment_id" : comment["ID_Parent_Post"],
-            "status" : comment["Status"],
-            "title" : comment["Headline"],
-            "text" : comment["Body"],
-            "timestamp" : comment["CreatedAt"],
-            "year" : comment_date.year,
-            "month" : comment_date.month,
-            "day" : comment_date.day,
-            "embedding" : None,
-        }
-        if args.with_embeddings:
-            embed = []
-            embed_comment = tools.embed_data(sql_conn, comment["ID_Post"])
-            for embeddings in embed_comment[Const.POSTS]:
-                embedding = embeddings["Embedding"]
-                if embedding != '':
-                    for e in embedding.strip('{}').split(','):
-                        embed.append(float(e))
-                    new_comment["embedding"] = embed
+    # comment sorting required as parent posts always have to be inserted before replies
+    # approach to minimize the number of session.flush() calls needed:
+    # batch by reply structure "depth" i.e. first insert all root comments, then all replies to root
+    # comments, then all replies to replies to root comments, then …
+    parent_id_by_id = {p['ID_Post']: p['ID_Parent_Post'] for p in omp[OmpTables.POSTS]}
+    omp_posts_by_depth = defaultdict(list)
+    for omp_post in omp[OmpTables.POSTS]:
+        depth = 0
+        parent_iterator_id = omp_post['ID_Parent_Post']
+        while parent_iterator_id is not None:
+            depth += 1
+            parent_iterator_id = parent_id_by_id[parent_iterator_id]
 
-        bulk.append(new_comment)
-        if comment_id % 1000 == 0:
-            session.execute(Comments.__table__.insert(), bulk)
-            bulk = []
-            # break
-    if bulk:
-        session.execute(Comments.__table__.insert(), bulk)
-    session.commit()
-    logging.info(f"Inserted {comment_id - com_id} comments")
+        omp_posts_by_depth[depth].append(omp_post)
+
+    comment_sql = (
+        "INSERT INTO comments (doc_id, source_id, user_id, parent_comment_id, status, title, text, timestamp, year, month, day, embedding)"
+        "VALUES %s RETURNING id"
+    )
+
+    # iterate batches by increasing depth
+
+    with Inserter(conn, comment_sql, unit='Comment', total=len(omp[OmpTables.POSTS])) as inserter:
+        for depth, omp_post_batch in sorted(omp_posts_by_depth.items(), key=itemgetter(0)):
+            inserter.pbar.set_postfix(depth=depth)
+            for omp_post in omp_post_batch:
+                comment_date = datetime.datetime.strptime(omp_post["CreatedAt"], '%Y-%m-%d %H:%M:%S.%f')
+                omp_parent_id = omp_post["ID_Parent_Post"]
+
+                inserter.add(
+                    source_id=omp_post["ID_Post"],
+                    args=(
+                        document_lookup[omp_post["ID_Article"]],  # doc_id
+                        source_id,  # source_id
+                        user_lookup[omp_post["ID_User"]],  # user_id
+                        inserter.id_lookup[omp_parent_id] if omp_parent_id is not None else None,  # parent_comment_id
+                        omp_post["Status"],  # status
+                        omp_post["Headline"],  # title
+                        omp_post["Body"],  # text
+                        omp_post["CreatedAt"],  # timestamp
+                        comment_date.year,  # year
+                        comment_date.month,  # month
+                        comment_date.day,  # day
+                        None,  # embedding
+                    )
+                )
+
+            inserter.flush()
+        comment_lookup = inserter.id_lookup
 
     # annotations
-    print(label_lookup)
-    Annotations = Base.classes.annotations
-    i = 0
-    for annotation in omp[Const.ANNOTATIONS_CONSOLIDATED]:
-        new_annotation = Annotations(
-            label_id = label_lookup[annotation["Category"]],
-            comment_id = comment_lookup[annotation["ID_Post"]],
-            label = annotation["Value"]
+    with conn.cursor() as cur:
+        execute_values(
+            cur,
+            "INSERT INTO annotations (label_id, comment_id, label) VALUES %s",
+            tqdm([
+                (label_lookup[ann["Category"]], comment_lookup[ann["ID_Post"]], bool(ann["Value"]))
+                for ann in omp[OmpTables.ANNOTATIONS_CONSOLIDATED]
+            ], unit='Annotation'),
         )
-        session.add(new_annotation)
-        i += 1
-    session.commit()
-    logging.info(f"Inserted {i} annotations")
 
-logging.info("Run indexing ...")
+    conn.commit()
+    conn.close()
 
-end = timer()
-logging.info("Import completed after " + str((end - start)) + " seconds.")
-
-session.close()
-
-# Query example
-
-# select
-# 	c.year,
-# 	c."month",
-# 	c."day",
-# 	count(*)
-# from
-# 	comments c,
-# 	facts f
-# where
-# 	c.id = f.comment_id
-# 	and f.label_id = 7
-# 	and f."label" = true
-# group by
-# 	cube (c."year",
-# 	c."month",
-# 	c."day")
-# order by
-# 	c."year",
-# 	c."month"
-#   c."day";
+    end = timer()
+    logging.info("Import completed after " + str((end - start)) + " seconds.")
