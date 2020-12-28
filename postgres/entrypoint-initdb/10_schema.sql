@@ -71,18 +71,6 @@ CREATE TABLE IF NOT EXISTS public.documents (
     UNIQUE (source_id, external_id)
 );
 
-CREATE MATERIALIZED VIEW IF NOT EXISTS public.count_comments_by_category
-TABLESPACE pg_default
-AS SELECT count(*) AS value,
-          d.category AS name,
-          c.source_id
-   FROM documents d,
-        comments c
-   WHERE c.doc_id = d.id
-   GROUP BY d.category, c.source_id
-   ORDER BY count(*)
-WITH DATA;
-
 -- Drop table
 
 -- DROP TABLE IF EXISTS public."comments" CASCADE;
@@ -106,6 +94,17 @@ CREATE TABLE IF NOT EXISTS public."comments" (
 	UNIQUE (source_id, external_id)
 );
 
+CREATE MATERIALIZED VIEW IF NOT EXISTS public.count_comments_by_category
+    TABLESPACE pg_default
+AS SELECT count(*) AS value,
+          d.category AS name,
+          c.source_id
+   FROM documents d,
+        comments c
+   WHERE c.doc_id = d.id
+   GROUP BY d.category, c.source_id
+   ORDER BY count(*)
+WITH DATA;
 
 -- Drop table
 
