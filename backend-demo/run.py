@@ -20,11 +20,15 @@ app.config['JWT_SECRET_KEY'] = settings.JWT_SECRET_KEY
 # main page
 @app.route("/")
 def hello():
-    url = str(request.url_rule)
-    return '<a href="{0}api/db/">User-Comments-API</a> </br> ' \
-           '<a href="{0}api/classification">Classification-API</a> </br>' \
-           '<a href="{0}api/similarity">Similarity-API</a> </br>' \
-           '<a href="{0}api/embedding">Embedding-API</a> </br>'.format(url)
+    base_url = str(request.url_rule)
+    entries = [
+        ('api/db/', 'User-Comments-API'),
+        ('api/classification', 'Classification-API'),
+        ('api/similarity', 'Similarity-API'),
+        ('api/embedding', 'Embedding-API'),
+    ]
+
+    return '\n'.join(f'<a href="{base_url}{path}">{name}</a> </br>' for path, name in entries)
 
 
 # add blueprints

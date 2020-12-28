@@ -62,7 +62,7 @@ class BertFeatureExtractor(object):
         # keep_cls is used to decide whether or not to keep CLS with all the tokens
         # use_layers is used to decide how many layers from the last layer to be used
         # use_token is used to decide whether to use the tokens or the CLS
-        
+
         # number of layers cannot be greater than 13 (12 hidden +one output)
         if(use_layers > 13):
             use_layers=13
@@ -76,7 +76,7 @@ class BertFeatureExtractor(object):
             print("Selected device: " + device)
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.n_gpu = torch.cuda.device_count()
-        print("Device: {} n_gpu: {}".format(self.device, self.n_gpu))
+        print(f"Device: {self.device} n_gpu: {self.n_gpu}")
 
         self.layer_weights = list(np.arange(1,use_layers+1))
         self.layer_indexes = [int(-x) for x in self.layer_weights]
@@ -224,7 +224,7 @@ class BertFeatureExtractor(object):
 
 
     def extract_features(self, sequences):
-        
+
         examples = self.convert_sequences_to_examples(sequences)
 
         features = self.convert_examples_to_features(
@@ -272,7 +272,7 @@ class BertFeatureExtractor(object):
                                 layer_output = np.mean(layer_output[b, CLS_index+1:],axis=0)
                         else:
                             layer_output = layer_output[b,CLS_index]
-                        
+
                         # weighted sum of final j layers
                         all_layers.append(layer_output * self.layer_weights[j])
                     sequence_embedding = np.sum(all_layers, axis=0)

@@ -45,7 +45,7 @@ def create_token(user_id: int, user_name: str, user_role: str) -> str:
 
 def checkIfUserIsAuthorised(token, data):
     postgres = postgres_con.cursor()
-    postgres.execute("SELECT COUNT(*) FROM users WHERE name = '{0}';".format(data["user"]))
+    postgres.execute("SELECT COUNT(*) FROM users WHERE name = %s", (data["user"],))
     db_result = postgres.fetchone()
 
     if not db_result or db_result == 0:
