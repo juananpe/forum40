@@ -39,7 +39,7 @@ class CommentIndexer(ForumProcessor):
         try:
 
             # get total size of the problem
-            self.cursor.execute("""SELECT count(*) FROM comments WHERE source_id = %d AND embedding IS NOT NULL""" % self.source_id)
+            self.cursor.execute('SELECT count(*) FROM comments WHERE source_id = %s AND embedding IS NOT NULL', (self.source_id,))
             n_comments = self.cursor.fetchone()[0]
             n_batches = math.ceil(n_comments / self.batch_size)
             # set totoal steps to n_batches + 2 (for saving steps)
@@ -51,7 +51,7 @@ class CommentIndexer(ForumProcessor):
 
             # cursor without withholding, since we do not commit any db updates
             cursor_large = self.conn.cursor(name='large_embedding', withhold=True)
-            cursor_large.execute("SELECT id FROM comments WHERE source_id = %d AND embedding IS NOT NULL", (self.source_id,))
+            cursor_large.execute('SELECT id FROM comments WHERE source_id = %d AND embedding IS NOT NULL', (self.source_id,))
 
             new_embeddings_added = False
 
@@ -89,7 +89,7 @@ class CommentIndexer(ForumProcessor):
 
                 if new_ids:
                     # get embeddings from db
-                    self.cursor.execute("SELECT id, embedding FROM comments WHERE id IN %s", (tuple(new_ids),))
+                    self.cursor.execute('SELECT id, embedding FROM comments WHERE id IN %s', (tuple(new_ids),))
                     result_with_embeddings = self.cursor.fetchall()
                     new_tuples = [(row[0], row[1]) for row in result_with_embeddings]
                     new_ids, new_embeddings = zip(*new_tuples)

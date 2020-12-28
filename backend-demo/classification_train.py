@@ -23,7 +23,7 @@ class ClassifierTrainer(ForumProcessor):
 
         # get label id
         self.cursor = self.conn.cursor()
-        self.cursor.execute("""SELECT id FROM labels WHERE name=%s""", (self.labelname,))
+        self.cursor.execute('SELECT id FROM labels WHERE name = %s', (self.labelname,))
         self.label_id = self.cursor.fetchone()[0]
         if self.label_id is None:
             self.logger.error(f"Label {self.labelname} not found")
@@ -33,7 +33,7 @@ class ClassifierTrainer(ForumProcessor):
 
         # count annotations
         self.cursor.execute(
-            """SELECT count(*) FROM comments c JOIN annotations a ON c.id=a.comment_id WHERE a.label_id=%s""",
+            'SELECT count(*) FROM comments c JOIN annotations a ON c.id = a.comment_id WHERE a.label_id = %s',
             (self.label_id,))
         n_annotations = self.cursor.fetchone()
 
@@ -45,7 +45,7 @@ class ClassifierTrainer(ForumProcessor):
 
         # select annotations
         self.cursor.execute(
-            """SELECT c.id, c.embedding, a.label, a.user_id FROM comments c JOIN annotations a ON c.id=a.comment_id WHERE a.label_id=%s""",
+            'SELECT c.id, c.embedding, a.label, a.user_id FROM comments c JOIN annotations a ON c.id = a.comment_id WHERE a.label_id = %s',
             (self.label_id,))
 
         # training data compilation

@@ -31,24 +31,19 @@ class LabelUpdater(ForumProcessor):
         self.buffer = StringIO()
 
         # get label id
-        self.cursor.execute("""SELECT id FROM labels WHERE name=%s""", (self.labelname,))
+        self.cursor.execute('SELECT id FROM labels WHERE name = %s', (self.labelname,))
         self.label_id = self.cursor.fetchone()[0]
 
-    def init_cursor(self, skip_train=False):
+    def init_cursor(self):
         """
         Initializes cursor that later (in process_batch) retreives all comments
         if skip_train is true, only select new comments that have not been labeled yet
         """
 
-        # get number of facts
-        if skip_train:
-            facts_count = """SELECT count(*) FROM comments c JOIN facts f ON c.id = f.comment_id WHERE c.source_id = %s AND f.label_id = %s and f.confidence = 0"""
-            facts_query = """SELECT c.id, f.label, f.confidence FROM comments c JOIN facts f ON c.id = f.comment_id WHERE c.source_id = %s AND f.label_id = %s and f.confidence = 0"""
-        else:
-            facts_count = """SELECT count(*) FROM comments c WHERE c.source_id = %s """
-            facts_query = """SELECT c.id, f.label, f.confidence FROM comments c JOIN facts f ON c.id = f.comment_id WHERE c.source_id = %s AND f.label_id = %s"""
-
-        self.cursor.execute(facts_count, (self.source_id,))
+        self.cursor.execute(
+            'SELECT count(*) FROM comments c WHERE c.source_id = %s',
+            (self.source_id,)
+        )
         self.n_facts = self.cursor.fetchone()[0]
 
         self.logger.info("Preparing cursor for updates ...")
@@ -57,7 +52,10 @@ class LabelUpdater(ForumProcessor):
 
         self.cursor_large = self.conn.cursor(name='fetch_facts_' + self.labelname, withhold=True)
         self.cursor_large.execute(
-            facts_query,
+            'SELECT c.id, f.label, f.confidence '
+            'FROM comments c '
+            'JOIN facts f ON c.id = f.comment_id '
+            'WHERE c.source_id = %s AND f.label_id = %s',
             (self.source_id, self.label_id))
 
         # init label arrays for stability measure
@@ -73,10 +71,17 @@ class LabelUpdater(ForumProcessor):
 
         # init facts entry for all
         self.logger.info(f"Ensuring a fact entry for each comment for label {self.labelname}")
-        facts_query = """INSERT INTO facts (SELECT c.id, %s, false, 0, 0 FROM comments c LEFT JOIN (SELECT * FROM facts WHERE label_id = %s) AS f ON c.id = f.comment_id WHERE c.source_id = %s AND f.comment_id IS NULL)"""
         self.cursor.execute(
-            facts_query,
-            (self.label_id, self.label_id, self.source_id))
+            'INSERT INTO facts ( '
+            '  SELECT c.id, %s, false, 0, 0 ' 
+            '  FROM comments c ' 
+            '  LEFT JOIN ( '
+            '    SELECT * FROM facts WHERE label_id = %s ' 
+            '  ) AS f ON c.id = f.comment_id ' 
+            '  WHERE c.source_id = %s AND f.comment_id IS NULL '
+            ')',
+            (self.label_id, self.label_id, self.source_id),
+        )
 
         # for a full update, we do not need a commit here
         if commit_now:
@@ -96,7 +101,7 @@ class LabelUpdater(ForumProcessor):
 
         # get embeddings
         batch_ids = tuple([comment[0] for comment in comment_batch])
-        self.cursor.execute("""SELECT embedding FROM comments WHERE id IN %s""", (batch_ids,))
+        self.cursor.execute('SELECT embedding FROM comments WHERE id IN %s', (batch_ids,))
         # remove comments without embedding
         filtered_batch = []
         for i, embedding in enumerate(self.cursor.fetchall()):
@@ -164,11 +169,24 @@ class LabelUpdater(ForumProcessor):
 
         # copy postgres
         self.buffer.seek(0)
-        self.cursor.execute("CREATE TEMP TABLE tmp_facts (comment_id int8 NOT NULL, label_id int8 NOT NULL, label bool NULL DEFAULT false, confidence float8 NULL DEFAULT 0, CONSTRAINT tmp_facts_pk PRIMARY KEY (comment_id, label_id));")
+        self.cursor.execute(
+            'CREATE TEMP TABLE tmp_facts ('
+            '  comment_id int8 NOT NULL, '
+            '  label_id int8 NOT NULL, '
+            '  label bool NULL DEFAULT false, '
+            '  confidence float8 NULL DEFAULT 0, '
+            '  CONSTRAINT tmp_facts_pk PRIMARY KEY (comment_id, label_id)'
+            ')'
+        )
         self.cursor.copy_from(self.buffer, 'tmp_facts')
-        self.cursor.execute("UPDATE facts f SET label=t.label, confidence=t.confidence FROM tmp_facts t WHERE f.comment_id=t.comment_id AND f.label_id=t.label_id;")
-        self.cursor.execute("COMMIT; TRUNCATE TABLE tmp_facts;")
-        self.cursor.execute("VACUUM FULL ANALYZE facts;")
+        self.cursor.execute(
+            'UPDATE facts f '
+            'SET label = t.label, confidence = t.confidence '
+            'FROM tmp_facts t '
+            'WHERE f.comment_id = t.comment_id AND f.label_id=t.label_id'
+        )
+        self.cursor.execute('COMMIT; TRUNCATE TABLE tmp_facts;')
+        self.cursor.execute('VACUUM FULL ANALYZE facts;')
 
         # stability
         kappa_score = cohen_kappa_score(self.labels_old, self.labels_new)
@@ -205,7 +223,10 @@ class LabelUpdater(ForumProcessor):
             ]))
 
     def initModelTable(self):
-        self.cursor.execute(" INSERT INTO model (label_id, timestamp, pid) VALUES(%s, CURRENT_TIMESTAMP, %s) RETURNING id;", (self.label_id, self.pid))
+        self.cursor.execute(
+            'INSERT INTO model (label_id, timestamp, pid) VALUES (%s, CURRENT_TIMESTAMP, %s) RETURNING id',
+            (self.label_id, self.pid),
+        )
         self.model_entry_id = self.cursor.fetchone()[0]
         self.logger.info(f"Init Model Entry: label_id={self.label_id}, pid={self.pid}")
 
@@ -216,7 +237,12 @@ class LabelUpdater(ForumProcessor):
         f1 = model_details['f1']
         fit_time = model_details['fit_time']
 
-        self.cursor.execute("UPDATE model SET timestamp=CURRENT_TIMESTAMP, number_training_samples=%s, acc=%s, f1=%s, fit_time=%s, pid=%s WHERE id=%s;", (number_training_samples, acc, f1, int(fit_time), None, self.model_entry_id))
+        self.cursor.execute(
+            'UPDATE model '
+            'SET timestamp = CURRENT_TIMESTAMP, number_training_samples = %s, acc = %s, f1 = %s, fit_time = %s, pid = %s '
+            'WHERE id = %s;',
+            (number_training_samples, acc, f1, int(fit_time), None, self.model_entry_id),
+        )
         self.logger.info(f"Update Model Entry: label_id={label_id}, number_training_samples={number_training_samples}")
 
     def updateColibertLabels(self):
@@ -224,14 +250,14 @@ class LabelUpdater(ForumProcessor):
         start = time.time()
 
         # get label description
-        self.cursor.execute("SELECT description FROM labels WHERE id = %s", (self.label_id,))
+        self.cursor.execute('SELECT description FROM labels WHERE id = %s', (self.label_id,))
         description = self.cursor.fetchone()[0]
 
         if not description:
             return
 
         # select sample comments
-        self.cursor.execute("SELECT id, text FROM comments WHERE source_id = %s ORDER BY RANDOM() LIMIT %s", (self.source_id, 100))
+        self.cursor.execute('SELECT id, text FROM comments WHERE source_id = %s ORDER BY RANDOM() LIMIT %s', (self.source_id, 100))
         comments = self.cursor.fetchall()
         comment_ids, comment_texts = zip(*comments)
 
@@ -241,7 +267,7 @@ class LabelUpdater(ForumProcessor):
 
         # update scores in DB
         records = list(zip(scores, comment_ids, itertools.repeat(self.label_id)))
-        self.cursor.executemany("UPDATE facts SET confidence = %s WHERE comment_id = %s and label_id = %s", records)
+        self.cursor.executemany('UPDATE facts SET confidence = %s WHERE comment_id = %s and label_id = %s', records)
         self.conn.commit()
 
         end = time.time()

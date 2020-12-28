@@ -2,7 +2,6 @@ import numpy as np
 import pickle
 import sys
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import cross_validate
 
 models_path = "models"

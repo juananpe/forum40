@@ -9,6 +9,8 @@ from datetime import datetime
 from config import settings
 
 # db configuration
+from db import Database
+
 DB_NAME = "omp"
 DB_USER = "postgres"
 DB_PASSWORD = "postgres"

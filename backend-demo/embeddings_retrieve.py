@@ -37,7 +37,7 @@ class RetrieveComment(ForumTask):
     def get_embedding(self, id):
         if type(id) != int:
             id = int(id)
-        self.cursor.execute("""SELECT embedding FROM comments WHERE id = %s""", (id,))
+        self.cursor.execute('SELECT embedding FROM comments WHERE id = %s', (id,))
         embedding = self.cursor.fetchone()[0]
         return embedding
 
@@ -61,7 +61,7 @@ class RetrieveComment(ForumTask):
     def get_comment_text(self, id):
         if type(id) != int:
             id = int(id)
-        self.cursor.execute("""SELECT title, text FROM comments WHERE id = %s""", (id,))
+        self.cursor.execute('SELECT title, text FROM comments WHERE id = %s', (id,))
         comment = self.cursor.fetchone()
         return concat(comment[0], comment[1])
 
