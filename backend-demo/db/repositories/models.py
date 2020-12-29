@@ -1,4 +1,4 @@
-from typing import Iterable, Dict
+from typing import Dict, Iterator
 
 from db.repositories.base import BaseRepository
 
@@ -18,5 +18,5 @@ class ModelRepository(BaseRepository):
             default=False,
         )
 
-    def find_all_by_label_id(self, label_id: int) -> Iterable[Dict]:
+    def find_all_by_label_id(self, label_id: int) -> Iterator[Dict]:
         return self._acc.fetch_all('SELECT * FROM model WHERE label_id = %s', (label_id,))

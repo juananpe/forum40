@@ -1,4 +1,4 @@
-from typing import TypedDict, Dict
+from typing import TypedDict, Dict, Iterator
 
 from db.repositories.base import BaseRepository
 
@@ -9,7 +9,7 @@ class NewSource(TypedDict):
 
 
 class SourceRepository(BaseRepository):
-    def find_all(self, include_protected: bool = True):
+    def find_all(self, include_protected: bool = True) -> Iterator[Dict]:
         query = 'SELECT * FROM sources'
         if not include_protected:
             query += ' WHERE protected = FALSE'

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from typing import Iterable, Dict, Optional
+from typing import Iterable, Dict, Optional, Iterator
 
 from db.repositories.base import BaseRepository
 
@@ -41,7 +41,7 @@ class AnnotationRepository(BaseRepository):
             num_negative=result['neg'],
         )
 
-    def count_by_value_for_comments(self, comment_ids: Iterable[int], label_ids: Iterable[int]) -> Iterable[Dict]:
+    def count_by_value_for_comments(self, comment_ids: Iterable[int], label_ids: Iterable[int]) -> Iterator[Dict]:
         return self._acc.fetch_all(
             'SELECT comment_id, label_id, sum(label::int) as count_true, sum(1 - label::int) as count_false '
             'FROM annotations '
@@ -51,7 +51,7 @@ class AnnotationRepository(BaseRepository):
             (tuple(comment_ids), tuple(label_ids)),
         )
 
-    def find_by_user_for_comments(self, user_id: int, comment_ids: Iterable[int], label_ids: Iterable[int]) -> Iterable[Dict]:
+    def find_by_user_for_comments(self, user_id: int, comment_ids: Iterable[int], label_ids: Iterable[int]) -> Iterator[Dict]:
         return self._acc.fetch_all(
             'SELECT * FROM annotations WHERE user_id = %s AND comment_id IN %s AND label_id IN %s',
             (user_id, tuple(comment_ids), tuple(label_ids)),

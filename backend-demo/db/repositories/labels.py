@@ -1,4 +1,4 @@
-from typing import Dict, Iterable, Optional, TypedDict
+from typing import Dict, Optional, TypedDict, Iterator
 
 from db.repositories.base import BaseRepository
 
@@ -11,7 +11,7 @@ class NewLabel(TypedDict):
 
 
 class LabelRepository(BaseRepository):
-    def find_all_by_source_id(self, source_id: int) -> Iterable[Dict]:
+    def find_all_by_source_id(self, source_id: int) -> Iterator[Dict]:
         return self._acc.fetch_all('SELECT * FROM labels WHERE source_id = %s', (source_id,))
 
     def is_name_taken(self, name: str) -> bool:

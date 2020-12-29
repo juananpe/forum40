@@ -1,11 +1,10 @@
 from dataclasses import dataclass
-from enum import Enum
-from typing import Iterable, Dict, Optional, Union, TypedDict, List, Set
+from enum import IntEnum
 
 import datetime
-
 from psycopg2.extras import execute_values
 from pypika import PostgreSQLQuery, Table, Order, functions as pfn
+from typing import Iterable, Dict, Optional, Union, TypedDict, List, Set, Iterator
 
 from db.repositories.base import BaseRepository
 from db.repositories.util import QueryArguments
@@ -39,7 +38,7 @@ class FactSorting:
     order: Union[Order, UncertaintyOrder]
 
 
-class Granularity(Enum):
+class Granularity(IntEnum):
     YEAR = 1
     MONTH = 2
     DAY = 3
@@ -63,7 +62,7 @@ class CommentRepository(BaseRepository):
     def exists(self, id_: int) -> bool:
         return self._acc.fetch_value('SELECT true FROM comments WHERE id = %s LIMIT 1', (id_,), default=False)
 
-    def count_by_category_for_source(self, source_id: int) -> Iterable[Dict]:
+    def count_by_category_for_source(self, source_id: int) -> Iterator[Dict]:
         return self._acc.fetch_all(
             'SELECT name category_name, value comment_count FROM count_comments_by_category WHERE source_id = %s',
             (source_id,),
@@ -94,7 +93,7 @@ class CommentRepository(BaseRepository):
                 'RETURNING id'
             )
 
-            results = execute_values(cur, query, items)
+            results = execute_values(cur, query, items, fetch=True)
 
         return [result['id'] for result in results]
 
@@ -107,7 +106,7 @@ class CommentRepository(BaseRepository):
             fields: Set[str] = base_comment_fields,
             limit: int = 100,
             offset: int = 0,
-    ) -> Iterable[Dict]:
+    ) -> Iterator[Dict]:
         args = QueryArguments()
 
         comments = Table('comments')
@@ -149,7 +148,7 @@ class CommentRepository(BaseRepository):
             source_id: int,
             label_id: Optional[int] = None,
             keywords: Optional[List[str]] = None,
-    ) -> Iterable[Dict]:
+    ) -> Iterator[Dict]:
         args = QueryArguments()
 
         comments = Table('comments')
