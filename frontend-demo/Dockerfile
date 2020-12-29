@@ -9,5 +9,4 @@ RUN npm run build
 
 FROM nginx:stable-alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
-ENV NGINX_PORT=8080
-EXPOSE 8080
+EXPOSE 80

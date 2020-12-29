@@ -6,5 +6,5 @@ RUN chmod 744 /root/docker-dev-entrypoint.sh
 
 WORKDIR /app
 
-EXPOSE 8080
+EXPOSE 80
 CMD ["/root/docker-dev-entrypoint.sh"]
