@@ -137,7 +137,7 @@ class CommentsParentRec(Resource):
             return '', HTTPStatus.UNAUTHORIZED
 
         return {
-            "comments": reversed(comments),
+            "comments": list(reversed(comments)),
             "size": len(comments)
         }
 

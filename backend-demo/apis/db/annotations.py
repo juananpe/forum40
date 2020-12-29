@@ -20,7 +20,7 @@ class GetLabel(Resource):
         return list(annotations), HTTPStatus.OK
 
 
-@ns.route('/<int:comment_id>/<int:label_id>/<int:label>')
+@ns.route('/<int:comment_id>/<int:label_id>/<int:value>')
 class LabelComment(Resource):
     @token_required
     @with_database

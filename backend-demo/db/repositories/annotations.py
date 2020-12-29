@@ -29,7 +29,9 @@ class AnnotationRepository(BaseRepository):
 
     def count_annotations_on_embedded_comments_for_label(self, label_id: int) -> AnnotationCount:
         result = self._acc.fetch_one(
-            'SELECT sum(label::int) pos, sum(1 - label::int) neg '
+            'SELECT '
+            '  count(*) filter ( where label ) pos, '
+            '  count(*) filter ( where not label ) neg '
             'FROM comments c '
             'JOIN annotations a ON c.id = a.comment_id '
             'WHERE a.label_id = %s AND c.embedding IS NOT NULL',
@@ -43,7 +45,11 @@ class AnnotationRepository(BaseRepository):
 
     def count_by_value_for_comments(self, comment_ids: Iterable[int], label_ids: Iterable[int]) -> Iterator[Dict]:
         return self._acc.fetch_all(
-            'SELECT comment_id, label_id, sum(label::int) as count_true, sum(1 - label::int) as count_false '
+            'SELECT '
+            '  comment_id, '
+            '  label_id, '
+            '  count(*) filter ( where label ) as count_true, '
+            '  count(*) filter ( where not label ) as count_false '
             'FROM annotations '
             'WHERE comment_id IN %s '
             '  AND label_id IN %s '
