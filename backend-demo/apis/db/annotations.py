@@ -16,7 +16,8 @@ ns = Namespace('annotations', description="annotations api")
 class GetLabel(Resource):
     @with_database
     def get(self, db: Database, comment_id):
-        return db.annotations.find_all_by_comment_id(comment_id)
+        annotations = db.annotations.find_all_by_comment_id(comment_id)
+        return list(annotations), HTTPStatus.OK
 
 
 @ns.route('/<int:comment_id>/<int:label_id>/<int:label>')

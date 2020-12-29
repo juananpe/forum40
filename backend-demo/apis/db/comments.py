@@ -257,18 +257,24 @@ def load_annotations(db: Database, comments: List[Dict], label_ids: List[int], u
 
     facts = key_by(db.facts.find_by_comment_and_labels(comment_ids, label_ids))
     annotations = key_by(db.annotations.count_by_value_for_comments(comment_ids, label_ids))
-    user_annotations = {} if user_id is None else key_by(db.annotations.find_by_user_for_comments(user_id, comment_ids, label_ids))
+    if user_id is None:
+        user_annotations = defaultdict(lambda: None)
+    else:
+        user_annotations = key_by(db.annotations.find_by_user_for_comments(user_id, comment_ids, label_ids))
 
     for comment in comments:
         comment['annotations'] = []
         for label_id in label_ids:
-            annotation = annotations[(comment['id'], label_id)]
-            agg = {
-                'label_id': label_id,
-                'group_count_true': annotation['count_true'],
-                'group_count_false': annotation['count_false']
-            }
+            agg = {'label_id': label_id}
             comment['annotations'].append(agg)
+
+            if (annotation := annotations[(comment['id'], label_id)]) is not None:
+                agg |= {
+                    'group_count_true': annotation['count_true'],
+                    'group_count_false': annotation['count_false'],
+                }
+            else:
+                agg |= {'group_count_true': 0, 'group_count_false': 0}
 
             if (fact := facts[(comment['id'], label_id)]) is not None:
                 agg |= {'ai': fact['label'], 'ai_pred': fact['confidence']}

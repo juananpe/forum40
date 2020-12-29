@@ -12,4 +12,4 @@ class Models(Resource):
     @with_database
     def get(self, db: Database, label_id):
         models = db.models.find_all_by_label_id(label_id)
-        return models, HTTPStatus.OK
+        return list(models), HTTPStatus.OK
