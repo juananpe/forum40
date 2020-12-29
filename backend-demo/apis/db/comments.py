@@ -110,7 +110,7 @@ class CommentsGrouped(Resource):
         )
         count_by_date = defaultdict(
             lambda: 0,
-            {date(d['year'], d.get('month', 1), d.get('day', 1)): d['count'] for d in db_result},
+            {date(d['year'], d.get('month', 1), d.get('day', 1)).strftime(dtf): d['count'] for d in db_result},
         )
 
         now = datetime.now()
@@ -119,7 +119,7 @@ class CommentsGrouped(Resource):
         dt_range = rrule.rrule(recurrence_frequency, dtstart=start_dt, until=end_dt)
 
         return {'start_time': {'year': start_dt.year, 'month': start_dt.month, 'day': start_dt.day}} \
-            | slice_dicts([{'time': dt.strftime(dtf), 'data': count_by_date[dt.date()]} for dt in dt_range])
+            | slice_dicts([{'time': dt.strftime(dtf), 'data': count_by_date[dt.strftime(dtf)]} for dt in dt_range])
 
 
 @ns.route('/parent_recursive/<string:id>/')
