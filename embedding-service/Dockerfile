@@ -1,4 +1,4 @@
-FROM python:3.6
+FROM python:3.8
 
 # system packages
 RUN apt-get update
