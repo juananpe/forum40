@@ -1,6 +1,7 @@
 from flask_restplus import reqparse, inputs
 
 group_by_model = reqparse.RequestParser()
+group_by_model.add_argument('granularity', type=str, choices=['day', 'month', 'year'], default='month')
 group_by_model.add_argument('label', type=int, default=None)
 group_by_model.add_argument('keyword', action='append', default=lambda: [])
 group_by_model.add_argument('source_id', type=int, required=True)

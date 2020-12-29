@@ -1,12 +1,13 @@
 from collections import defaultdict
+from datetime import date, datetime, time
 from http import HTTPStatus
-
-from datetime import timedelta, date
-from dateutil.relativedelta import relativedelta
-from flask import request
-from flask_restplus import Resource, Namespace, inputs
 from typing import List, Dict, Optional, Iterable, Tuple
 
+import dateutil.rrule as rrule
+from flask import request
+from flask_restplus import Resource, Namespace, inputs
+
+from apis.utils.transformation import slice_dicts
 from db import with_database, Database
 from db.db_models import comments_parser_sl, comment_parser_post, comments_list_parser, \
     group_by_model, comment_parser
@@ -88,116 +89,37 @@ class CommentsInsertMany(Resource):
         return {'ids': ids}, HTTPStatus.OK
 
 
-def add_missing_days(data):
-    min_ = min_date
-    missing = []
-    for el in data:
-        while min_ < date(el['year'], el['month'], el['day']):
-            missing.append(
-                {"year": min_.year, "month": min_.month, "day": min_.day, "count": 0})
-            min_ = min_ + timedelta(1)
-        min_ = min_ + + timedelta(1)
-    data = data + missing
-    return sorted(data, key=lambda x: (x['year'], x['month'], x['day']))
-
-
-def add_missing_months(data):
-    if len(data) == 0:
-        return data
-
-    min_ = min_date
-    missing = []
-    for el in data:
-        while min_ < date(el['year'], el['month'], 1):
-            missing.append(
-                {"year": min_.year, "month": min_.month, "count": 0})
-            min_ = min_ + relativedelta(months=1)
-        min_ = min_ + relativedelta(months=1)
-    data = data + missing
-    return sorted(data, key=lambda x: (x['year'], x['month']))
-
-
-def add_missing_years(data):
-    if len(data) == 0:
-        return data
-
-    min_ = min_date.year
-    missing = []
-    for el in data:
-        while min_ < el['year']:
-            missing.append({"year": min_, "count": 0})
-            min_ = min_ + 1
-        min_ = min_ + 1
-    data = data + missing
-    return sorted(data, key=lambda x: (x['year']))
-
-
-def prepare_for_visualisation(data, f):
-    if len(data) == 0:
-        return {"start_time": None, "time": [], "data": []}
-
-    time_list = []
-    data_list = []
-    for e in data:
-        time_list.append(f(e))
-        data_list.append(e["count"])
-    start_time = data[0]
-    del start_time['count']
-    return {"start_time": start_time, "time": time_list, "data": data_list}
-
-
 @check_source_id
-@ns.route('/groupByDay')
+@ns.route('/time_histogram')
 @ns.expect(group_by_model)
-class CommentsGroupByDay(Resource):
+class CommentsGrouped(Resource):
     @with_database
     def get(self, db: Database):
         args = group_by_model.parse_args()
+        granularity, recurrence_frequency, dtf = {
+            'day': (Granularity.DAY, rrule.DAILY, '%d.%m.%Y'),
+            'month': (Granularity.MONTH, rrule.MONTHLY, '%m.%Y'),
+            'year': (Granularity.YEAR, rrule.YEARLY, '%Y'),
+        }[args['granularity']]
 
-        db_result = list(db.comments.count_by_timestamp_query(
-            granularity=Granularity.MONTH,
+        db_result = db.comments.count_by_timestamp_query(
+            granularity=granularity,
             source_id=args['source_id'],
             label_id=args['label'],
             keywords=args['keyword'],
-        ))
+        )
+        count_by_date = defaultdict(
+            lambda: 0,
+            {date(d['year'], d.get('month', 1), d.get('day', 1)): d['count'] for d in db_result},
+        )
 
-        return prepare_for_visualisation(add_missing_days(db_result), lambda d: f"{d['day']}.{d['month']}.{d['year']}")
+        start_date = min(count_by_date.keys())
+        start_dt = datetime.combine(start_date, time(0, 0, 0))
+        end_dt = datetime.now()
+        dt_range = rrule.rrule(recurrence_frequency, dtstart=start_dt, until=end_dt)
 
-
-@check_source_id
-@ns.route('/groupByMonth')
-@ns.expect(group_by_model)
-class CommentsGroupByMonth(Resource):
-    @with_database
-    def get(self, db: Database):
-        args = group_by_model.parse_args()
-
-        db_result = list(db.comments.count_by_timestamp_query(
-            granularity=Granularity.MONTH,
-            source_id=args['source_id'],
-            label_id=args['label'],
-            keywords=args['keyword'],
-        ))
-
-        return prepare_for_visualisation(add_missing_months(db_result), lambda d: f"{d['month']}.{d['year']}")
-
-
-@check_source_id
-@ns.route('/groupByYear')
-@ns.expect(group_by_model)
-class CommentsGroupByYear(Resource):
-    @with_database
-    def get(self, db: Database):
-        args = group_by_model.parse_args()
-
-        db_result = list(db.comments.count_by_timestamp_query(
-            granularity=Granularity.MONTH,
-            source_id=args['source_id'],
-            label_id=args['label'],
-            keywords=args['keyword'],
-        ))
-
-        return prepare_for_visualisation(add_missing_years(db_result), lambda d: f"{d['year']}")
+        return {'start_time': {'year': start_dt.year, 'month': start_dt.month, 'day': start_dt.day}} \
+            | slice_dicts([{'time': dt.strftime(dtf), 'data': count_by_date[dt.date()]} for dt in dt_range])
 
 
 @ns.route('/parent_recursive/<string:id>/')
