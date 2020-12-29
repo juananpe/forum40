@@ -24,7 +24,7 @@ class AnnotationRepository(BaseRepository):
             'INSERT INTO annotations (user_id, comment_id, label_id, label) '
             'VALUES (%s, %s, %s, %s) '
             'ON CONFLICT (comment_id, label_id, user_id) DO UPDATE SET label = %s',
-            (user_id, comment_id, label_id, value, value),
+            (str(user_id), comment_id, label_id, value, value),
         )
 
     def count_annotations_on_embedded_comments_for_label(self, label_id: int) -> AnnotationCount:
@@ -54,5 +54,5 @@ class AnnotationRepository(BaseRepository):
     def find_by_user_for_comments(self, user_id: int, comment_ids: Iterable[int], label_ids: Iterable[int]) -> Iterator[Dict]:
         return self._acc.fetch_all(
             'SELECT * FROM annotations WHERE user_id = %s AND comment_id IN %s AND label_id IN %s',
-            (user_id, tuple(comment_ids), tuple(label_ids)),
+            (str(user_id), tuple(comment_ids), tuple(label_ids)),
         )
