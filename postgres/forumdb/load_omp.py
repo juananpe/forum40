@@ -140,4 +140,4 @@ if __name__ == "__main__":
     conn.close()
 
     end = timer()
-    logging.info("Import completed after " + str((end - start)) + " seconds.")
+    logging.info(f"Import completed after {timer() - start:.01f} seconds.")
