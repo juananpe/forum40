@@ -1,21 +1,15 @@
-from flask import request, Response
-from flask_restplus import Resource, reqparse
-
-from apis.db import api
-from db import postgres_con
-from db.queries import *
-
-from db.db_models import label_parser_post
+from http import HTTPStatus
 
 import os
+from flask_restplus import Resource, Namespace
+
 from apis.utils.tasks import SingleProcessManager
+from apis.utils.transformation import slice_dicts
+from db import with_database, Database
+from db.db_models import label_parser_post
+from jwt_auth.token import token_required, TokenData
 
-from bson import json_util
-import json
-
-from jwt_auth.token import token_required
-
-ns = api.namespace('labels', description="labels api")
+ns = Namespace('labels', description="labels api")
 
 # pg config
 pg_host = os.getenv('PG_HOST', 'postgres')
@@ -24,79 +18,39 @@ pg_port = os.getenv('PG_PORT', '5432')
 process_manager = SingleProcessManager(pg_host, pg_port)
 process_manager.register_process("init_facts", ["classification_update.py", pg_host, pg_port])
 
+
 @ns.route('/<int:source_id>')
 class LabelsGetAll(Resource):
-    def get(self, source_id):
-        postgres = postgres_con.cursor()
-
-        postgres.execute(SELECT_NAMES_FROM_LABELS, (source_id,))
-        d_list = [t[0] for t in postgres.fetchall()]
-
-        postgres.execute(SELECT_IDS_FROM_LABELS, (source_id,))
-        i_list = [t[0] for t in postgres.fetchall()]
-
-        postgres.execute(SELECT_DESCRIPTIONS_FROM_LABELS, (source_id,))
-        descriptions = [t[0] for t in postgres.fetchall()]
-
-        return { 
-            "labels" : d_list,
-            "ids" : i_list,
-            "descriptions": descriptions
-        }
-
-@ns.route('/count')
-class LabelsCount(Resource):
-    def get(self):
-        postgres = postgres_con.cursor()
-        postgres.execute(COUNT_LABELS)
-        db_return = postgres.fetchone()
-
-        if db_return:
-             return {'count': db_return[0]}, 200
-        
-        return {"msg": "Error"}, 400        
-
-@ns.route('/id/<string:name>')
-class LabelsId(Resource):
-    def get(self, name):
-        postgres = postgres_con.cursor()
-        postgres.execute(SELECT_ID_FROM_LABELS_BY_NAME(name))
-        db_return = postgres.fetchone()
-        if db_return:
-            return {'id': db_return[0]}, 200
-        else:
-            return {"msg": f"Label: '{name}' does not exists!"}, 400 
+    @with_database
+    def get(self, db: Database, source_id):
+        labels = db.labels.find_all_by_source_id(source_id)
+        return slice_dicts(labels, {'labels': 'name', 'ids': 'id', 'descriptions': 'description'})
 
 
 @ns.route('/binary/<string:label_name>/<int:source_id>')
 class AddLabel(Resource):
     @token_required
-    @api.doc(security='apikey')
-    @api.expect(label_parser_post)
-    def put(self, data, label_name, source_id):
-        postgres = postgres_con.cursor()
-        postgres.execute(COUNT_LABELS_BY_NAME(label_name))
-        db_result = postgres.fetchone()
+    @with_database
+    @ns.doc(security='apikey')
+    @ns.expect(label_parser_post)
+    def put(self, db: Database, token_data: TokenData, label_name, source_id):
+        if db.labels.is_name_taken(label_name):
+            return {'msg': 'Label already exists.'}, HTTPStatus.CONFLICT
 
         args = label_parser_post.parse_args()
-        description = args.get('description', None)
 
-        if db_result:
-            if db_result[0] >= 1:
-                return { 'msg' : 'Label already exists.' } , 400
+        db.labels.insert_label({
+            'type': 'classification',
+            'name': label_name,
+            'source_id': source_id,
+            'description': args['description'],
+        })
 
-        postgres.execute(SELECT_MAX_ID('labels'))
-        max_id = postgres.fetchone()[0]
-
-        label_id = max_id + 1
-
-        postgres.execute(INSERT_LABEL, (label_id, 'classification', label_name, source_id, description))
-        postgres_con.commit()
+        db.acc.commit()
 
         # init facts
-        args = ["--labelname", label_name, "--init-facts-only"]
-        results = process_manager.invoke("init_facts", str(source_id), args)
-        print("Init facts for label %s started as background process" % label_name)
-        
-        return "ok", 200 
-                
+        process_args = ["--labelname", label_name, "--init-facts-only"]
+        process_manager.invoke("init_facts", str(source_id), process_args)
+        print(f"Init facts for label {label_name} started as background process")
+
+        return '', HTTPStatus.NO_CONTENT

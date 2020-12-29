@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from flask import Flask
 from logging.config import dictConfig
 from flask_restplus import Api, Resource, fields
@@ -50,7 +52,7 @@ class StringsEmbedding(Resource):
     def post(self):
         comment_texts = api.payload.get('texts', [])
         results = get_embeddings(comment_texts)
-        return results, 200
+        return results, HTTPStatus.OK
 
 
 # run app manually

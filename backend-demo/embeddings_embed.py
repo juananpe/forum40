@@ -1,24 +1,26 @@
-import argparse
 import traceback
+
+import argparse
 import math
+from pypika import PostgreSQLQuery, Table, Parameter
+from pypika.functions import Count
 
 from apis.utils.tasks import ForumProcessor, concat
 from apis.utils.tasks import get_embeddings
 
-class CommentEmbedder(ForumProcessor):
 
+class CommentEmbedder(ForumProcessor):
     def __init__(self, embed_all=False, batch_size=8, host="postgres", port=5432):
         super().__init__("embedding", host=host, port=port)
         self.cursor_large = None
         self.embed_all = embed_all
         self.batch_size = batch_size
-        self.batch_i  = 0
+        self.batch_i = 0
         self.n_batches = 0
         self.n_commit = 100
 
     def set_commit_number(self, n_commit):
         self.n_commit = n_commit
-
 
     def process_batch(self, comment_batch):
         comment_texts = [concat(c[1], c[2]) for c in comment_batch if c[1] or c[2]]
@@ -30,43 +32,32 @@ class CommentEmbedder(ForumProcessor):
         else:
             batch_update_comments = []
             for i, comment_embedding in enumerate(comment_embeddings):
-                # get comment object id
                 comment_id = comment_ids[i]
+                batch_update_comments.append((comment_embedding, comment_id))
 
-                # update mongo db
-                batch_update_comments.append(
-                    (comment_embedding, comment_id)
-                )
-
-            # write to db
-            self.cursor.executemany("""UPDATE comments SET embedding=%s WHERE id=%s""", batch_update_comments)
+            self.cursor.executemany('UPDATE comments SET embedding = %s WHERE id = %s', batch_update_comments)
             return True
 
     def init_cursor(self):
         try:
-
-            self.cursor.execute("""SELECT COUNT(*) from comments WHERE source_id = %s""", (source_id,))
-            n_comments = self.cursor.fetchone()[0]
-
-            self.logger.info("Comments in the database source " + str(source_id) + ": " + str(n_comments))
-
-            embed_query = """SELECT id, title, text FROM comments WHERE source_id = """ + str(source_id)
-            self.n_to_embed = n_comments
+            comments = Table('comments')
+            query = PostgreSQLQuery() \
+                .from_(comments) \
+                .where(comments.source_id == Parameter('%s'))
 
             if not self.embed_all:
-                embed_query += " AND embedding IS NULL"
-                self.cursor.execute("""SELECT COUNT(*) from comments WHERE source_id = %s AND embedding IS NULL""", (source_id,))
-                self.n_to_embed = self.cursor.fetchone()[0]
+                query = query.where(comments.embedding.notnull())
 
-            embed_query += " order by random()"
+            self.cursor.execute(query.select(Count('*')).get_sql(), (source_id,))
+            n_to_embed = self.cursor.fetchone()[0]
 
-            self.logger.info("Comments to embed: " + str(self.n_to_embed))
             self.batch_i = 0
-            self.n_batches = math.ceil(self.n_to_embed / self.batch_size)
+            self.n_batches = math.ceil(n_to_embed / self.batch_size)
             self.set_total(self.n_batches)
 
+            embed_query = query.select(comments.id, comments.title, comments.text).orderby('random()')
             self.cursor_large = self.conn.cursor(name='fetch_embeddings', withhold=True)
-            self.cursor_large.execute(embed_query)
+            self.cursor_large.execute(embed_query.get_sql(), (source_id,))
 
         except Exception as err:
             self.logger.error(err)
@@ -75,7 +66,6 @@ class CommentEmbedder(ForumProcessor):
     def close_cursor(self):
         if self.cursor_large:
             self.cursor_large.close()
-
 
     def embed_batch(self):
 
@@ -108,7 +98,7 @@ class CommentEmbedder(ForumProcessor):
             self.logger.info(message)
             if self.batch_i % 10 == 0:
                 self.update_state(self.batch_i, message)
-        
+
         self.logger.info("Final commit to DB ...")
         self.conn.commit()
         self.close_cursor()
@@ -121,8 +111,8 @@ if __name__ == '__main__':
                         help='DB host (default: localhost)')
     parser.add_argument('port', type=int, default=5432, nargs='?',
                         help='DB port (default: 5432)')
-    parser.add_argument('source_id', type=int, default=1, nargs='?', 
-                        help='Source id of the comment (default 1)')                        
+    parser.add_argument('source_id', type=int, default=1, nargs='?',
+                        help='Source id of the comment (default 1)')
 
     parser.add_argument('--embed-all', dest='all', default=False, action='store_true',
                         help='(Re-)embed all data (default: False)')

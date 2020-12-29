@@ -1,16 +1,13 @@
+from http import HTTPStatus
+
 import os
-
-from flask import Flask
+from flask_restplus import Resource, fields, Namespace
 from logging.config import dictConfig
-from flask_restplus import Api, Resource, fields
-from core.proxy_wrapper import ReverseProxied
-from classification_classifier import get_history_path
-
-from apis.classification import api
 
 from apis.utils.tasks import SingleProcessManager
+from classification_classifier import get_history_path
 
-ns = api.namespace('classification', description="Classification-API namespace")
+ns = Namespace('classification', description="Classification-API namespace")
 
 # pg config
 pg_host = os.getenv('PG_HOST', 'postgres')
@@ -36,57 +33,57 @@ dictConfig({
 })
 
 
-update_model = api.model('update', {
+update_model = ns.model('update', {
     'source_id': fields.Integer(
         description="Source id",
         required=True,
         example=1
     ),
     'labelname': fields.String(
-        description = 'Labelname to update model and machine classification.',
-        example = 'SentimentNegative',
-        required = True
+        description='Labelname to update model and machine classification.',
+        example='SentimentNegative',
+        required=True
     ),
-    'optimize' : fields.Boolean(
-        description = 'Perform hyperparameter optimization',
-        default = False,
-        required = False
+    'optimize': fields.Boolean(
+        description='Perform hyperparameter optimization',
+        default=False,
+        required=False
     ),
-    'skip-confidence' : fields.Boolean(
-        description = 'Fast version only updates changing labels, but not confidence scores',
-        default = False,
-        required = False
+    'skip-confidence': fields.Boolean(
+        description='Fast version only updates changing labels, but not confidence scores',
+        default=False,
+        required=False
     ),
-    'skip-training' : fields.Boolean(
-        description = 'Indicate whether training should be skipped',
-        default = False,
-        required = False
+    'skip-training': fields.Boolean(
+        description='Indicate whether training should be skipped',
+        default=False,
+        required=False
     )
 })
 
-history_model = api.model('history', {
+history_model = ns.model('history', {
     'labelname': fields.String(
-        description = 'Labelname to update model and machine classification.',
-        example = 'SentimentNegative',
-        required = True
+        description='Labelname to update model and machine classification.',
+        example='SentimentNegative',
+        required=True
     ),
-    'n' : fields.Integer(
-        description = 'Number of history entries',
-        example = 100,
-        required = False
+    'n': fields.Integer(
+        description='Number of history entries',
+        example=100,
+        required=False
     )
 })
 
 
 @ns.route('/update')
 class ClassifierService(Resource):
-    @api.expect(update_model)
+    @ns.expect(update_model)
     def post(self):
-        source_id = api.payload.get('source_id', None)
-        labelname = api.payload.get('labelname', None)
-        optimize = api.payload.get('optimize', False)
-        skip_training = api.payload.get('skip-training', False)
-        skip_confidence = api.payload.get('skip-confidence', False)
+        source_id = ns.payload.get('source_id', None)
+        labelname = ns.payload.get('labelname', None)
+        optimize = ns.payload.get('optimize', False)
+        skip_training = ns.payload.get('skip-training', False)
+        skip_confidence = ns.payload.get('skip-confidence', False)
         if labelname and source_id:
             args = ["--labelname", labelname]
             if skip_confidence:
@@ -96,30 +93,31 @@ class ClassifierService(Resource):
             if skip_training:
                 args.append("--skip-train")
             results = process_manager.invoke("update", str(source_id), args)
-            return results, 200
+            return results, HTTPStatus.OK
         else:
-            return {'error' : 'Something went wrong.'}, 500
+            return {'error': 'Something went wrong.'}, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 @ns.route('/status')
 class StatusService(Resource):
     def get(self):
         results = process_manager.status("update")
-        return results, 200
+        return results, HTTPStatus.OK
 
 
 @ns.route('/abort')
 class AbortService(Resource):
     def get(self):
         results = process_manager.abort("update")
-        return results, 200
+        return results, HTTPStatus.OK
+
 
 @ns.route('/history')
 class HistoryService(Resource):
     @ns.expect(history_model)
     def post(self):
-        labelname = api.payload.get('labelname', None)
-        n = api.payload.get('n', 100)
+        labelname = ns.payload.get('labelname', None)
+        n = ns.payload.get('n', 100)
         if labelname:
             try:
                 history = []
@@ -128,12 +126,11 @@ class HistoryService(Resource):
                         history.append(line.strip())
                 history = history[-n:]
                 results = {
-                    'labelname' : labelname,
-                    'history' : history
+                    'labelname': labelname,
+                    'history': history
                 }
-                return results, 200
+                return results, HTTPStatus.OK
             except:
-                return {'error': 'Something went wrong.'}, 500
+                return {'error': 'Something went wrong.'}, HTTPStatus.INTERNAL_SERVER_ERROR
         else:
-            return {'error' : 'No labelname given.'}, 404
-
+            return {'error': 'No labelname given.'}, HTTPStatus.NOT_FOUND

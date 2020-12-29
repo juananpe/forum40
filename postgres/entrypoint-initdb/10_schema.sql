@@ -67,9 +67,9 @@ CREATE TABLE IF NOT EXISTS public.documents (
 	metadata text NULL,
 	source_id int8 NULL,
 	embedding float8[] NULL,
-	CONSTRAINT documents_pk PRIMARY KEY (id)
+	CONSTRAINT documents_pk PRIMARY KEY (id),
+    UNIQUE (source_id, external_id)
 );
-
 
 -- Drop table
 
@@ -90,9 +90,21 @@ CREATE TABLE IF NOT EXISTS public."comments" (
 	"year" int2 NULL,
 	"month" int2 NULL,
 	"day" int2 NULL,
-	CONSTRAINT comments_pk PRIMARY KEY (id)
+	CONSTRAINT comments_pk PRIMARY KEY (id),
+	UNIQUE (source_id, external_id)
 );
 
+CREATE MATERIALIZED VIEW IF NOT EXISTS public.count_comments_by_category
+    TABLESPACE pg_default
+AS SELECT count(*) AS value,
+          d.category AS name,
+          c.source_id
+   FROM documents d,
+        comments c
+   WHERE c.doc_id = d.id
+   GROUP BY d.category, c.source_id
+   ORDER BY count(*)
+WITH DATA;
 
 -- Drop table
 
@@ -119,6 +131,7 @@ CREATE TABLE IF NOT EXISTS public.annotations (
 	comment_id int8 NOT NULL,
 	user_id varchar NOT NULL DEFAULT 'anonymous',
 	"label" bool NOT NULL,
+	UNIQUE (label_id, comment_id, user_id),
 	CONSTRAINT annotations_pk PRIMARY KEY (id)
 );
 

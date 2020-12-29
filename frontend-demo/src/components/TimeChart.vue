@@ -109,7 +109,7 @@ export default {
       this.removeAllLabels();
 
       const { data } = await Service.get(
-        `${this.selectEndpoint()}?source_id=${this[Getters.getSelectedSource].id}&${this.textFilterArg("?")}`
+        `${Endpoint.COMMENTS_TIME_HISTOGRAM}?granularity=${this.selectGranularity()}&source_id=${this[Getters.getSelectedSource].id}&${this.textFilterArg("?")}`
       );
 
       if (this[Getters.selectedLabels].length == 0) {
@@ -118,15 +118,14 @@ export default {
     },
     updateChart: async function() {
       var chart_options = this.chart_options;
-      var selectEndpoint = this.selectEndpoint;
       var textFilterArg = this.textFilterArg;
       chart_options.series.forEach(async (x) => {
         if (chart_options.legend.selected[x.name]) {
           const label_id = this[State.labels][x.name];
           const { data } = label_id ?
-              await Service.get(`${selectEndpoint()}?source_id=${this[Getters.getSelectedSource].id}&label=${label_id}${textFilterArg("&")}`)
+              await Service.get(`${Endpoint.COMMENTS_TIME_HISTOGRAM}?granularity=${this.selectGranularity()}&source_id=${this[Getters.getSelectedSource].id}&label=${label_id}${textFilterArg("&")}`)
               :
-              await Service.get(`${selectEndpoint()}?source_id=${this[Getters.getSelectedSource].id}&${textFilterArg("&")}`);
+              await Service.get(`${Endpoint.COMMENTS_TIME_HISTOGRAM}?granularity=${this.selectGranularity()}&source_id=${this[Getters.getSelectedSource].id}&${textFilterArg("&")}`);
 
           chart_options.xAxis.data = data["time"];
           x.data = data.data;
@@ -148,7 +147,7 @@ export default {
         ];
         const label_id = this[State.labels][label];
         const { data } = await Service.get(
-          `${this.selectEndpoint()}?source_id=${this[Getters.getSelectedSource].id}&label=${label_id}${this.textFilterArg("&")}`
+          `${Endpoint.COMMENTS_TIME_HISTOGRAM}?granularity=${this.selectGranularity()}&source_id=${this[Getters.getSelectedSource].id}&label=${label_id}${this.textFilterArg("&")}`
         );
         this.addSeriesToChat(data, label);
       }
@@ -161,22 +160,8 @@ export default {
         return "";
       }
     },
-    selectEndpoint: function() {
-      var endpoint = "";
-      switch (this[Getters.timeFrequency]) {
-        case "d":
-          endpoint = Endpoint.COMMENTS_GROUP_BY_DAY;
-          break;
-        case "m":
-          endpoint = Endpoint.COMMENTS_GROUP_BY_MONTH;
-          break;
-        case "y":
-          endpoint = Endpoint.COMMENTS_GROUP_BY_YEAR;
-          break;
-        default:
-        // code block
-      }
-      return endpoint;
+    selectGranularity: function() {
+      return { y: 'year', m: 'month', d: 'day' }[this[Getters.timeFrequency]];
     },
     removeAllLabels: function() {
       this.local_chart_state = [];

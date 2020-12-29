@@ -1,13 +1,16 @@
-import psycopg2
 import logging
+import os
+import psycopg2
 import requests
-import os, subprocess, pdb
+import subprocess
+from abc import abstractmethod
 from datetime import datetime
-from abc import ABC, abstractmethod
 
 from config import settings
 
 # db configuration
+from db import Database
+
 DB_NAME = "omp"
 DB_USER = "postgres"
 DB_PASSWORD = "postgres"
@@ -29,8 +32,8 @@ ch.setFormatter(formatter)
 # add ch to logger
 logger.addHandler(ch)
 
-class ForumTask:
 
+class ForumTask:
     def __init__(self, taskname, host="postgres", port=5432):
         self.taskname = taskname
         self.logger = logger
@@ -47,11 +50,10 @@ class ForumTask:
                 password=DB_PASSWORD
             )
         except:
-            self.logger.error("Could not connect to database (%s:***@%s:%s/%s)" % (DB_USER, host, port, DB_NAME))
+            self.logger.error(f"Could not connect to database ({DB_USER}:***@{host}:{port}/{DB_NAME})")
             exit(1)
 
         self.cursor = self.conn.cursor()
-
 
     def __del__(self):
         if self.cursor:
@@ -79,7 +81,6 @@ class ForumProcessor(ForumTask):
             self.cursor.close()
             self.conn.close()
 
-
     def set_total(self, total_steps):
         self.total_steps = total_steps
 
@@ -100,36 +101,21 @@ class ForumProcessor(ForumTask):
         pass
 
 
-
 class SingleProcessManager:
-
     def __init__(self, pg_host, pg_port):
-
-        # task names must be consistent with ForumTask.tasknames
         self.commands = {}
-        # {
-        #     "embedding": ["embed_comments.py", pg_host, pg_port],
-        #     "train": ["train.py", pg_host, pg_port],
-        #     "update": ["update.py", pg_host, pg_port]
-        # }
-
-        # init process registry
         self.processes = {}
-
         self.history = ForumTask("task_history", pg_host, pg_port)
-
 
     def register_process(self, name, command):
         self.commands[name] = command
         self.processes[name] = 0
 
-
     def tasks(self):
         result = {
-            "tasks" : list(self.commands.keys())
+            "tasks": list(self.commands.keys())
         }
         return result
-
 
     def poll(self):
         for task in self.processes.keys():
@@ -139,9 +125,7 @@ class SingleProcessManager:
                     # unset registered task
                     self.processes[task] = 0
 
-
-    def invoke(self, task, source_id, arguments = []):
-
+    def invoke(self, task, source_id, arguments=[]):
         # check arguments (only 2 allowed of max length 32 characters)
         arg_lengths = [len(arg) for arg in arguments]
         if arguments and (len(arguments) > 6 or max(arg_lengths) > 32):
@@ -153,7 +137,7 @@ class SingleProcessManager:
             # check for terminated tasks
             self.poll()
 
-            if not self.processes[task] or task == 'update': # allow update task in parallel
+            if not self.processes[task] or task == 'update':  # allow update task in parallel
 
                 # start process
                 popen_command = ["python"] + self.commands[task] + [source_id] + arguments
@@ -163,25 +147,23 @@ class SingleProcessManager:
                 self.processes[task] = proc
 
                 result = {
-                    "message" : "Task %s started for source_id %s." % (task, source_id),
-                    "pid" : proc.pid
+                    "message": f"Task {task} started for source_id {source_id}.",
+                    "pid": proc.pid
                 }
 
             else:
 
                 result = {
-                    "message" : "Task %s is still running." % task,
-                    "pid" : self.processes[task].pid
+                    "message": f"Task {task} is still running.",
+                    "pid": self.processes[task].pid
                 }
 
             return result
 
         except KeyError:
-            message = "Unknown task %s" % task
+            message = f"Unknown task {task}"
             logger.error(message)
-            return { "error" : message}
-
-
+            return {"error": message}
 
     def abort(self, task):
         try:
@@ -192,24 +174,22 @@ class SingleProcessManager:
                 pid = self.processes[task].pid
                 self.processes[task].terminate()
                 result = {
-                    "message" : "Task %s stopped." % task,
-                    "pid" : pid
+                    "message": f"Task {task} stopped.",
+                    "pid": pid
                 }
             else:
                 result = {
-                    "message" : "Task %s is not running." % task
+                    "message": f"Task {task} is not running."
                 }
 
             return result
 
         except KeyError:
-            message = "Unknown task %s" % task
+            message = f"Unknown task {task}"
             logger.error(message)
-            return { "error" : message}
+            return {"error": message}
 
-
-
-    def status(self, task, n = 50):
+    def status(self, task, n=50):
         try:
             # check for terminated tasks
             self.poll()
@@ -231,23 +211,22 @@ class SingleProcessManager:
                     status_log = "\n".join([str(e) for e in status_entries])
 
                 result = {
-                    "task" : task,
-                    "pid" : pid,
-                    "progress" : progress,
-                    "log" : status_log
+                    "task": task,
+                    "pid": pid,
+                    "progress": progress,
+                    "log": status_log
                 }
             else:
                 result = {
-                    "message" : "Task %s is not running." % task
+                    "message": f"Task {task} is not running."
                 }
 
             return result
 
         except KeyError:
-            message = "Unknown task %s" % task
+            message = f"Unknown task {task}"
             logger.error(message)
-            return { "error" : message}
-
+            return {"error": message}
 
     def clear(self):
         # check for terminated tasks
@@ -286,31 +265,17 @@ def concat(title: str, text: str) -> str:
     return (title + ' ' + text).strip()
 
 
-def slugify(value):
-    """
-    Normalizes string, converts to lowercase, removes non-alpha characters,
-    and converts spaces to hyphens.
-    """
-    import unicodedata
-    value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
-    value = unicode(re.sub('[^\w\s-]', '', value).strip().lower())
-    value = unicode(re.sub('[-\s]+', '-', value))
-    # ...
-    return value
-
-
 def get_embeddings(string_list):
-
     url = os.getenv('EMBEDDING_SERVICE_URL', settings.EMBEDDING_SERVICE_URL)
 
     response = requests.post(
         url,
-        json={"texts" : string_list},
+        json={"texts": string_list},
         headers={'Accept': 'application/json', 'Content-Type': 'application/json'}
     )
 
     if response.ok:
         return response.json(), True
     else:
-        print("Error: could not retrieve embeddings from %s" % url)
+        print(f"Error: could not retrieve embeddings from {url}")
         return response.reason, False
