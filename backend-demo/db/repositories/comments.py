@@ -193,3 +193,10 @@ class CommentRepository(BaseRepository):
             next_id = comment['parent_comment_id']
 
         return comments
+
+    def find_first_timestamp_by_source(self, source_id: int) -> Optional[datetime.datetime]:
+        return self._acc.fetch_value(
+            'SELECT min(timestamp) FROM comments WHERE source_id = %s',
+            (source_id,),
+            default=None,
+        )

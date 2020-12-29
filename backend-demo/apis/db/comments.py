@@ -113,9 +113,9 @@ class CommentsGrouped(Resource):
             {date(d['year'], d.get('month', 1), d.get('day', 1)): d['count'] for d in db_result},
         )
 
-        start_date = min(count_by_date.keys())
-        start_dt = datetime.combine(start_date, time(0, 0, 0))
-        end_dt = datetime.now()
+        now = datetime.now()
+        start_dt = db.comments.find_first_timestamp_by_source(args['source_id']) or now
+        end_dt = now
         dt_range = rrule.rrule(recurrence_frequency, dtstart=start_dt, until=end_dt)
 
         return {'start_time': {'year': start_dt.year, 'month': start_dt.month, 'day': start_dt.day}} \
