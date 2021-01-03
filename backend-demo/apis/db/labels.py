@@ -4,9 +4,9 @@ from flask_restplus import Resource, Namespace
 
 from apis.utils.tasks import SingleProcessManager
 from apis.utils.transformation import slice_dicts
+from auth.token import token_required, TokenData
 from db import with_database, Database
 from db.db_models import label_parser_post
-from jwt_auth.token import token_required, TokenData
 
 ns = Namespace('labels', description="labels api")
 

@@ -5,9 +5,9 @@ import requests
 import sys
 from flask_restplus import Resource, Namespace
 
+from auth.token import token_required, TokenData
 from config import settings
 from db import Database, with_database
-from jwt_auth.token import token_required, TokenData
 
 ns = Namespace('annotations', description="annotations api")
 

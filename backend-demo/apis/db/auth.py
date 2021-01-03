@@ -4,7 +4,9 @@ from flask import jsonify
 from flask_restplus import Resource, Namespace, reqparse
 from typing import Dict
 
-from jwt_auth.token import token_required, create_token, TokenData
+from auth.authentication import login
+from auth.passwords import hash_password
+from auth.token import token_required, create_token, TokenData
 from db import with_database, Database
 
 ns = Namespace('auth', description="auth api")
@@ -22,11 +24,9 @@ class AuthTest(Resource):
 
 @ns.route('/login/<string:username>/<string:password>')
 class AuthLogin(Resource):
-    @with_database
-    def get(self, db: Database, username, password):
-        user = db.users.find_by_name(username)
-
-        if user is None or user['password'] is None or user['password'] != password:
+    def get(self, username, password):
+        user = login(username, password)
+        if user is None:
             return 'Wrong username or password', HTTPStatus.UNAUTHORIZED
 
         return make_auth_response(user)
@@ -42,8 +42,8 @@ class Register(Resource):
     @with_database
     @ns.expect(register_model)
     def post(self, db: Database):
-        data = register_model.parse_args()
-        id_ = db.users.insert_user(data)
+        body = register_model.parse_args()
+        id_ = db.users.insert_user(body | {'password': hash_password(body['password'])})
         user = db.users.find_by_id(id_)
         return make_auth_response(user)
 

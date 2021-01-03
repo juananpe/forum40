@@ -1,10 +1,9 @@
 import datetime
-from flask.blueprints import BlueprintSetupState
-from typing import Any
-
 import json
 from flask import Blueprint
+from flask.blueprints import BlueprintSetupState
 from flask_restplus import Api
+from typing import Any
 
 from apis.db.annotations import ns as annotations_namespace
 from apis.db.auth import ns as auth_namespace
@@ -13,7 +12,7 @@ from apis.db.documents import ns as documents_namespace
 from apis.db.labels import ns as labels_namespace
 from apis.db.models import ns as models_namespace
 from apis.db.sources import ns as sources_namespace
-from jwt_auth import authorization
+from auth import authorization
 
 
 class CustomJSONEncoder(json.JSONEncoder):

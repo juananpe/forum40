@@ -2,9 +2,9 @@ from http import HTTPStatus
 
 from flask_restplus import Resource, Namespace
 
+from auth.token import token_required, TokenData
 from db import Database, with_database
 from db.db_models import document_parser
-from jwt_auth.token import token_required, TokenData
 
 ns = Namespace('documents', description="documents api")
 

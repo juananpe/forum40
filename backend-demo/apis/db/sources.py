@@ -1,12 +1,11 @@
 from http import HTTPStatus
 
+from flask_restplus import Resource, Namespace
 from typing import Optional
 
-from flask_restplus import Resource, Namespace
-
+from auth.token import token_required, token_optional, TokenData
 from db import with_database, Database
 from db.db_models import source_parser
-from jwt_auth.token import token_required, token_optional, TokenData
 
 ns = Namespace('sources', description="sources api")
 

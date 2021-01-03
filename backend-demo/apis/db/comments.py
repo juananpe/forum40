@@ -1,20 +1,20 @@
 from collections import defaultdict
-from datetime import date, datetime, time
 from http import HTTPStatus
-from typing import List, Dict, Optional, Iterable, Tuple
 
 import dateutil.rrule as rrule
+from datetime import date, datetime
 from flask import request
 from flask_restplus import Resource, Namespace, inputs
+from typing import List, Dict, Optional, Iterable, Tuple
 
 from apis.utils.transformation import slice_dicts
+from auth.token import token_optional, check_source_id, allow_access_source_id, TokenData
+from auth.token import token_required
 from db import with_database, Database
 from db.db_models import comments_parser_sl, comment_parser_post, comments_list_parser, \
     group_by_model, comment_parser
 from db.repositories.comments import TimestampSorting, Order, FactSorting, UncertaintyOrder, \
     Granularity, comment_fields
-from jwt_auth.token import token_optional, check_source_id, allow_access_source_id, TokenData
-from jwt_auth.token import token_required
 
 ns = Namespace('comments', description="comments api")
 min_date = date(2016, 6, 1)
