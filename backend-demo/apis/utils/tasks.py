@@ -6,14 +6,10 @@ import subprocess
 from abc import abstractmethod
 from datetime import datetime
 
-from config import settings, secrets
-
-# db configuration
-
-DB_NAME = "omp"
-DB_USER = "postgres"
-
+from config import settings
 # standard logger
+from config.settings import PG_DATABASE, PG_USER, PG_PASSWORD
+
 logger = logging.getLogger('ForumTask')
 logger.setLevel(logging.DEBUG)
 
@@ -43,12 +39,12 @@ class ForumTask:
             self.conn = psycopg2.connect(
                 host=host,
                 port=port,
-                dbname=DB_NAME,
-                user=DB_USER,
-                password=secrets['db_password'].decode('utf8')
+                dbname=PG_DATABASE,
+                user=PG_USER,
+                password=PG_PASSWORD,
             )
         except:
-            self.logger.error(f"Could not connect to database ({DB_USER}:***@{host}:{port}/{DB_NAME})")
+            self.logger.error(f"Could not connect to database ({PG_USER}:***@{host}:{port}/{PG_DATABASE})")
             exit(1)
 
         self.cursor = self.conn.cursor()

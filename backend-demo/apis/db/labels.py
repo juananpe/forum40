@@ -1,10 +1,10 @@
 from http import HTTPStatus
 
-import os
 from flask_restplus import Resource, Namespace
 
 from apis.utils.tasks import SingleProcessManager
 from apis.utils.transformation import slice_dicts
+from config.settings import PG_HOST, PG_PORT
 from db import with_database, Database
 from db.db_models import label_parser_post
 from jwt_auth.token import token_required, TokenData
@@ -12,11 +12,8 @@ from jwt_auth.token import token_required, TokenData
 ns = Namespace('labels', description="labels api")
 
 # pg config
-pg_host = os.getenv('PG_HOST', 'postgres')
-pg_port = os.getenv('PG_PORT', '5432')
-
-process_manager = SingleProcessManager(pg_host, pg_port)
-process_manager.register_process("init_facts", ["classification_update.py", pg_host, pg_port])
+process_manager = SingleProcessManager(PG_HOST, PG_PORT)
+process_manager.register_process("init_facts", ["classification_update.py", PG_HOST, PG_PORT])
 
 
 @ns.route('/<int:source_id>')

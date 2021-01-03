@@ -7,7 +7,7 @@ import jwt
 import wrapt
 from flask import request
 
-from config import secrets
+from config.settings import JWT_KEY
 from db import postgres_con
 
 
@@ -28,7 +28,7 @@ def check_if_token_exists(token):
 
 def check_if_token_is_valid_and_get_data(token: str) -> Tuple[bool, Optional[TokenData]]:
     try:
-        return True, jwt.decode(token, secrets['jwt_key'])
+        return True, jwt.decode(token, JWT_KEY)
     except:
         return False, None
 
@@ -39,7 +39,7 @@ def create_token(user_id: int, user_name: str, user_role: str) -> str:
         user_id=user_id,
         role=user_role,
         exp=datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
-    ), secrets['jwt_key']).decode('UTF-8')
+    ), JWT_KEY).decode('UTF-8')
 
 
 def check_if_user_is_authorised(token, data):

@@ -6,7 +6,7 @@ class Secrets:
         self.base_path = base_path
         self._cache = {}
 
-    def __getitem__(self, item):
+    def __getitem__(self, item) -> bytes:
         if not isinstance(item, str):
             raise TypeError(f'Invalid secret key type {type(item)}')
 
@@ -19,3 +19,6 @@ class Secrets:
                 self._cache[item] = f.read()
 
         return self._cache[item]
+
+
+secrets = Secrets()

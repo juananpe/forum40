@@ -1,21 +1,17 @@
 from http import HTTPStatus
 
-import os
 from flask_restplus import Resource, fields, Namespace
 from logging.config import dictConfig
 
 from apis.utils.tasks import SingleProcessManager
 from classification_classifier import get_history_path
+from config.settings import PG_HOST, PG_PORT
 
 ns = Namespace('classification', description="Classification-API namespace")
 
-# pg config
-pg_host = os.getenv('PG_HOST', 'postgres')
-pg_port = os.getenv('PG_PORT', '5432')
-
-process_manager = SingleProcessManager(pg_host, pg_port)
-process_manager.register_process("train", ["classification_train.py", pg_host, pg_port])
-process_manager.register_process("update", ["classification_update.py", pg_host, pg_port])
+process_manager = SingleProcessManager(PG_HOST, PG_PORT)
+process_manager.register_process("train", ["classification_train.py", PG_HOST, PG_PORT])
+process_manager.register_process("update", ["classification_update.py", PG_HOST, PG_PORT])
 
 dictConfig({
     'version': 1,
