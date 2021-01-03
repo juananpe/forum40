@@ -1,11 +1,10 @@
 from http import HTTPStatus
 
-from typing import TypedDict, Tuple, Optional
-
 import datetime
 import jwt
 import wrapt
 from flask import request
+from typing import TypedDict, Tuple, Optional
 
 from config.settings import JWT_KEY
 from db import with_database, Database
