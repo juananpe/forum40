@@ -7,6 +7,7 @@ from pypika.functions import Count
 
 from apis.utils.tasks import ForumProcessor, concat
 from apis.utils.tasks import get_embeddings
+from db.repositories.util import Random
 
 
 class CommentEmbedder(ForumProcessor):
@@ -55,7 +56,7 @@ class CommentEmbedder(ForumProcessor):
             self.n_batches = math.ceil(n_to_embed / self.batch_size)
             self.set_total(self.n_batches)
 
-            embed_query = query.select(comments.id, comments.title, comments.text).orderby('random()')
+            embed_query = query.select(comments.id, comments.title, comments.text).orderby(Random())
             self.cursor_large = self.conn.cursor(name='fetch_embeddings', withhold=True)
             self.cursor_large.execute(embed_query.get_sql(), (source_id,))
 

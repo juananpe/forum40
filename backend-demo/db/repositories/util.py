@@ -1,7 +1,10 @@
 import math
 from typing import Any
 
-from pypika import Parameter
+from pypika import Parameter, CustomFunction
+
+
+Random = CustomFunction('random')
 
 
 class QueryArguments:
