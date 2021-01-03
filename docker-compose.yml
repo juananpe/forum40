@@ -1,5 +1,12 @@
-version: '2'
+version: '3.5'
+
 services:
+    secrets:
+        build:
+            context: ./secrets
+            dockerfile: Dockerfile
+        volumes:
+            - ./secrets/store:/root/store
     reverseproxy:
         build:
             context: ./reverseproxy
@@ -25,7 +32,10 @@ services:
             - ./backend-demo:/usr/src/app
             - ./backend-demo/models:/usr/src/app/models
         depends_on:
+            - secrets
             - postgres
+        secrets:
+            - jwt_key
     colibert:
         build:
             context: ./colibert-service
@@ -55,6 +65,11 @@ services:
             - ./embedding-service/model:/app/model
         depends_on:
             - postgres
+
 volumes:
     postgres:
     transformers:
+
+secrets:
+    jwt_key:
+        file: ./secrets/store/jwt_key

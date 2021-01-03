@@ -7,9 +7,8 @@ import jwt
 import wrapt
 from flask import request
 
+from config import secrets
 from db import postgres_con
-
-GLOBAL_SECRET = "eh9Df9G27gahgHJ7g2oGQz6Ug5he6ud5shd"  # TODO hide
 
 
 class TokenData(TypedDict):
@@ -29,7 +28,7 @@ def check_if_token_exists(token):
 
 def check_if_token_is_valid_and_get_data(token: str) -> Tuple[bool, Optional[TokenData]]:
     try:
-        return True, jwt.decode(token, GLOBAL_SECRET)
+        return True, jwt.decode(token, secrets['jwt_key'])
     except:
         return False, None
 
@@ -40,7 +39,7 @@ def create_token(user_id: int, user_name: str, user_role: str) -> str:
         user_id=user_id,
         role=user_role,
         exp=datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
-    ), GLOBAL_SECRET).decode('UTF-8')
+    ), secrets['jwt_key']).decode('UTF-8')
 
 
 def check_if_user_is_authorised(token, data):
