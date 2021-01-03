@@ -36,6 +36,7 @@ services:
             - postgres
         secrets:
             - jwt_key
+            - db_password
     colibert:
         build:
             context: ./colibert-service
@@ -50,10 +51,14 @@ services:
         command: postgres -c 'max_connections=1000'
         volumes:
             - postgres:/var/lib/postgresql/data
+        depends_on:
+            - secrets
         environment:
             POSTGRES_DB: omp
             POSTGRES_USER: postgres
-            POSTGRES_PASSWORD: postgres
+            POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+        secrets:
+            - db_password
         ports:
             - 5432:5432
     embedding:
@@ -73,3 +78,5 @@ volumes:
 secrets:
     jwt_key:
         file: ./secrets/store/jwt_key
+    db_password:
+        file: ./secrets/store/db_password.txt

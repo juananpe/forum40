@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl pwgen
 COPY ./generate.sh /root/generate.sh
 
 WORKDIR /root/store

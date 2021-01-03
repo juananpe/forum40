@@ -6,14 +6,12 @@ import subprocess
 from abc import abstractmethod
 from datetime import datetime
 
-from config import settings
+from config import settings, secrets
 
 # db configuration
-from db import Database
 
 DB_NAME = "omp"
 DB_USER = "postgres"
-DB_PASSWORD = "postgres"
 
 # standard logger
 logger = logging.getLogger('ForumTask')
@@ -47,7 +45,7 @@ class ForumTask:
                 port=port,
                 dbname=DB_NAME,
                 user=DB_USER,
-                password=DB_PASSWORD
+                password=secrets['db_password'].decode('utf8')
             )
         except:
             self.logger.error(f"Could not connect to database ({DB_USER}:***@{host}:{port}/{DB_NAME})")

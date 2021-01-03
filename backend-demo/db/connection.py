@@ -4,12 +4,13 @@ import psycopg2
 from psycopg2.pool import ThreadedConnectionPool
 
 # PostgSQL
+from config import secrets
+
 PG_HOST = 'postgres'
 PG_PORT = 5432
 PG_DATABASE = 'omp'
-PG_USER = 'postgres'  # TODO hide
-PG_PASSWORD = 'postgres'  # TODO hide
-
+PG_USER = 'postgres'
+PG_PASSWORD = secrets['db_password'].decode('utf8')
 
 postgres_con = psycopg2.connect(host=PG_HOST, port=PG_PORT, database=PG_DATABASE, user=PG_USER, password=PG_PASSWORD)
 
