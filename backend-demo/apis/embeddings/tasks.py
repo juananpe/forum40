@@ -6,20 +6,19 @@ from flask_restplus import Resource, fields, Namespace
 
 from apis.utils.tasks import SingleProcessManager, get_embeddings
 from config import settings
-from config.settings import PG_HOST, PG_PORT
 from embeddings_retrieve import RetrieveComment
 
 ns = Namespace('embeddings', description="Embeddings-API namespace")
 
 # pg config
-process_manager = SingleProcessManager(PG_HOST, PG_PORT)
-process_manager.register_process("indexing", ["embeddings_index.py", PG_HOST, PG_PORT])
-process_manager.register_process("embedding", ["embeddings_embed.py", PG_HOST, PG_PORT])
+process_manager = SingleProcessManager()
+process_manager.register_process("indexing", ["embeddings_index.py"])
+process_manager.register_process("embedding", ["embeddings_embed.py"])
 
 # db connection
 try:
     default_source_id = 1
-    retriever = RetrieveComment(PG_HOST, PG_PORT)
+    retriever = RetrieveComment()
     retriever.load_index(default_source_id)
 except:
     current_app.logger.error('DB connection failed.')

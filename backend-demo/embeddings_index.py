@@ -16,8 +16,8 @@ max_batches = 100
 
 class CommentIndexer(ForumProcessor):
 
-    def __init__(self, source_id, host="postgres", port=5432):
-        super().__init__("indexing", host=host, port=port)
+    def __init__(self, source_id):
+        super().__init__("indexing")
 
         # index
         self.source_id = source_id
@@ -127,10 +127,6 @@ class CommentIndexer(ForumProcessor):
 if __name__ == '__main__':
     # CLI parser
     parser = argparse.ArgumentParser(description='Embed comments in DB.')
-    parser.add_argument('host', type=str, default='localhost', nargs='?',
-                        help='DB host (default: localhost)')
-    parser.add_argument('port', type=int, default=5432, nargs='?',
-                        help='DB port (default: 5432)')
     parser.add_argument('source_id', type=int, default=1, nargs='?',
                         help='Source id of the comment (default 1)')
 
@@ -138,7 +134,7 @@ if __name__ == '__main__':
     source_id = args.source_id
 
     # start indexing
-    indexer = CommentIndexer(source_id, args.host, args.port)
+    indexer = CommentIndexer(source_id)
     indexer.process()
 
     # try to reload the index in the web app

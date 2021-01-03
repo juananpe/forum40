@@ -11,8 +11,8 @@ from db.repositories.util import Random
 
 
 class CommentEmbedder(ForumProcessor):
-    def __init__(self, embed_all=False, batch_size=8, host="postgres", port=5432):
-        super().__init__("embedding", host=host, port=port)
+    def __init__(self, embed_all=False, batch_size=8):
+        super().__init__("embedding")
         self.cursor_large = None
         self.embed_all = embed_all
         self.batch_size = batch_size
@@ -108,10 +108,6 @@ class CommentEmbedder(ForumProcessor):
 if __name__ == '__main__':
     # CLI parser
     parser = argparse.ArgumentParser(description='Embed comments in DB.')
-    parser.add_argument('host', type=str, default='localhost', nargs='?',
-                        help='DB host (default: localhost)')
-    parser.add_argument('port', type=int, default=5432, nargs='?',
-                        help='DB port (default: 5432)')
     parser.add_argument('source_id', type=int, default=1, nargs='?',
                         help='Source id of the comment (default 1)')
 
@@ -133,7 +129,7 @@ if __name__ == '__main__':
     # not really needed, right?
     source_id = args.source_id
 
-    ce = CommentEmbedder(embed_all=args.all, batch_size=args.batch_size, host=args.host, port=args.port)
+    ce = CommentEmbedder(embed_all=args.all, batch_size=args.batch_size)
 
     # start embedding
     ce.process()

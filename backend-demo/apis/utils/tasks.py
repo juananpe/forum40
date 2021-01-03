@@ -1,6 +1,5 @@
 import logging
 import os
-import psycopg2
 import requests
 import subprocess
 from abc import abstractmethod
@@ -8,7 +7,7 @@ from datetime import datetime
 
 from config import settings
 # standard logger
-from config.settings import PG_DATABASE, PG_USER, PG_PASSWORD
+from db.connection import db_pool
 
 logger = logging.getLogger('ForumTask')
 logger.setLevel(logging.DEBUG)
@@ -28,32 +27,16 @@ logger.addHandler(ch)
 
 
 class ForumTask:
-    def __init__(self, taskname, host="postgres", port=5432):
+    def __init__(self, taskname):
         self.taskname = taskname
         self.logger = logger
-        self.host = host
-        self.port = port
         self.conn = None
         self.cursor = None
-        try:
-            self.conn = psycopg2.connect(
-                host=host,
-                port=port,
-                dbname=PG_DATABASE,
-                user=PG_USER,
-                password=PG_PASSWORD,
-            )
-        except:
-            self.logger.error(f"Could not connect to database ({PG_USER}:***@{host}:{port}/{PG_DATABASE})")
-            exit(1)
-
+        self.conn = db_pool.getconn()
         self.cursor = self.conn.cursor()
 
     def __del__(self):
-        if self.cursor:
-            self.cursor.close()
-        if self.conn:
-            self.conn.close()
+        db_pool.putconn(self.conn)
 
     def set_logger(self, logger):
         self.logger = logger
@@ -61,8 +44,8 @@ class ForumTask:
 
 class ForumProcessor(ForumTask):
 
-    def __init__(self, taskname, host="postgres", port=5432):
-        super().__init__(taskname, host, port)
+    def __init__(self, taskname):
+        super().__init__(taskname)
         self.total_steps = 1
         self.current_step = 0
         self.message_log = []
@@ -96,10 +79,10 @@ class ForumProcessor(ForumTask):
 
 
 class SingleProcessManager:
-    def __init__(self, pg_host, pg_port):
+    def __init__(self):
         self.commands = {}
         self.processes = {}
-        self.history = ForumTask("task_history", pg_host, pg_port)
+        self.history = ForumTask("task_history")
 
     def register_process(self, name, command):
         self.commands[name] = command

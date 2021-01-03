@@ -8,8 +8,8 @@ from config.settings import EMBEDDING_INDEX_PATH
 
 
 class RetrieveComment(ForumTask):
-    def __init__(self, host="localhost", port=5432):
-        super().__init__("retrieving", host=host, port=port)
+    def __init__(self):
+        super().__init__("retrieving")
         self.index = None
         self.comment_id_mapping = {}
         self.id_comment_mapping = {}
@@ -68,10 +68,6 @@ class RetrieveComment(ForumTask):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Nearest neighbor comment retrieval')
-    parser.add_argument('--host', type=str, default='localhost', nargs='?',
-                        help='DB host')
-    parser.add_argument('--port', type=int, default=5432, nargs='?',
-                        help='DB port')
     parser.add_argument('--n', type=int, default=10, nargs='?',
                         help='Nunmber of nearest neighbors (default: 10)')
     parser.add_argument('source_id', type=int, nargs='?', default=1, help='Source id of the comment (default: 1)')
@@ -86,7 +82,7 @@ if __name__ == "__main__":
     if source_id < 1:
         parser.error("Error: no valid positional id has been provided.")
 
-    retriever = RetrieveComment(args.host, args.port)
+    retriever = RetrieveComment()
     retriever.load_index(source_id)
 
     embeddings = retriever.get_embedding(comment_id)

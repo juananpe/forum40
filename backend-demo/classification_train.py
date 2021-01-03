@@ -9,8 +9,8 @@ from classification_classifier import EmbeddingClassifier, get_history_path
 
 
 class ClassifierTrainer(ForumProcessor):
-    def __init__(self, labelname, classifier=None, host="postgres", port=5432):
-        super().__init__("classification", host=host, port=port)
+    def __init__(self, labelname, classifier=None):
+        super().__init__("classification")
         self.labelname = labelname
         self.label_id = None
         if classifier:
@@ -165,13 +165,9 @@ if __name__ == "__main__":
                         help='Perform cross validation after training (default: False)')
     parser.add_argument('source_id', type=1, default=1, nargs='?',
                         help='Source id (default: 1)')
-    parser.add_argument('host', type=str, default='localhost', nargs='?',
-                        help='DB host (default: localhost)')
-    parser.add_argument('port', type=int, default=5432, nargs='?',
-                        help='DB port (default: 5432)')
     args = parser.parse_args()
     labelname = args.labelname
 
-    classifier_trainer = ClassifierTrainer(labelname, host=args.host, port=args.port)
+    classifier_trainer = ClassifierTrainer(labelname)
 
     classifier_trainer.train(optimize=args.optimize, cv=args.cv)

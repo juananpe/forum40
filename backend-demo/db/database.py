@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import sys
-
-from contextlib import contextmanager
-
 import wrapt
+from contextlib import contextmanager
 
 from db.accessor import DatabaseAccessor
 from db.connection import db_pool

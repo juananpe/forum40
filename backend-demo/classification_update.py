@@ -17,8 +17,8 @@ from classification_train import ClassifierTrainer
 class LabelUpdater(ForumProcessor):
     """Functions for collection of training data and prediction on the entire DB"""
 
-    def __init__(self, source_id, labelname, host="postgres", port=5432, skip_confidence=False):
-        super().__init__("classification", host=host, port=port)
+    def __init__(self, source_id, labelname, skip_confidence=False):
+        super().__init__("classification")
         self.cursor_large = None
         self.labels_old = None
         self.labels_new = None
@@ -290,10 +290,6 @@ if __name__ == "__main__":
     parser.add_argument('--skip-train', dest='skip_train', default=False, action='store_true',
                         help='Skip retraining model.')
 
-    parser.add_argument('host', type=str, default='localhost', nargs='?',
-                        help='DB host (default: localhost)')
-    parser.add_argument('port', type=int, default=5432, nargs='?',
-                        help='DB port (default: 5432)')
     parser.add_argument('source_id', type=int, default=1, nargs='?',
                         help='Source id (default: 1)')
     args = parser.parse_args()
@@ -302,8 +298,8 @@ if __name__ == "__main__":
     source_id = args.source_id
     optimize = args.optimize
 
-    classifier_trainer = ClassifierTrainer(labelname, host=args.host, port=args.port)
-    label_updater = LabelUpdater(source_id, labelname, host=args.host, port=args.port, skip_confidence=args.skip_confidence)
+    classifier_trainer = ClassifierTrainer(labelname)
+    label_updater = LabelUpdater(source_id, labelname, skip_confidence=args.skip_confidence)
 
     if args.init_facts:
         # just init all predictions with 0 (necessary, when new labels are inserted)

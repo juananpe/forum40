@@ -5,13 +5,12 @@ from logging.config import dictConfig
 
 from apis.utils.tasks import SingleProcessManager
 from classification_classifier import get_history_path
-from config.settings import PG_HOST, PG_PORT
 
 ns = Namespace('classification', description="Classification-API namespace")
 
-process_manager = SingleProcessManager(PG_HOST, PG_PORT)
-process_manager.register_process("train", ["classification_train.py", PG_HOST, PG_PORT])
-process_manager.register_process("update", ["classification_update.py", PG_HOST, PG_PORT])
+process_manager = SingleProcessManager()
+process_manager.register_process("train", ["classification_train.py"])
+process_manager.register_process("update", ["classification_update.py"])
 
 dictConfig({
     'version': 1,
