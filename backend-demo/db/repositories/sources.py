@@ -19,6 +19,9 @@ class SourceRepository(BaseRepository):
     def find_by_name(self, name: str) -> Dict:
         return self._acc.fetch_one('SELECT * FROM sources WHERE name = %s', (name,))
 
+    def find_by_id(self, id_: int) -> Dict:
+        return self._acc.fetch_one('SELECT * FROM sources WHERE id = %s', (id_,))
+
     def insert(self, source: NewSource) -> int:
         return self._acc.fetch_value(
             'INSERT INTO sources (name, domain) '
