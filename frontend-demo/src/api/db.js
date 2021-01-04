@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = process.env.VUE_APP_ROOT_API
+export const API_URL = process.env.VUE_APP_ROOT_API
 
 export const Endpoint = {
     LABELS: (source_id) => `db/labels/${source_id}`,

@@ -1,6 +1,21 @@
+CREATE OR REPLACE FUNCTION public.task_update()
+    RETURNS TRIGGER AS $$
+DECLARE
+BEGIN
+    PERFORM pg_notify('task_update', row_to_json(NEW)::text);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER task_updated
+    AFTER INSERT ON tasks
+    FOR EACH ROW
+EXECUTE PROCEDURE public.task_update();
+
+
 
 CREATE OR REPLACE FUNCTION public.calculate_certainty()
-	RETURNS trigger 
+	RETURNS trigger
 	LANGUAGE plpgsql
 AS $body$
 	BEGIN

@@ -37,6 +37,11 @@ export default {
     UserCommentFilter,
     UserCommentThread
   },
+  sockets: {
+    task_update(data) {
+      console.log('Task update triggered', data);
+    },
+  },
   methods: {
     ...mapActions(["start"])
   },

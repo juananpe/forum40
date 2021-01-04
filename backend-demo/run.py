@@ -1,12 +1,15 @@
 #!/usr/bin/env python3.6
+
 from flask import Flask, request
 from flask_cors import CORS
+from flask_socketio import SocketIO
 
 from apis.classification import blueprint as classification_blueprint
 from apis.db import blueprint as db_blueprint
 from apis.embeddings import blueprint as embeddings_blueprint
 from config import settings
 from core.proxy_wrapper import ReverseProxied
+from status import register_status_endpoint
 
 app = Flask(__name__)
 
@@ -38,6 +41,8 @@ app.register_blueprint(classification_blueprint, url_prefix='/classification')
 # add extensions
 app.wsgi_app = ReverseProxied(app.wsgi_app)
 CORS(app)
+socketio = SocketIO(app, cors_allowed_origins='*')
+register_status_endpoint(socketio)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5050, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5050, debug=True)
