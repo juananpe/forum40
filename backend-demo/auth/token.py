@@ -43,7 +43,7 @@ def create_token(user_id: int, user_name: str, user_role: str) -> str:
 
 def check_source_id_access(source_id, token):
     success, data = check_if_token_is_valid_and_get_data(token)
-    return success and allow_access_source_id(source_id, data)
+    return allow_access_source_id(source_id, data)
 
 
 @with_database
@@ -52,7 +52,7 @@ def is_source_id_protected(db: Database, source_id):
 
 
 def allow_access_source_id(source_id, token_data: Optional[TokenData]):
-    is_admin = token_data is not None and token_data
+    is_admin = token_data is not None and token_data['role'] == 'admin'
     return is_admin or not is_source_id_protected(source_id)
 
 
