@@ -3,6 +3,7 @@ from enum import Enum
 import os
 
 OMP_DB_FILE = 'corpus.sqlite3'
+OMP_EMBEDDINGS_FILE = 'omp_bert_embeddings.hdf5'
 
 PG_USER = os.environ['POSTGRES_USER']
 PG_DB = os.environ['POSTGRES_DB']

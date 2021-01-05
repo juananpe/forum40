@@ -2,14 +2,16 @@ from collections import defaultdict
 from timeit import default_timer as timer
 
 import datetime
+import h5py
 import logging
+import math
 import psycopg2
 import sqlite3
 from operator import itemgetter
 from psycopg2.extras import execute_values
-from tqdm import tqdm
+from tqdm import tqdm, trange
 
-from forumdb.constants import OmpTables, OMP_DB_FILE, PG_USER, PG_DB
+from forumdb.constants import OmpTables, OMP_DB_FILE, PG_USER, PG_DB, OMP_EMBEDDINGS_FILE
 from forumdb.tools import dict_factory, insert, Inserter, omp_data
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.DEBUG)
@@ -53,8 +55,9 @@ if __name__ == "__main__":
     # documents
     document_lookup = insert(
         conn,
-        "INSERT INTO documents (category, url, title, text, timestamp, source_id) VALUES %s RETURNING id",
+        "INSERT INTO documents (external_id, category, url, title, text, timestamp, source_id) VALUES %s RETURNING id",
         {art['ID_Article']: (
+            str(art["ID_Article"]),
             art["Path"].split('/')[1] if '/' in art["Path"] else art["Path"],  # category
             art["Path"],  # url
             art["Title"],  # title
@@ -91,7 +94,7 @@ if __name__ == "__main__":
         omp_posts_by_depth[depth].append(omp_post)
 
     comment_sql = (
-        "INSERT INTO comments (doc_id, source_id, user_id, parent_comment_id, status, title, text, timestamp, year, month, day, embedding)"
+        "INSERT INTO comments (external_id, doc_id, source_id, user_id, parent_comment_id, status, title, text, timestamp, year, month, day, embedding)"
         "VALUES %s RETURNING id"
     )
 
@@ -107,6 +110,7 @@ if __name__ == "__main__":
                 inserter.add(
                     source_id=omp_post["ID_Post"],
                     args=(
+                        str(omp_post["ID_Post"]),  # external_id
                         document_lookup[omp_post["ID_Article"]],  # doc_id
                         source_id,  # source_id
                         user_lookup[omp_post["ID_User"]],  # user_id
@@ -135,6 +139,33 @@ if __name__ == "__main__":
                 for ann in omp[OmpTables.ANNOTATIONS_CONSOLIDATED]
             ], unit='Annotation'),
         )
+
+    with h5py.File(OMP_EMBEDDINGS_FILE, 'r') as f:
+        ids = f['ids']
+        embs = f['embeddings']
+        n_embeddings = len(ids)
+
+        batch_size = 5000
+        n_batches = math.ceil(n_embeddings / batch_size)
+
+        embedding_sql = (
+            'UPDATE comments '
+            'SET embedding = data.embedding '
+            'FROM (VALUES %s) AS data (id, embedding) '
+            f'WHERE comments.source_id = {source_id} '
+            'AND comments.external_id = data.id'
+        )
+
+        with conn.cursor() as cur:
+            for batch_start in trange(0, n_embeddings, batch_size, unit_scale=batch_size, unit='Embedding'):
+                batch_end = batch_start + batch_size
+
+                batch_data = list(zip(
+                    [str(id_) for id_ in ids[batch_start:batch_end]],
+                    embs[batch_start:batch_end].tolist(),
+                ))
+
+                execute_values(cur, embedding_sql, batch_data, page_size=100)
 
     conn.commit()
     conn.close()
