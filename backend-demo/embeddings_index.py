@@ -42,8 +42,6 @@ class CommentIndexer(ForumProcessor):
             self.cursor.execute('SELECT count(*) FROM comments WHERE source_id = %s AND embedding IS NOT NULL', (self.source_id,))
             n_comments = self.cursor.fetchone()[0]
             n_batches = math.ceil(n_comments / self.batch_size)
-            # set totoal steps to n_batches + 2 (for saving steps)
-            self.set_total(n_batches + 2)
 
             # incremental indexing: load index, set max comments to new value
             self.index.load_index(self.index_filename, max_elements=n_comments)
@@ -60,9 +58,8 @@ class CommentIndexer(ForumProcessor):
                 # keep track of progress
                 batch_i += 1
                 processed_comments = batch_i * self.batch_size
-                message = f"Batch {batch_i} of {n_batches} (comments: {processed_comments})"
-                self.logger.info(message)
-                self.update_state(batch_i, message)
+                self.logger.info(f"Batch {batch_i} of {n_batches} (comments: {processed_comments})")
+                self.set_state({'step': 'add', 'progress': {'total': n_batches, 'current': batch_i}})
 
                 # get batch from db
                 records = cursor_large.fetchmany(size=self.batch_size)
@@ -114,14 +111,12 @@ class CommentIndexer(ForumProcessor):
 
         # create and save index
         if new_embeddings_added:
-            self.update_state(batch_i + 1, "Create index (this may take a while)")
+            self.set_state({'step': 'save'})
             self.index.save_index(self.index_filename)
             message = f"Indexing finished and saved to {self.index_filename}"
             self.logger.info(message)
         else:
             self.logger.info("There are no new embeddings to index.")
-        # set progress to 100%
-        self.update_state(batch_i + 2, message)
 
 
 if __name__ == '__main__':
@@ -135,7 +130,7 @@ if __name__ == '__main__':
 
     # start indexing
     indexer = CommentIndexer(source_id)
-    indexer.process()
+    indexer.start()
 
     # try to reload the index in the web app
     try:

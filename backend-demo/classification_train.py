@@ -3,16 +3,20 @@ from timeit import default_timer as timer
 
 import argparse
 from datetime import datetime
+from typing import Dict
 
 from apis.utils.tasks import ForumProcessor
 from classification_classifier import EmbeddingClassifier, get_history_path
 
 
 class ClassifierTrainer(ForumProcessor):
-    def __init__(self, labelname, classifier=None):
-        super().__init__("classification")
+    def __init__(self, labelname, annotation_dataset=None, optimize=False, cv=True, classifier=None):
+        super().__init__("classification_train")
         self.labelname = labelname
         self.label_id = None
+        self.annotation_dataset = annotation_dataset
+        self.optimize = optimize
+        self.cv = cv
         if classifier:
             self.classifier = EmbeddingClassifier(classifier)
         else:
@@ -35,7 +39,7 @@ class ClassifierTrainer(ForumProcessor):
         self.cursor.execute(
             'SELECT count(*) FROM comments c JOIN annotations a ON c.id = a.comment_id WHERE a.label_id = %s',
             (self.label_id,))
-        n_annotations = self.cursor.fetchone()
+        n_annotations = self.cursor.fetchone()[0]
 
         if not n_annotations:
             self.logger.info("No comments for training found.")
@@ -74,28 +78,27 @@ class ClassifierTrainer(ForumProcessor):
 
         return annotation_dataset
 
-    def train(self, annotation_dataset=None, optimize=False, cv=True):
-        if annotation_dataset is None:
-            annotation_dataset = self.get_trainingdata()
+    def set_state(self, data: Dict):
+        super().set_state(data | {'label_id': self.label_id})
 
-        self.set_total(1)
-        if cv:
-            self.total_steps += 1
-        step = 0
+    def process(self):
+        annotation_dataset = self.get_trainingdata()
 
         # find best C parameter
-        if optimize:
+        if self.optimize:
             self.logger.info("Hyperparameter optimzation started")
             start = timer()
             params = [0.01, 0.05, 0.1, 0.5, 1, 5, 10]
             best_C = 0
             best_F1 = 0
             best_acc = 0
-            self.set_total(1 + len(params))
-            for step, C in enumerate(params):
-                message = f"Testing C = {C:.3f}"
-                self.update_state(step + 1, message)
-                self.logger.info(message)
+            for param_num, C in enumerate(params):
+                self.logger.info(f"Testing C = {C:.3f}")
+                self.set_state({
+                    'step': 'hyperparam',
+                    'progress': {'total': len(params), 'current': param_num},
+                    'params': {'C': C}
+                })
                 self.classifier.set_c(C)
                 accuracy, f1_score, fit_time, score_time = self.classifier.cross_validation(
                     annotation_dataset
@@ -112,23 +115,17 @@ class ClassifierTrainer(ForumProcessor):
             self.logger.info(f"Hyperparameter optimzation finished after {str(end - start)} seconds.")
 
         # train final model
-        step += 1
-        message = "Training started"
-        self.update_state(step, message)
-        self.logger.info(message)
+        self.set_state({'step': 'train'})
+        self.logger.info("Training started")
         start = timer()
         self.model = self.classifier.train(annotation_dataset, self.labelname)
         end = timer()
-        message = "Training finished after " + str(end - start) + " seconds."
-        self.logger.info(message)
-        self.update_state(step, message)
+        self.logger.info("Training finished after " + str(end - start) + " seconds.")
 
         # evaluate model
-        if cv:
-            step += 1
-            message = "Cross-validating performance."
-            self.logger.info(message)
-            self.update_state(step, message)
+        if self.cv:
+            self.logger.info("Cross-validating performance.")
+            self.set_state({'step': 'cv'})
             acc, f1, fit_time, _ = self.classifier.cross_validation(annotation_dataset, k=10)
             with open(get_history_path(self.labelname), 'a', encoding="UTF-8") as f:
                 # append history file
@@ -144,7 +141,6 @@ class ClassifierTrainer(ForumProcessor):
                 ])
                 f.write(result_string + "\n")
                 self.logger.info(result_string)
-                self.update_state(step, result_string)
 
         return {
             'number_training_samples': len(annotation_dataset),
@@ -168,6 +164,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     labelname = args.labelname
 
-    classifier_trainer = ClassifierTrainer(labelname)
-
-    classifier_trainer.train(optimize=args.optimize, cv=args.cv)
+    classifier_trainer = ClassifierTrainer(labelname, optimize=args.optimize, cv=args.cv)
+    classifier_trainer.start()

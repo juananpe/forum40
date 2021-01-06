@@ -144,9 +144,8 @@ CREATE TABLE IF NOT EXISTS public.tasks (
 	id bigserial NOT NULL,
 	pid int8 NOT NULL,
 	"name" varchar NULL,
-	message varchar NULL,
-	progress float4 NULL,
-	"timestamp" timestamp NULL
+	"timestamp" timestamp NOT NULL DEFAULT now(),
+	data jsonb NOT NULL
 );
 
 -- Drop table

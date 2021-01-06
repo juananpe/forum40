@@ -54,7 +54,6 @@ class CommentEmbedder(ForumProcessor):
 
             self.batch_i = 0
             self.n_batches = math.ceil(n_to_embed / self.batch_size)
-            self.set_total(self.n_batches)
 
             embed_query = query.select(comments.id, comments.title, comments.text).orderby(Random())
             self.cursor_large = self.conn.cursor(name='fetch_embeddings', withhold=True)
@@ -95,10 +94,9 @@ class CommentEmbedder(ForumProcessor):
     def process(self):
         self.init_cursor()
         while self.embed_batch():
-            message = "Batch: " + str(self.batch_i) + " of " + str(self.n_batches)
-            self.logger.info(message)
+            self.logger.info(f"Batch {self.batch_i} of {self.n_batches}")
             if self.batch_i % 10 == 0:
-                self.update_state(self.batch_i, message)
+                self.set_state({'progress': {'total': self.n_batches, 'current': self.batch_i}})
 
         self.logger.info("Final commit to DB ...")
         self.conn.commit()
@@ -130,8 +128,6 @@ if __name__ == '__main__':
     source_id = args.source_id
 
     ce = CommentEmbedder(embed_all=args.all, batch_size=args.batch_size)
-
-    # start embedding
-    ce.process()
+    ce.start()
 
 

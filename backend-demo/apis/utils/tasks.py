@@ -1,13 +1,17 @@
+from timeit import default_timer as timer
+
 import logging
 import os
 import requests
 import subprocess
 from abc import abstractmethod
-from datetime import datetime
+from psycopg2.extras import Json
+from typing import Dict, Union
 
 from config import settings
-# standard logger
 from db.connection import db_pool
+
+# standard logger
 
 logger = logging.getLogger('ForumTask')
 logger.setLevel(logging.DEBUG)
@@ -43,38 +47,47 @@ class ForumTask:
 
 
 class ForumProcessor(ForumTask):
-
     def __init__(self, taskname):
         super().__init__(taskname)
-        self.total_steps = 1
-        self.current_step = 0
-        self.message_log = []
         self.pid = os.getpid()
+        self.log_conn = db_pool.getconn()
+        self.log_conn.autocommit = True
 
     def __del__(self):
-        if self.conn:
-            if self.current_step and self.get_progress() < 1:
-                self.update_state(self.current_step, self.taskname + " aborted.")
-            self.cursor.close()
-            self.conn.close()
+        super().__del__()
+        self.log_conn.autocommit = False
+        db_pool.putconn(self.log_conn)
 
-    def set_total(self, total_steps):
-        self.total_steps = total_steps
+    def set_state(self, data: Dict):
+        with self.log_conn.cursor() as log_cur:
+            log_cur.execute(
+                'INSERT INTO tasks (pid, name, data) VALUES (%s, %s, %s)',
+                (self.pid, self.taskname, Json(data))
+            )
 
-    def get_progress(self):
-        return self.current_step / self.total_steps
+    def start(self):
+        self.set_state({'status': 'starting'})
 
-    def update_state(self, step, message):
-        self.current_step = step
-        self.message_log.append(message)
-        self.cursor.execute(
-            """INSERT INTO tasks (pid, name, message, progress, timestamp) VALUES (%s, %s, %s, %s, %s)""",
-            (self.pid, self.taskname, message, self.get_progress(), datetime.now().isoformat())
-        )
-        self.conn.commit()
+        start = timer()
+        log_data = {}
+        result = None
+        try:
+            result = self.process()
+            log_data['status'] = 'finished'
+            if result is not None:
+                log_data['result'] = result
+        except Exception as e:
+            logger.exception(e)
+            log_data['status'] = 'failed'
+            log_data['error'] = str(e)
+        finally:
+            log_data['duration'] = timer() - start
+            self.set_state(log_data)
+
+        return result
 
     @abstractmethod
-    def process(self):
+    def process(self) -> Union[Dict, None]:
         pass
 
 
@@ -178,7 +191,7 @@ class SingleProcessManager:
 
                 pid = self.processes[task].pid
                 self.history.cursor.execute(
-                    """SELECT message, progress, timestamp FROM tasks WHERE name=%s AND pid=%s ORDER BY timestamp DESC LIMIT %s""",
+                    """SELECT timestamp, data FROM tasks WHERE name=%s AND pid=%s ORDER BY timestamp DESC LIMIT %s""",
                     (task, pid, n)
                 )
                 status_entries = self.history.cursor.fetchall()

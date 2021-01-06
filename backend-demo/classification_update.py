@@ -7,6 +7,7 @@ import time
 from datetime import datetime
 from io import StringIO
 from sklearn.metrics import cohen_kappa_score
+from typing import Dict
 
 from apis.service.colibert_client import CoLiBertClient
 from apis.utils.tasks import ForumProcessor
@@ -18,7 +19,7 @@ class LabelUpdater(ForumProcessor):
     """Functions for collection of training data and prediction on the entire DB"""
 
     def __init__(self, source_id, labelname, skip_confidence=False):
-        super().__init__("classification")
+        super().__init__("classification_update")
         self.cursor_large = None
         self.labels_old = None
         self.labels_new = None
@@ -136,7 +137,7 @@ class LabelUpdater(ForumProcessor):
         # look at next batch
         return True
 
-    def update_labels(self):
+    def process(self):
         start = timer()
 
         # load model
@@ -144,9 +145,10 @@ class LabelUpdater(ForumProcessor):
             self.classifier = EmbeddingClassifier()
             self.classifier.load_from_disk(labelname)
         except:
-            self.logger.error(
-                f"Could not load classifier model for label {labelname}. Run train.py first to create a model")
-            exit(1)
+            raise Exception(
+                f"Could not load classifier model for label {labelname}. "
+                f"Run train.py first to create a model"
+            )
 
         # make sure there is a fact entry for this label for every comment of a source
         self.init_facts()
@@ -156,13 +158,11 @@ class LabelUpdater(ForumProcessor):
 
         # keep track of progress with the SingleProcessManager
         n_total = math.ceil(self.n_facts / self.batch_size)
-        self.set_total(n_total + 3)  # 3 additional steps: stability, commit, finished
 
         # process comments batch by batch
         while self.process_batch():
-            message = f"Completed batch {self.batch_i} of {n_total}."
-            self.logger.info(message)
-            self.update_state(self.batch_i, message)
+            self.logger.info(f"Completed batch {self.batch_i} of {n_total}.")
+            self.set_state({'progress': {'total': n_total, 'current': self.batch_i}})
 
         # close the large cursor
         self.close_cursor()
@@ -191,22 +191,16 @@ class LabelUpdater(ForumProcessor):
         # stability
         kappa_score = cohen_kappa_score(self.labels_old, self.labels_new)
         self.stability = kappa_score
-        message = f"Stability: {kappa_score:.3f}"
-        self.logger.info(message)
-        self.update_state(self.batch_i + 1, message)
+        self.logger.info(f"Stability: {kappa_score:.3f}")
 
         # Commit updates
-        message = "Commit to DB ..."
-        self.logger.info(message)
-        self.update_state(self.batch_i + 2, message)
+        self.logger.info("Commit to DB ...")
         self.conn.commit()
 
         # some useful information and status tracking
         end = timer()
         duration = end - start
-        message = f"{self.n_facts:d} label updates finished after {duration:.3f} seconds."
-        self.logger.info(message)
-        self.update_state(self.batch_i + 3, message)
+        self.logger.info(f"{self.n_facts:d} label updates finished after {duration:.3f} seconds.")
 
         # update history
         with open(get_history_path(self.labelname), 'a', encoding="UTF-8") as f:
@@ -222,13 +216,16 @@ class LabelUpdater(ForumProcessor):
                 f"{duration:.1f}",  # duration
             ]))
 
+    def set_state(self, data: Dict):
+        super().set_state(data | {'label_id': self.label_id})
+
     def init_model_table(self):
         self.cursor.execute(
             'INSERT INTO model (label_id, timestamp, pid) VALUES (%s, CURRENT_TIMESTAMP, %s) RETURNING id',
             (self.label_id, self.pid),
         )
         self.model_entry_id = self.cursor.fetchone()[0]
-        self.logger.info(f"Init Model Entry: label_id={self.label_id}, pid={self.pid}")
+        self.logger.info(f"Init Model Entry: {self.label_id=}, {self.pid=}")
 
     def update_model_table(self, model_details):
         label_id = self.label_id
@@ -298,7 +295,6 @@ if __name__ == "__main__":
     source_id = args.source_id
     optimize = args.optimize
 
-    classifier_trainer = ClassifierTrainer(labelname)
     label_updater = LabelUpdater(source_id, labelname, skip_confidence=args.skip_confidence)
 
     if args.init_facts:
@@ -313,10 +309,11 @@ if __name__ == "__main__":
 
         if not args.skip_train:
             # train model
-            model_details = classifier_trainer.train(optimize=optimize, cv=True)
+            classifier_trainer = ClassifierTrainer(labelname, optimize=optimize, cv=True)
+            model_details = classifier_trainer.start()
 
             # update model entry
             label_updater.update_model_table(model_details)
 
         # update predictions
-        label_updater.update_labels()
+        label_updater.start()
