@@ -16,6 +16,7 @@
           <UserCommentThread />
         </v-flex>
       </v-layout>
+      <UpdateNotification />
     </v-container>
   </v-app>
 </template>
@@ -27,20 +28,17 @@ import UserCommentFilter from "./components/UserCommentFilter";
 import UserCommentThread from "./components/UserCommentThread";
 import { mapActions } from "vuex";
 import ClassifierMetrics from "./components/classifiermetrics/ClassifierMetrics";
+import UpdateNotification from "@/components/updatenotification/UpdateNotification";
 
 export default {
   name: "App",
   components: {
+    UpdateNotification,
     ClassifierMetrics,
     TopToolbar,
     UserCommentList,
     UserCommentFilter,
     UserCommentThread
-  },
-  sockets: {
-    task_update(data) {
-      console.log('Task update triggered', data);
-    },
   },
   methods: {
     ...mapActions(["start"])
