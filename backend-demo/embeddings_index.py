@@ -51,7 +51,7 @@ class CommentIndexer(ForumProcessor):
 
             # cursor without withholding, since we do not commit any db updates
             cursor_large = self.conn.cursor(name='large_embedding', withhold=True)
-            cursor_large.execute('SELECT id FROM comments WHERE source_id = %d AND embedding IS NOT NULL', (self.source_id,))
+            cursor_large.execute('SELECT id FROM comments WHERE source_id = %s AND embedding IS NOT NULL', (self.source_id,))
 
             new_embeddings_added = False
 
