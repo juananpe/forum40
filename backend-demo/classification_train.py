@@ -9,14 +9,15 @@ from classification_classifier import EmbeddingClassifier, get_history_path
 
 
 class ClassifierTrainer(ForumProcessor):
-    def __init__(self, labelname, classifier=None, host="postgres", port=5432):
+    def __init__(self, labelname, classifier=None, host="postgres", port=5432, nn=False):
         super().__init__("classification", host=host, port=port)
         self.labelname = labelname
+        self.nn = nn
         self.label_id = None
         if classifier:
-            self.classifier = EmbeddingClassifier(classifier)
+            self.classifier = EmbeddingClassifier(classifier=classifier, nn=nn)
         else:
-            self.classifier = EmbeddingClassifier()
+            self.classifier = EmbeddingClassifier(nn=nn)
 
     def get_trainingdata(self):
         start = timer()
@@ -117,14 +118,23 @@ class ClassifierTrainer(ForumProcessor):
         self.update_state(step, message)
         self.logger.info(message)
         start = timer()
-        self.model = self.classifier.train(annotation_dataset, self.labelname)
+        if self.nn:
+            self.logger.info(f"Training Neural Network")
+            self.model, acc, f1, fit_time = self.classifier.train_nn(annotation_dataset, self.labelname)
+            self.logger.info(f"Test accuracy: {acc:.3f}")
+            self.logger.info(f"Test F1_score: {f1:.3f}")
+            self.logger.info(f"Model training time (seconds): {fit_time}")
+        else:
+            self.logger.info(f"Running logistic regression")
+            self.model = self.classifier.train(annotation_dataset, self.labelname)
+
         end = timer()
         message = "Training finished after " + str(end - start) + " seconds."
         self.logger.info(message)
         self.update_state(step, message)
 
         # evaluate model
-        if cv:
+        if cv and not self.nn:
             step += 1
             message = "Cross-validating performance."
             self.logger.info(message)
@@ -169,9 +179,11 @@ if __name__ == "__main__":
                         help='DB host (default: localhost)')
     parser.add_argument('port', type=int, default=5432, nargs='?',
                         help='DB port (default: 5432)')
+    parser.add_argument('--nn', dest='nn', default=False, action='store_true',
+                        help='Train in neural network')
     args = parser.parse_args()
     labelname = args.labelname
 
-    classifier_trainer = ClassifierTrainer(labelname, host=args.host, port=args.port)
+    classifier_trainer = ClassifierTrainer(labelname, host=args.host, port=args.port, nn=args.nn)
 
     classifier_trainer.train(optimize=args.optimize, cv=args.cv)
