@@ -49,6 +49,11 @@ update_model = ns.model('update', {
         default=False,
         required=False
     ),
+    'neural-network': fields.Boolean(
+        description='Indicate whether train the model with neural network',
+        default=False,
+        required=False
+    ),
     'skip-confidence': fields.Boolean(
         description='Fast version only updates changing labels, but not confidence scores',
         default=False,
@@ -82,6 +87,7 @@ class ClassifierService(Resource):
         source_id = ns.payload.get('source_id', None)
         labelname = ns.payload.get('labelname', None)
         optimize = ns.payload.get('optimize', False)
+        neural_network = ns.payload.get('neural-network', False)
         skip_training = ns.payload.get('skip-training', False)
         skip_confidence = ns.payload.get('skip-confidence', False)
         if labelname and source_id:
@@ -92,6 +98,8 @@ class ClassifierService(Resource):
                 args.append("--optimize")
             if skip_training:
                 args.append("--skip-train")
+            if neural_network:
+                args.append("--nn")
             results = process_manager.invoke("update", str(source_id), args)
             return results, HTTPStatus.OK
         else:
