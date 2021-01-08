@@ -296,13 +296,15 @@ if __name__ == "__main__":
                         help='DB port (default: 5432)')
     parser.add_argument('source_id', type=int, default=1, nargs='?',
                         help='Source id (default: 1)')
+    parser.add_argument('--nn', dest='nn', default=False, action='store_true',
+                        help='Train in neural network')
     args = parser.parse_args()
 
     labelname = args.labelname
     source_id = args.source_id
     optimize = args.optimize
 
-    classifier_trainer = ClassifierTrainer(labelname, host=args.host, port=args.port)
+    classifier_trainer = ClassifierTrainer(labelname, host=args.host, port=args.port, nn=args.nn)
     label_updater = LabelUpdater(source_id, labelname, host=args.host, port=args.port, skip_confidence=args.skip_confidence)
 
     if args.init_facts:
