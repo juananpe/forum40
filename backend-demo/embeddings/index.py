@@ -1,6 +1,5 @@
 import traceback
 
-import click
 import hnswlib
 import math
 import numpy as np
@@ -119,8 +118,6 @@ class CommentIndexer(ForumProcessor):
             self.logger.info("There are no new embeddings to index.")
 
 
-@click.command(help='Index comment embeddings')
-@click.argument('source-id', required=True, type=int)
 def index(source_id: int):
     # start indexing
     indexer = CommentIndexer(source_id)

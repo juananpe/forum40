@@ -1,5 +1,4 @@
 #!/usr/bin/env python3.6
-import click
 from flask import Flask, request
 from flask_cors import CORS
 from flask_socketio import SocketIO
@@ -45,6 +44,5 @@ socketio = SocketIO(app, cors_allowed_origins='*')
 register_status_endpoint(socketio)
 
 
-@click.command()
 def serve():
     socketio.run(app, host='0.0.0.0', port=5050, debug=True)

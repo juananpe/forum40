@@ -10,7 +10,11 @@ def cli():
     pass
 
 
-cli.add_command(serve)
+@cli.command('serve', help='Start the server')
+def cli_serve():
+    serve()
+
+
 cli.add_command(classification)
 cli.add_command(embeddings)
 

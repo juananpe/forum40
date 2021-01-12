@@ -1,4 +1,3 @@
-import click
 import hnswlib
 import os
 import pprint
@@ -66,11 +65,7 @@ class RetrieveComment(ForumTask):
         return concat(comment[0], comment[1])
 
 
-@click.command()
-@click.argument('source-id', required=True, type=int)
-@click.argument('comment-id', required=True, type=int)
-@click.option('--n', default=10, help='Number of nearest neighbors')
-def retrieve(source_id: int, comment_id: int, n: int):
+def retrieve(source_id: int, comment_id: int, n: int = 10):
     retriever = RetrieveComment()
     retriever.load_index(source_id)
 

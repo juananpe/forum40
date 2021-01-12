@@ -1,6 +1,5 @@
 from timeit import default_timer as timer
 
-import click
 import itertools
 import math
 import time
@@ -271,14 +270,7 @@ class LabelUpdater(ForumProcessor):
         self.logger.info(f'CoLiBERT fact initialization finished. Took {end - start:.01f}s')
 
 
-@click.command(help='Update category labels')
-@click.argument('source-id', required=True, type=int)
-@click.option('--labelname', required=True, help='Name of the category for model training')
-@click.option('--skip-confidence', is_flag=True, help='Update changing labels only')
-@click.option('--optimize', is_flag=True, help='Run C parameter optimization')
-@click.option('--init-facts-only', is_flag=True, help='Do not predict anything, but init the fact table for a label')
-@click.option('--skip-train', is_flag=True, help='Skip retraining model')
-def update(source_id: int, labelname: str, skip_confidence: bool, optimize: bool, init_facts_only: bool, skip_train: bool):
+def update(source_id: int, labelname: str, skip_confidence: bool = False, optimize: bool = False, init_facts_only: bool = False, skip_train: bool = False):
     label_updater = LabelUpdater(source_id, labelname, skip_confidence=skip_confidence)
 
     if init_facts_only:

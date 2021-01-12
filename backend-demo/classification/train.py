@@ -1,7 +1,6 @@
 from collections import Counter
 from timeit import default_timer as timer
 
-import click
 from datetime import datetime
 from typing import Dict
 
@@ -150,11 +149,6 @@ class ClassifierTrainer(ForumProcessor):
         }
 
 
-@click.command(help='Classifier trainer')
-@click.argument('source-id', required=True, type=int)
-@click.option('--labelname', required=True, help='Name of the category for model training')
-@click.option('--optimize', is_flag=True, help='Run C parameter optimization')
-@click.option('--cv', is_flag=True, help='Perform cross validation after training')
-def train(source_id: int, labelname: str, optimize: bool, cv: bool):
+def train(labelname: str, optimize: bool = False, cv: bool = False):
     classifier_trainer = ClassifierTrainer(labelname, optimize=optimize, cv=cv)
     classifier_trainer.start()

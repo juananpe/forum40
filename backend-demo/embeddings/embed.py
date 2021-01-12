@@ -1,6 +1,5 @@
 import traceback
 
-import click
 import math
 from pypika import PostgreSQLQuery, Table, Parameter
 from pypika.functions import Count
@@ -104,10 +103,6 @@ class CommentEmbedder(ForumProcessor):
         self.close_cursor()
 
 
-@click.command(help='Embed comments in DB')
-@click.argument('source-id', required=True, type=int)
-@click.option('--embed-all', is_flag=True, help='(Re-)embed all data')
-@click.option('--batch-size', default=8, help='Batch size for tensor operations')
-def embed(source_id: int, embed_all: bool, batch_size: int):
+def embed(source_id: int, embed_all: bool = False, batch_size: int = 8):
     ce = CommentEmbedder(source_id=source_id, embed_all=embed_all, batch_size=batch_size)
     ce.start()
