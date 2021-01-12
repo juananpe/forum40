@@ -1,6 +1,6 @@
 from timeit import default_timer as timer
 
-import argparse
+import click
 import itertools
 import math
 import time
@@ -11,8 +11,8 @@ from typing import Dict
 
 from apis.service.colibert_client import CoLiBertClient
 from apis.utils.tasks import ForumProcessor
-from classification_classifier import EmbeddingClassifier, get_history_path
-from classification_train import ClassifierTrainer
+from classification.classifier import EmbeddingClassifier, get_history_path
+from classification.train import ClassifierTrainer
 
 
 class LabelUpdater(ForumProcessor):
@@ -143,10 +143,10 @@ class LabelUpdater(ForumProcessor):
         # load model
         try:
             self.classifier = EmbeddingClassifier()
-            self.classifier.load_from_disk(labelname)
+            self.classifier.load_from_disk(self.labelname)
         except:
             raise Exception(
-                f"Could not load classifier model for label {labelname}. "
+                f"Could not load classifier model for label {self.labelname}. "
                 f"Run train.py first to create a model"
             )
 
@@ -271,33 +271,17 @@ class LabelUpdater(ForumProcessor):
         self.logger.info(f'CoLiBERT fact initialization finished. Took {end - start:.01f}s')
 
 
-if __name__ == "__main__":
-    # argument parsing
-    parser = argparse.ArgumentParser(description='Update category labels.')
+@click.command(help='Update category labels')
+@click.argument('source-id', required=True, type=int)
+@click.option('--labelname', required=True, help='Name of the category for model training')
+@click.option('--skip-confidence', is_flag=True, help='Update changing labels only')
+@click.option('--optimize', is_flag=True, help='Run C parameter optimization')
+@click.option('--init-facts-only', is_flag=True, help='Do not predict anything, but init the fact table for a label')
+@click.option('--skip-train', is_flag=True, help='Skip retraining model')
+def update(source_id: int, labelname: str, skip_confidence: bool, optimize: bool, init_facts_only: bool, skip_train: bool):
+    label_updater = LabelUpdater(source_id, labelname, skip_confidence=skip_confidence)
 
-    parser.add_argument('--labelname', type=str, nargs='?', default='offtopic',
-                        help='Name of the category to update')
-    parser.add_argument('--skip-confidence', dest='skip_confidence', default=False, action='store_true',
-                        help='Update changing labels only (default: False)')
-    parser.add_argument('--optimize', dest='optimize', default=False, action='store_true',
-                        help='Perform hyperparameter optimization (default: False)')
-    parser.add_argument('--init-facts-only', dest='init_facts', default=False, action='store_true',
-                        help='Do not predict anything, but init the fact table for a label (default: False)')
-
-    parser.add_argument('--skip-train', dest='skip_train', default=False, action='store_true',
-                        help='Skip retraining model.')
-
-    parser.add_argument('source_id', type=int, default=1, nargs='?',
-                        help='Source id (default: 1)')
-    args = parser.parse_args()
-
-    labelname = args.labelname
-    source_id = args.source_id
-    optimize = args.optimize
-
-    label_updater = LabelUpdater(source_id, labelname, skip_confidence=args.skip_confidence)
-
-    if args.init_facts:
+    if init_facts_only:
         # just init all predictions with 0 (necessary, when new labels are inserted)
         label_updater.init_facts(commit_now=True)
 
@@ -307,7 +291,7 @@ if __name__ == "__main__":
         # init model entry
         label_updater.init_model_table()
 
-        if not args.skip_train:
+        if not skip_train:
             # train model
             classifier_trainer = ClassifierTrainer(labelname, optimize=optimize, cv=True)
             model_details = classifier_trainer.start()

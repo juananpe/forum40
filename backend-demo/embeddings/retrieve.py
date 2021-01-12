@@ -1,4 +1,4 @@
-import argparse
+import click
 import hnswlib
 import os
 import pprint
@@ -66,22 +66,11 @@ class RetrieveComment(ForumTask):
         return concat(comment[0], comment[1])
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Nearest neighbor comment retrieval')
-    parser.add_argument('--n', type=int, default=10, nargs='?',
-                        help='Nunmber of nearest neighbors (default: 10)')
-    parser.add_argument('source_id', type=int, nargs='?', default=1, help='Source id of the comment (default: 1)')
-    parser.add_argument('id', type=int, nargs='?', default=0, help='Id of the comment')
-    args = parser.parse_args()
-    comment_id = args.id
-    source_id = args.source_id
-
-    if comment_id < 1:
-        parser.error("Error: no valid positional id has been provided.")
-
-    if source_id < 1:
-        parser.error("Error: no valid positional id has been provided.")
-
+@click.command()
+@click.argument('source-id', required=True, type=int)
+@click.argument('comment-id', required=True, type=int)
+@click.option('--n', default=10, help='Number of nearest neighbors')
+def retrieve(source_id: int, comment_id: int, n: int):
     retriever = RetrieveComment()
     retriever.load_index(source_id)
 
@@ -92,10 +81,10 @@ if __name__ == "__main__":
         exit(1)
 
     retriever.logger.info("Length of the embedding: " + str(len(embeddings)))
-    nn_ids = retriever.get_nearest_for_id(comment_id, args.n)
+    nn_ids = retriever.get_nearest_for_id(comment_id, n)
 
     retriever.logger.info("Selected sentence: " + retriever.get_comment_text(comment_id))
     retriever.logger.info("Nearest neighbour ids for " + str(comment_id))
     pprint.pprint(nn_ids)
-    for id in nn_ids:
-        print(id, retriever.get_comment_text(id))
+    for nn_comment_id in nn_ids:
+        print(nn_comment_id, retriever.get_comment_text(nn_comment_id))

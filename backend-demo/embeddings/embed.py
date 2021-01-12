@@ -1,6 +1,6 @@
 import traceback
 
-import argparse
+import click
 import math
 from pypika import PostgreSQLQuery, Table, Parameter
 from pypika.functions import Count
@@ -11,8 +11,9 @@ from db.repositories.util import Random
 
 
 class CommentEmbedder(ForumProcessor):
-    def __init__(self, embed_all=False, batch_size=8):
+    def __init__(self, source_id: int, embed_all=False, batch_size=8):
         super().__init__("embedding")
+        self.source_id = source_id
         self.cursor_large = None
         self.embed_all = embed_all
         self.batch_size = batch_size
@@ -49,7 +50,7 @@ class CommentEmbedder(ForumProcessor):
             if not self.embed_all:
                 query = query.where(comments.embedding.notnull())
 
-            self.cursor.execute(query.select(Count('*')).get_sql(), (source_id,))
+            self.cursor.execute(query.select(Count('*')).get_sql(), (self.source_id,))
             n_to_embed = self.cursor.fetchone()[0]
 
             self.batch_i = 0
@@ -57,7 +58,7 @@ class CommentEmbedder(ForumProcessor):
 
             embed_query = query.select(comments.id, comments.title, comments.text).orderby(Random())
             self.cursor_large = self.conn.cursor(name='fetch_embeddings', withhold=True)
-            self.cursor_large.execute(embed_query.get_sql(), (source_id,))
+            self.cursor_large.execute(embed_query.get_sql(), (self.source_id,))
 
         except Exception as err:
             self.logger.error(err)
@@ -103,31 +104,10 @@ class CommentEmbedder(ForumProcessor):
         self.close_cursor()
 
 
-if __name__ == '__main__':
-    # CLI parser
-    parser = argparse.ArgumentParser(description='Embed comments in DB.')
-    parser.add_argument('source_id', type=int, default=1, nargs='?',
-                        help='Source id of the comment (default 1)')
-
-    parser.add_argument('--embed-all', dest='all', default=False, action='store_true',
-                        help='(Re-)embed all data (default: False)')
-    parser.add_argument('--device', type=str, default='cpu', nargs='?',
-                        help='Pytorch device for tensor operations (default: cpu, else cuda)')
-    parser.add_argument('--batch-size', dest='batch_size', type=int, default=8, nargs='?',
-                        help='Batch size for tensor operations (default: 8).')
-    parser.add_argument('--include-CLS', dest='keep_cls', default=False, action='store_true',
-                        help='Include CLS when calculating embeddings for all the tokens (default: True).')
-    parser.add_argument('--exclude-tokens', dest='use_token', default=True, action='store_false',
-                        help='Use tokens or CLS (default: True).')
-    parser.add_argument('--layers', dest='use_layers', type=int, default=4, nargs='?',
-                        help='How many final model layers to use (default=4).')
-
-    args = parser.parse_args()
-
-    # not really needed, right?
-    source_id = args.source_id
-
-    ce = CommentEmbedder(embed_all=args.all, batch_size=args.batch_size)
+@click.command(help='Embed comments in DB')
+@click.argument('source-id', required=True, type=int)
+@click.option('--embed-all', is_flag=True, help='(Re-)embed all data')
+@click.option('--batch-size', default=8, help='Batch size for tensor operations')
+def embed(source_id: int, embed_all: bool, batch_size: int):
+    ce = CommentEmbedder(source_id=source_id, embed_all=embed_all, batch_size=batch_size)
     ce.start()
-
-

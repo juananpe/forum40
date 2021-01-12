@@ -1,12 +1,12 @@
 from collections import Counter
 from timeit import default_timer as timer
 
-import argparse
+import click
 from datetime import datetime
 from typing import Dict
 
 from apis.utils.tasks import ForumProcessor
-from classification_classifier import EmbeddingClassifier, get_history_path
+from classification.classifier import EmbeddingClassifier, get_history_path
 
 
 class ClassifierTrainer(ForumProcessor):
@@ -150,19 +150,11 @@ class ClassifierTrainer(ForumProcessor):
         }
 
 
-if __name__ == "__main__":
-    # argument parsing
-    parser = argparse.ArgumentParser(description='Classifier trainer.')
-    parser.add_argument('--labelname', type=str, nargs='?', default='offtopic',
-                        help='Name of the category for model training')
-    parser.add_argument('--optimize', dest='optimize', default=False, action='store_true',
-                        help='Run C parameter optimization (default: False)')
-    parser.add_argument('--cv', dest='cv', default=False, action='store_true',
-                        help='Perform cross validation after training (default: False)')
-    parser.add_argument('source_id', type=1, default=1, nargs='?',
-                        help='Source id (default: 1)')
-    args = parser.parse_args()
-    labelname = args.labelname
-
-    classifier_trainer = ClassifierTrainer(labelname, optimize=args.optimize, cv=args.cv)
+@click.command(help='Classifier trainer')
+@click.argument('source-id', required=True, type=int)
+@click.option('--labelname', required=True, help='Name of the category for model training')
+@click.option('--optimize', is_flag=True, help='Run C parameter optimization')
+@click.option('--cv', is_flag=True, help='Perform cross validation after training')
+def train(source_id: int, labelname: str, optimize: bool, cv: bool):
+    classifier_trainer = ClassifierTrainer(labelname, optimize=optimize, cv=cv)
     classifier_trainer.start()

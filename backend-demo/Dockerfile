@@ -13,4 +13,4 @@ RUN pip install -r requirements.txt
 
 EXPOSE 5050
 
-CMD ["python", "/usr/src/app/run.py"]
+CMD ["python", "/usr/src/app/run.py", "serve"]

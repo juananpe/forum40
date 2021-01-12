@@ -4,13 +4,13 @@ from flask_restplus import Resource, fields, Namespace
 from logging.config import dictConfig
 
 from apis.utils.tasks import SingleProcessManager
-from classification_classifier import get_history_path
+from classification.classifier import get_history_path
 
 ns = Namespace('classification', description="Classification-API namespace")
 
 process_manager = SingleProcessManager()
-process_manager.register_process("train", ["classification_train.py"])
-process_manager.register_process("update", ["classification_update.py"])
+process_manager.register_process("train", ["run.py", "classification", "train"])
+process_manager.register_process("update", ["run.py", "classification", "update"])
 
 dictConfig({
     'version': 1,

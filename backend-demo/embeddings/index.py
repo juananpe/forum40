@@ -1,6 +1,6 @@
 import traceback
 
-import argparse
+import click
 import hnswlib
 import math
 import numpy as np
@@ -49,7 +49,7 @@ class CommentIndexer(ForumProcessor):
 
             # cursor without withholding, since we do not commit any db updates
             cursor_large = self.conn.cursor(name='large_embedding', withhold=True)
-            cursor_large.execute('SELECT id FROM comments WHERE source_id = %d AND embedding IS NOT NULL', (self.source_id,))
+            cursor_large.execute('SELECT id FROM comments WHERE source_id = %s AND embedding IS NOT NULL', (self.source_id,))
 
             new_embeddings_added = False
 
@@ -119,15 +119,9 @@ class CommentIndexer(ForumProcessor):
             self.logger.info("There are no new embeddings to index.")
 
 
-if __name__ == '__main__':
-    # CLI parser
-    parser = argparse.ArgumentParser(description='Embed comments in DB.')
-    parser.add_argument('source_id', type=int, default=1, nargs='?',
-                        help='Source id of the comment (default 1)')
-
-    args = parser.parse_args()
-    source_id = args.source_id
-
+@click.command(help='Index comment embeddings')
+@click.argument('source-id', required=True, type=int)
+def index(source_id: int):
     # start indexing
     indexer = CommentIndexer(source_id)
     indexer.start()

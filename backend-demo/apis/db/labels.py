@@ -12,7 +12,7 @@ ns = Namespace('labels', description="labels api")
 
 # pg config
 process_manager = SingleProcessManager()
-process_manager.register_process("init_facts", ["classification_update.py"])
+process_manager.register_process("init_facts", ["run.py", "classification", "update"])
 
 
 @ns.route('/<int:source_id>')

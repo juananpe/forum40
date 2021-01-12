@@ -6,14 +6,14 @@ from flask_restplus import Resource, fields, Namespace
 
 from apis.utils.tasks import SingleProcessManager, get_embeddings
 from config import settings
-from embeddings_retrieve import RetrieveComment
+from embeddings.retrieve import RetrieveComment
 
 ns = Namespace('embeddings', description="Embeddings-API namespace")
 
 # pg config
 process_manager = SingleProcessManager()
-process_manager.register_process("indexing", ["embeddings_index.py"])
-process_manager.register_process("embedding", ["embeddings_embed.py"])
+process_manager.register_process("indexing", ["run.py", "embeddings", "index"])
+process_manager.register_process("embedding", ["run.py", "embeddings", "embed"])
 
 # db connection
 try:
