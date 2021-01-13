@@ -11,8 +11,10 @@ def cli():
 
 
 @cli.command('serve', help='Start the server')
-def cli_serve():
-    serve()
+@click.option('--port', default=5050, help='The port on which to run')
+@click.option('--debug', is_flag=True, help='Run in debug mode with live reloading and additional logs')
+def cli_serve(port: int, debug: bool):
+    serve(port=port, debug=debug)
 
 
 cli.add_command(classification)

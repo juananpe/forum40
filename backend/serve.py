@@ -44,5 +44,5 @@ socketio = SocketIO(app, cors_allowed_origins='*')
 register_status_endpoint(socketio)
 
 
-def serve():
-    socketio.run(app, host='0.0.0.0', port=5050, debug=True)
+def serve(port: int = 5050, debug: bool = False):
+    socketio.run(app, host='0.0.0.0', port=port, debug=debug)

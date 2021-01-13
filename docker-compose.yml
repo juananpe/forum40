@@ -29,8 +29,7 @@ services:
             context: ./backend
             dockerfile: Dockerfile
         volumes:
-            - ./backend:/usr/src/app
-            - ./backend/models:/usr/src/app/models
+            - backend_models:/usr/src/app/models
         depends_on:
             - secrets
             - db
@@ -74,6 +73,7 @@ services:
 volumes:
     db_data:
     transformers:
+    backend_models:
 
 secrets:
     jwt_key:
