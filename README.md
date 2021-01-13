@@ -12,12 +12,12 @@ After the initialization, you should be able to use the tool at https://localhos
 To install or update frontend dependencies, you have to use the npm installation of the frontend container.
 For example, to update the dependencies after a git pull, you would run
 ```shell script
-docker-compose exec vue npm i
+docker-compose exec frontend npm i
 ```
-This executes the command `npm i` on the frontend container `vue`.
+This executes the command `npm i` on the frontend container `frontend`.
 If you expect to run multiple npm commands, you might instead want to launch an interactive shell in the container via
 ```shell script
-docker-compose exec vue sh
+docker-compose exec frontend sh
 ```
 and run your npm commands there.
 

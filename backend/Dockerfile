@@ -1,0 +1,16 @@
+FROM python:3.9
+
+# system packages
+RUN apt-get update && apt-get install -y \
+  python-pybind11 \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /usr/src/app
+
+COPY ./requirements.txt ./
+RUN pip install -r requirements.txt
+
+COPY . .
+
+EXPOSE 5050
+CMD ["python", "/usr/src/app/run.py", "serve", "--port", "5050"]

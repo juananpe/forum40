@@ -1,13 +1,16 @@
 version: '2'
 services:
-    vue:
-        build: 
+    frontend:
+        build:
             dockerfile: DockerfileLocal
         volumes:
-            - ./frontend-demo:/app
-            - vue_node_modules:/app/node_modules/
-    flask:
-        mem_limit: 10G
+            - ./frontend:/app
+            - frontend_node_modules:/app/node_modules/
+    backend:
+        build:
+            dockerfile: DockerfileLocal
+        volumes:
+            - ./backend:/usr/src/app
 
 volumes:
-    vue_node_modules:
+    frontend_node_modules:
