@@ -61,8 +61,8 @@ Embedding, indexing and classification should work with incremental comments in 
 * Every m minutes: indexing comments
 * ???: classification of comments only when there are new comments! [not working yet]
 
-## Demo
 
-The project is live on:
+## Links
 
-https://mast-se.informatik.uni-hamburg.de/
+- [Mockups](https://drive.google.com/file/d/1dHhMLJ3wGDxC2tQtV3n5kjjxIm-DBiaC/view?usp=sharing)
+- [Live Demo](https://mast-se.informatik.uni-hamburg.de/)
