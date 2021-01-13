@@ -1,4 +1,4 @@
-# frontend-demo
+# Forum 4.0 Web Interface
 
 ## Project setup
 ```

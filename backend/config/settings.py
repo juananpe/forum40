@@ -16,11 +16,11 @@ NUMBER_SAMPLES_FOR_NEXT_TRAINING = 10
 NUMBER_MIN_SAMPLES_PER_CLASS = 10
 
 # Database connection
-PG_HOST = 'postgres'
-PG_PORT = 5432
-PG_DATABASE = 'omp'
-PG_USER = 'postgres'
-PG_PASSWORD = secrets['db_password'].decode('utf8')
+DB_HOST = 'db'
+DB_PORT = 5432
+DB_NAME = 'forum40'
+DB_USER = 'postgres'
+DB_PASSWORD = secrets['db_password'].decode('utf8')
 
 # JWT
 JWT_KEY = secrets['jwt_key']

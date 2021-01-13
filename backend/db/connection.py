@@ -5,7 +5,7 @@ from psycopg2.pool import ThreadedConnectionPool
 from threading import Lock
 from typing import Optional
 
-from config.settings import PG_HOST, PG_PORT, PG_DATABASE, PG_USER, PG_PASSWORD
+from config.settings import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 from db.driver import Connection
 
 logger = logging.getLogger(__name__)
@@ -44,4 +44,4 @@ class WaitingConnectionPool:
             self._pool.putconn(conn)
 
 
-db_pool = WaitingConnectionPool(10, 50, host=PG_HOST, port=PG_PORT, database=PG_DATABASE, user=PG_USER, password=PG_PASSWORD)
+db_pool = WaitingConnectionPool(10, 50, host=DB_HOST, port=DB_PORT, database=DB_NAME, user=DB_USER, password=DB_PASSWORD)
