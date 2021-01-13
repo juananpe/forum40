@@ -166,6 +166,8 @@ class EmbedSource(Resource):
 @ns.route('/source/<source_id>/index')
 class IndexSource(Resource):
     def post(self, source_id):
-        async_tasks.embeddings.index(source_id) \
-            .then(lambda: retriever.load_index(source_id, force_reload=True))
+        obs = async_tasks.embeddings.index(source_id)
+        if obs is not None:
+            obs.then(lambda: retriever.load_index(source_id, force_reload=True))
+
         return '', HTTPStatus.NO_CONTENT

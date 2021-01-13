@@ -1,10 +1,9 @@
 from concurrent.futures import Future
 
-import queue
 from concurrent.futures.process import ProcessPoolExecutor
 from threading import Lock
 from types import SimpleNamespace
-from typing import Any, Callable, Optional, List, Dict, Tuple
+from typing import Any, Callable, Optional, List
 
 import classification
 import embeddings
@@ -28,41 +27,38 @@ class ParallelOrchestrator(Orchestrator):
         return obs
 
 
-class SequentialOrchestrator(Orchestrator):
+class SingularOrchestrator(Orchestrator):
+    # TODO: Enqueue repeated calls to be executed later
+    # - add "key by" to e.g. allow one update per "source_id" parameter value
+    #   (e.g. update source 1 and source 2 in parallel possible, but not source 1 twice)
+    # - optionally only allow one in queue.
+    #   E.g. 5 consecutive calls trigger once, enqueue one and omit the other three
+
     def __init__(self, fn: Callable[..., Any]):
         super().__init__(fn)
         self._latest_future: Optional[Future] = None
-        # queue of pending (DoneObserver, args, kwargs) entries
-        self._call_queue: queue.Queue[Tuple[DoneObserver, List, Dict[str, Any]]] = queue.Queue()
         self._submit_lock = Lock()
 
     def __call__(self, *args, **kwargs):
-        obs = DoneObserver()
-        self._call_queue.put((obs, args, kwargs))
-        self._maybe_start_next_call()
-        return obs
-
-    def _maybe_start_next_call(self):
         with self._submit_lock:
-            try:
-                if not self._latest_future or self._latest_future.done():
-                    obs, args, kwargs = self._call_queue.get_nowait()
-                    self._latest_future = self.executor.submit(self._fn, *args, **kwargs)
-                    self._latest_future.add_done_callback(lambda _: self._maybe_start_next_call())
-                    self._latest_future.add_done_callback(lambda _: obs.set_done())
-            except queue.Empty:
-                pass
+            if not self._latest_future or self._latest_future.done():
+                obs = DoneObserver()
+                self._latest_future = self.executor.submit(self._fn, *args, **kwargs)
+                self._latest_future.add_done_callback(lambda _: obs.set_done())
+                return obs
+
+        return None
 
 
 async_tasks = SimpleNamespace(
     classification=SimpleNamespace(
-        train=SequentialOrchestrator(classification.train),
+        train=SingularOrchestrator(classification.train),
         update=ParallelOrchestrator(classification.update),
     ),
     embeddings=SimpleNamespace(
-        embed=SequentialOrchestrator(embeddings.embed),
-        index=SequentialOrchestrator(embeddings.index),
-        retrieve=SequentialOrchestrator(embeddings.retrieve),
+        embed=SingularOrchestrator(embeddings.embed),
+        index=SingularOrchestrator(embeddings.index),
+        retrieve=SingularOrchestrator(embeddings.retrieve),
     ),
 )
 
