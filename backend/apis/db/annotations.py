@@ -47,11 +47,7 @@ class LabelComment(Resource):
 
         new_training_samples = annotation_count.num_total - model_sample_count
 
-        # is training in progress?
-        training_running = db.models.is_training_active(label_id)
-
-        if not training_running \
-                and new_training_samples >= settings.NUMBER_SAMPLES_FOR_NEXT_TRAINING \
+        if new_training_samples >= settings.NUMBER_SAMPLES_FOR_NEXT_TRAINING \
                 and annotation_count.num_positive >= settings.NUMBER_MIN_SAMPLES_PER_CLASS \
                 and annotation_count.num_negative >= settings.NUMBER_MIN_SAMPLES_PER_CLASS:
             label = db.labels.find_by_id(label_id)

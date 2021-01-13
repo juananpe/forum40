@@ -220,11 +220,11 @@ class LabelUpdater(ForumProcessor):
 
     def init_model_table(self):
         self.cursor.execute(
-            'INSERT INTO model (label_id, timestamp, pid) VALUES (%s, CURRENT_TIMESTAMP, %s) RETURNING id',
-            (self.label_id, self.pid),
+            'INSERT INTO model (label_id, timestamp) VALUES (%s, CURRENT_TIMESTAMP) RETURNING id',
+            (self.label_id),
         )
         self.model_entry_id = self.cursor.fetchone()[0]
-        self.logger.info(f"Init Model Entry: {self.label_id=}, {self.pid=}")
+        self.logger.info(f"Init Model Entry: {self.label_id=}")
 
     def update_model_table(self, model_details):
         label_id = self.label_id
@@ -235,9 +235,9 @@ class LabelUpdater(ForumProcessor):
 
         self.cursor.execute(
             'UPDATE model '
-            'SET timestamp = CURRENT_TIMESTAMP, number_training_samples = %s, acc = %s, f1 = %s, fit_time = %s, pid = %s '
+            'SET timestamp = CURRENT_TIMESTAMP, number_training_samples = %s, acc = %s, f1 = %s, fit_time = %s '
             'WHERE id = %s;',
-            (number_training_samples, acc, f1, int(fit_time), None, self.model_entry_id),
+            (number_training_samples, acc, f1, int(fit_time), self.model_entry_id),
         )
         self.logger.info(f"Update Model Entry: label_id={label_id}, number_training_samples={number_training_samples}")
 

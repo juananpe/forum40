@@ -1,7 +1,6 @@
 from timeit import default_timer as timer
 
 import logging
-import os
 from abc import abstractmethod
 from psycopg2.extras import Json
 from typing import Dict, Union
@@ -41,7 +40,6 @@ class ForumTask:
 class ForumProcessor(ForumTask):
     def __init__(self, taskname):
         super().__init__(taskname)
-        self.pid = os.getpid()
         self.log_conn = db_pool.getconn()
         self.log_conn.autocommit = True
 
@@ -53,8 +51,8 @@ class ForumProcessor(ForumTask):
     def set_state(self, data: Dict):
         with self.log_conn.cursor() as log_cur:
             log_cur.execute(
-                'INSERT INTO tasks (pid, name, data) VALUES (%s, %s, %s)',
-                (self.pid, self.taskname, Json(data))
+                'INSERT INTO tasks (name, data) VALUES (%s, %s)',
+                (self.taskname, Json(data))
             )
 
     def start(self):
