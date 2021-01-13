@@ -3,14 +3,10 @@ from http import HTTPStatus
 from flask_restplus import Resource, fields, Namespace
 from logging.config import dictConfig
 
-from apis.utils.tasks import SingleProcessManager
+from apis.utils.tasks import async_tasks
 from classification.classifier import get_history_path
 
 ns = Namespace('classification', description="Classification-API namespace")
-
-process_manager = SingleProcessManager()
-process_manager.register_process("train", ["run.py", "classification", "train"])
-process_manager.register_process("update", ["run.py", "classification", "update"])
 
 dictConfig({
     'version': 1,
@@ -74,37 +70,15 @@ history_model = ns.model('history', {
 class ClassifierService(Resource):
     @ns.expect(update_model)
     def post(self):
-        source_id = ns.payload.get('source_id', None)
-        labelname = ns.payload.get('labelname', None)
-        optimize = ns.payload.get('optimize', False)
-        skip_training = ns.payload.get('skip-training', False)
-        skip_confidence = ns.payload.get('skip-confidence', False)
-        if labelname and source_id:
-            args = ["--labelname", labelname]
-            if skip_confidence:
-                args.append("--skip-confidence")
-            if optimize:
-                args.append("--optimize")
-            if skip_training:
-                args.append("--skip-train")
-            results = process_manager.invoke("update", str(source_id), args)
-            return results, HTTPStatus.OK
-        else:
-            return {'error': 'Something went wrong.'}, HTTPStatus.INTERNAL_SERVER_ERROR
-
-
-@ns.route('/status')
-class StatusService(Resource):
-    def get(self):
-        results = process_manager.status("update")
-        return results, HTTPStatus.OK
-
-
-@ns.route('/abort')
-class AbortService(Resource):
-    def get(self):
-        results = process_manager.abort("update")
-        return results, HTTPStatus.OK
+        async_tasks.classification.update(
+            source_id=ns.payload.get('source_id', None),
+            labelname=ns.payload.get('labelname', None),
+            skip_confidence=ns.payload.get('skip-confidence', False),
+            optimize=ns.payload.get('optimize', False),
+            init_facts_only=False,
+            skip_train=ns.payload.get('skip-training', False),
+        )
+        return '', HTTPStatus.NO_CONTENT
 
 
 @ns.route('/history')

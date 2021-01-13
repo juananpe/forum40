@@ -1,271 +1,88 @@
-from timeit import default_timer as timer
+from concurrent.futures import Future
 
-import logging
-import os
-import requests
-import subprocess
-from abc import abstractmethod
-from psycopg2.extras import Json
-from typing import Dict, Union
+import queue
+from concurrent.futures.process import ProcessPoolExecutor
+from threading import Lock
+from types import SimpleNamespace
+from typing import Any, Callable, Optional, List, Dict, Tuple
 
-from config import settings
-from db.connection import db_pool
-
-# standard logger
-
-logger = logging.getLogger('ForumTask')
-logger.setLevel(logging.DEBUG)
-
-# create console handler and set level to debug
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-
-# create formatter
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-# add formatter to ch
-ch.setFormatter(formatter)
-
-# add ch to logger
-logger.addHandler(ch)
+import classification
+import embeddings
 
 
-class ForumTask:
-    def __init__(self, taskname):
-        self.taskname = taskname
-        self.logger = logger
-        self.conn = None
-        self.cursor = None
-        self.conn = db_pool.getconn()
-        self.cursor = self.conn.cursor()
+class Orchestrator:
+    executor = ProcessPoolExecutor(1)
 
-    def __del__(self):
-        db_pool.putconn(self.conn)
+    def __init__(self, fn: Callable[..., Any]):
+        self._fn = fn
 
-    def set_logger(self, logger):
-        self.logger = logger
+    def __call__(self, *args, **kwargs):
+        raise NotImplementedError
 
 
-class ForumProcessor(ForumTask):
-    def __init__(self, taskname):
-        super().__init__(taskname)
-        self.pid = os.getpid()
-        self.log_conn = db_pool.getconn()
-        self.log_conn.autocommit = True
-
-    def __del__(self):
-        super().__del__()
-        self.log_conn.autocommit = False
-        db_pool.putconn(self.log_conn)
-
-    def set_state(self, data: Dict):
-        with self.log_conn.cursor() as log_cur:
-            log_cur.execute(
-                'INSERT INTO tasks (pid, name, data) VALUES (%s, %s, %s)',
-                (self.pid, self.taskname, Json(data))
-            )
-
-    def start(self):
-        self.set_state({'status': 'starting'})
-
-        start = timer()
-        log_data = {}
-        result = None
-        try:
-            result = self.process()
-            log_data['status'] = 'finished'
-            if result is not None:
-                log_data['result'] = result
-        except Exception as e:
-            logger.exception(e)
-            log_data['status'] = 'failed'
-            log_data['error'] = str(e)
-        finally:
-            log_data['duration'] = timer() - start
-            self.set_state(log_data)
-
-        return result
-
-    @abstractmethod
-    def process(self) -> Union[Dict, None]:
-        pass
+class ParallelOrchestrator(Orchestrator):
+    def __call__(self, *args, **kwargs):
+        obs = DoneObserver()
+        fut = self.executor.submit(self._fn, *args, **kwargs)
+        fut.add_done_callback(lambda _: obs.set_done())
+        return obs
 
 
-class SingleProcessManager:
+class SequentialOrchestrator(Orchestrator):
+    def __init__(self, fn: Callable[..., Any]):
+        super().__init__(fn)
+        self._latest_future: Optional[Future] = None
+        # queue of pending (DoneObserver, args, kwargs) entries
+        self._call_queue: queue.Queue[Tuple[DoneObserver, List, Dict[str, Any]]] = queue.Queue()
+        self._submit_lock = Lock()
+
+    def __call__(self, *args, **kwargs):
+        obs = DoneObserver()
+        self._call_queue.put((obs, args, kwargs))
+        self._maybe_start_next_call()
+        return obs
+
+    def _maybe_start_next_call(self):
+        with self._submit_lock:
+            try:
+                if not self._latest_future or self._latest_future.done():
+                    obs, args, kwargs = self._call_queue.get_nowait()
+                    self._latest_future = self.executor.submit(self._fn, *args, **kwargs)
+                    self._latest_future.add_done_callback(lambda _: self._maybe_start_next_call())
+                    self._latest_future.add_done_callback(lambda _: obs.set_done())
+            except queue.Empty:
+                pass
+
+
+async_tasks = SimpleNamespace(
+    classification=SimpleNamespace(
+        train=SequentialOrchestrator(classification.train),
+        update=ParallelOrchestrator(classification.update),
+    ),
+    embeddings=SimpleNamespace(
+        embed=SequentialOrchestrator(embeddings.embed),
+        index=SequentialOrchestrator(embeddings.index),
+        retrieve=SequentialOrchestrator(embeddings.retrieve),
+    ),
+)
+
+
+class DoneObserver:
     def __init__(self):
-        self.commands = {}
-        self.processes = {}
-        self.history = ForumTask("task_history")
+        self._callbacks: List[Callable[[], Any]] = []
+        self._is_done = False
+        self._lock = Lock()
 
-    def register_process(self, name, command):
-        self.commands[name] = command
-        self.processes[name] = 0
+    def then(self, callback: Callable[[], Any]):
+        with self._lock:
+            if not self._is_done:
+                self._callbacks.append(callback)
+                return
 
-    def tasks(self):
-        result = {
-            "tasks": list(self.commands.keys())
-        }
-        return result
+        callback()
 
-    def poll(self):
-        for task in self.processes.keys():
-            proc = self.processes[task]
-            if proc:
-                if proc.poll() is not None:
-                    # unset registered task
-                    self.processes[task] = 0
-
-    def invoke(self, task, source_id, arguments=[]):
-        # check arguments (only 2 allowed of max length 32 characters)
-        arg_lengths = [len(arg) for arg in arguments]
-        if arguments and (len(arguments) > 6 or max(arg_lengths) > 32):
-            raise ValueError("Invalid arguments passed.")
-
-        # invoke task
-        try:
-
-            # check for terminated tasks
-            self.poll()
-
-            if not self.processes[task] or task == 'update':  # allow update task in parallel
-
-                # start process
-                popen_command = ["python"] + self.commands[task] + [source_id] + arguments
-                proc = subprocess.Popen(popen_command)
-
-                # register process
-                self.processes[task] = proc
-
-                result = {
-                    "message": f"Task {task} started for source_id {source_id}.",
-                    "pid": proc.pid
-                }
-
-            else:
-
-                result = {
-                    "message": f"Task {task} is still running.",
-                    "pid": self.processes[task].pid
-                }
-
-            return result
-
-        except KeyError:
-            message = f"Unknown task {task}"
-            logger.error(message)
-            return {"error": message}
-
-    def abort(self, task):
-        try:
-            # check for terminated tasks
-            self.poll()
-
-            if self.processes[task]:
-                pid = self.processes[task].pid
-                self.processes[task].terminate()
-                result = {
-                    "message": f"Task {task} stopped.",
-                    "pid": pid
-                }
-            else:
-                result = {
-                    "message": f"Task {task} is not running."
-                }
-
-            return result
-
-        except KeyError:
-            message = f"Unknown task {task}"
-            logger.error(message)
-            return {"error": message}
-
-    def status(self, task, n=50):
-        try:
-            # check for terminated tasks
-            self.poll()
-
-            if self.processes[task]:
-
-                status_log = []
-                progress = 0
-
-                pid = self.processes[task].pid
-                self.history.cursor.execute(
-                    """SELECT timestamp, data FROM tasks WHERE name=%s AND pid=%s ORDER BY timestamp DESC LIMIT %s""",
-                    (task, pid, n)
-                )
-                status_entries = self.history.cursor.fetchall()
-                if status_entries:
-                    progress = status_entries[0][1]
-                    # status_entries.reverse()
-                    status_log = "\n".join([str(e) for e in status_entries])
-
-                result = {
-                    "task": task,
-                    "pid": pid,
-                    "progress": progress,
-                    "log": status_log
-                }
-            else:
-                result = {
-                    "message": f"Task {task} is not running."
-                }
-
-            return result
-
-        except KeyError:
-            message = f"Unknown task {task}"
-            logger.error(message)
-            return {"error": message}
-
-    def clear(self):
-        # check for terminated tasks
-        self.poll()
-
-        running_tasks = False
-        for task in self.processes.keys():
-            if self.processes[task]:
-                running_tasks = True
-                break
-
-        if running_tasks:
-            result = {
-                "message": "Task history not cleared due to ongoing tasks."
-            }
-        else:
-            self.history.cursor.execute(
-                """TRUNCATE TABLE public.tasks RESTART IDENTITY"""
-            )
-            self.history.conn.commit()
-            result = {
-                "message": "Task history cleared."
-            }
-        return result
-
-
-def concat(title: str, text: str) -> str:
-    """
-    Concatenates comment's title and text
-    :param title: comment title
-    :param text: comment text
-    :return: concatenated comment text
-    """
-    title = title if title else ''
-    text = text if text else ''
-    return (title + ' ' + text).strip()
-
-
-def get_embeddings(string_list):
-    url = os.getenv('EMBEDDING_SERVICE_URL', settings.EMBEDDING_SERVICE_URL)
-
-    response = requests.post(
-        url,
-        json={"texts": string_list},
-        headers={'Accept': 'application/json', 'Content-Type': 'application/json'}
-    )
-
-    if response.ok:
-        return response.json(), True
-    else:
-        print(f"Error: could not retrieve embeddings from {url}")
-        return response.reason, False
+    def set_done(self):
+        with self._lock:
+            self._is_done = True
+        for callback in self._callbacks:
+            callback()

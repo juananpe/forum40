@@ -4,9 +4,8 @@ import hnswlib
 import math
 import numpy as np
 import os
-import requests
 
-from apis.utils.tasks import ForumProcessor
+from core.tasks import ForumProcessor
 from config.settings import EMBEDDING_INDEX_PATH
 
 debug = False
@@ -122,15 +121,3 @@ def index(source_id: int):
     # start indexing
     indexer = CommentIndexer(source_id)
     indexer.start()
-
-    # try to reload the index in the web app
-    try:
-        url = "http://localhost:5050/similarity/embeddings/reload-index/" + str(source_id)
-        response = requests.get(url)
-        if response.ok:
-            print(response.json())
-        else:
-            print(f"Index not reloaded via api call {url}")
-            print(response.reason)
-    except:
-        print("Error: Something went wrong during index reloading ...")

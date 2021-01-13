@@ -1,10 +1,9 @@
 from http import HTTPStatus
 
-import json
-import requests
 import sys
 from flask_restplus import Resource, Namespace
 
+from apis.utils.tasks import async_tasks
 from auth.token import token_required, TokenData
 from config import settings
 from db import Database, with_database
@@ -58,20 +57,12 @@ class LabelComment(Resource):
             label = db.labels.find_by_id(label_id)
             print(f'New training ({label["id"]=}, {label["name"]=}, {label["source_id"]=})', file=sys.stderr)
 
-            # trigger new training
-            headers = {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            }
-
-            payload = {
-                'source_id': label['source_id'],
-                'labelname': label['name'],
-                'optimize': False,
-                'skip-confidence': False
-            }
-
-            requests.post('http://127.0.0.1:5050/classification/classification/update', headers=headers, data=json.dumps(payload))
+            async_tasks.classification.update(
+                source_id=label['source_id'],
+                labelname=label['name'],
+                skip_confidence=False,
+                optimize=False,
+            )
 
         return {
             "annotations": annotation_count.num_total,

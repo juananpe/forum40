@@ -2,7 +2,8 @@ import hnswlib
 import os
 import pprint
 
-from apis.utils.tasks import ForumTask, concat
+from embeddings.utils import concat
+from core.tasks import ForumTask
 from config.settings import EMBEDDING_INDEX_PATH
 
 

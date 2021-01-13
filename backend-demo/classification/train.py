@@ -4,7 +4,7 @@ from timeit import default_timer as timer
 from datetime import datetime
 from typing import Dict
 
-from apis.utils.tasks import ForumProcessor
+from core.tasks import ForumProcessor
 from classification.classifier import EmbeddingClassifier, get_history_path
 
 

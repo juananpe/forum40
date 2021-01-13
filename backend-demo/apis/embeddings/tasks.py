@@ -1,19 +1,16 @@
 from http import HTTPStatus
 
+import functools
 import os
-from flask import current_app
 from flask_restplus import Resource, fields, Namespace
 
-from apis.utils.tasks import SingleProcessManager, get_embeddings
+import core.tasks
+from apis.service.embedding_service_client import EmbeddingServiceClient
+from apis.utils.tasks import async_tasks
 from config import settings
 from embeddings.retrieve import RetrieveComment
 
 ns = Namespace('embeddings', description="Embeddings-API namespace")
-
-# pg config
-process_manager = SingleProcessManager()
-process_manager.register_process("indexing", ["run.py", "embeddings", "index"])
-process_manager.register_process("embedding", ["run.py", "embeddings", "embed"])
 
 # db connection
 try:
@@ -21,7 +18,7 @@ try:
     retriever = RetrieveComment()
     retriever.load_index(default_source_id)
 except:
-    current_app.logger.error('DB connection failed.')
+    core.tasks.logger.error('DB connection failed.')
     exit(1)
 
 
@@ -148,7 +145,7 @@ class SimilarComments(Resource):
             return f"Error: could not find index for source_id {source_id}", HTTPStatus.BAD_REQUEST
 
         # get embedding
-        embeddings, status = get_embeddings(comment_texts)
+        embeddings, status = EmbeddingServiceClient().embed(comment_texts)
         if not status:
             return {'message': embeddings}, HTTPStatus.INTERNAL_SERVER_ERROR
         results = []
@@ -159,45 +156,16 @@ class SimilarComments(Resource):
         return results, HTTPStatus.OK
 
 
-@ns.route('/reload-index/<source_id>')
-class ReloadIndex(Resource):
-    def get(self, source_id):
-        if not retriever.load_index(source_id, force_reload=True):
-            return f"Error: could not find index for source_id {source_id}", HTTPStatus.BAD_REQUEST
-        else:
-            return f"Index for source id {source_id} reloaded", HTTPStatus.OK
+@ns.route('/source/<source_id>/embed')
+class EmbedSource(Resource):
+    def post(self, source_id):
+        async_tasks.embeddings.embed(source_id)
+        return '', HTTPStatus.NO_CONTENT
 
 
-@ns.route('/tasks')
-class Tasks(Resource):
-    def get(self):
-        results = process_manager.tasks()
-        return results, HTTPStatus.OK
-
-
-@ns.route('/tasks/<taskname>')
-class TaskStatus(Resource):
-    def get(self, taskname):
-        results = process_manager.status(taskname)
-        return results, HTTPStatus.OK
-
-
-@ns.route('/tasks/<taskname>/invoke/<source_id>')
-class TaskInvoke(Resource):
-    def get(self, taskname, source_id):
-        results = process_manager.invoke(taskname, source_id)
-        return results, HTTPStatus.OK
-
-
-@ns.route('/tasks/<taskname>/abort')
-class TaskAbort(Resource):
-    def get(self, taskname):
-        results = process_manager.abort(taskname)
-        return results, HTTPStatus.OK
-
-
-@ns.route('/tasks/clear')
-class TasksClear(Resource):
-    def get(self):
-        results = process_manager.clear()
-        return results, HTTPStatus.OK
+@ns.route('/source/<source_id>/index')
+class IndexSource(Resource):
+    def post(self, source_id):
+        async_tasks.embeddings.index(source_id) \
+            .then(lambda: retriever.load_index(source_id, force_reload=True))
+        return '', HTTPStatus.NO_CONTENT

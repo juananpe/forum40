@@ -9,7 +9,7 @@ from sklearn.metrics import cohen_kappa_score
 from typing import Dict
 
 from apis.service.colibert_client import CoLiBertClient
-from apis.utils.tasks import ForumProcessor
+from core.tasks import ForumProcessor
 from classification.classifier import EmbeddingClassifier, get_history_path
 from classification.train import ClassifierTrainer
 

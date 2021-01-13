@@ -4,9 +4,10 @@ import math
 from pypika import PostgreSQLQuery, Table, Parameter
 from pypika.functions import Count
 
-from apis.utils.tasks import ForumProcessor, concat
-from apis.utils.tasks import get_embeddings
+from apis.service.embedding_service_client import EmbeddingServiceClient
+from core.tasks import ForumProcessor
 from db.repositories.util import Random
+from embeddings.utils import concat
 
 
 class CommentEmbedder(ForumProcessor):
@@ -26,7 +27,7 @@ class CommentEmbedder(ForumProcessor):
     def process_batch(self, comment_batch):
         comment_texts = [concat(c[1], c[2]) for c in comment_batch if c[1] or c[2]]
         comment_ids = [c[0] for c in comment_batch if c[1] or c[2]]
-        comment_embeddings, success = get_embeddings(comment_texts)
+        comment_embeddings, success = EmbeddingServiceClient().embed(comment_texts)
         if not success:
             self.logger.error("No embeddings retrieved from embedding-service")
             return False
