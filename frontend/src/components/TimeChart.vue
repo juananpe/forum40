@@ -59,15 +59,14 @@ export default {
   },
   methods: {
     sourceChanged: async function() {
-      var p1 = this.initChart();
-      await Promise.all([p1]);
+      await this.initChart();
       this.resetChartToOrigin();
     },
     initChart: async function() {
       var source_id = this[Getters.getSelectedSource].id
       var response = Service.get(Endpoint.LABELS(source_id));
-      response.then((value) => {
-          value.data.labels.push(this.$i18n.t("time_chart.series_total"));
+      return response.then((value) => {
+        value.data.labels.push(this.$i18n.t("time_chart.series_total"));
 
         this.chart_options.series = []
 
