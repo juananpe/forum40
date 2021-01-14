@@ -13,7 +13,7 @@ ns = Namespace('documents', description="documents api")
 class Categories(Resource):
     @with_database
     def get(self, db: Database, source_id):
-        category_comments = db.comments.count_by_category_for_source(source_id)
+        category_comments = list(db.comments.count_by_category_for_source(source_id))
 
         result = {
             'names': [entry['category_name'] for entry in category_comments],
