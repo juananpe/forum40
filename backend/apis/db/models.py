@@ -11,5 +11,8 @@ ns = Namespace('models', description="models api")
 class Models(Resource):
     @with_database
     def get(self, db: Database, label_id):
-        models = db.models.find_all_by_label_id(label_id)
+        models = sorted(
+            db.models.find_all_by_label_id(label_id),
+            key=lambda model: model['timestamp']
+        )
         return list(models), HTTPStatus.OK
