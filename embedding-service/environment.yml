@@ -1,0 +1,8 @@
+name: embedding
+channels:
+  - conda-forge
+dependencies:
+  - fastapi=0.63.0
+  - python=3.9.1
+  - sentence-transformers=0.4.1
+  - uvicorn=0.13.3

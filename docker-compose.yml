@@ -64,15 +64,15 @@ services:
         build:
             context: ./embedding-service
             dockerfile: Dockerfile
+        environment:
+            API_ROOT_PATH: /api/embedding
         volumes:
-            - ./embedding-service:/app
-            - ./embedding-service/model:/app/model
-        depends_on:
-            - db
+            - sentence_transformers:/root/sentence-transformers/
 
 volumes:
     db_data:
     transformers:
+    sentence_transformers:
     backend_models:
 
 secrets:

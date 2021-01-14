@@ -1,7 +1,0 @@
-Werkzeug==0.16.0
-numpy==1.19.4
-Flask==1.0.2
-flask-restplus==0.12.1
-torch==1.7.1
-pytorch-transformers==1.2.0
-gunicorn==19.9.0
