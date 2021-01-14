@@ -18,7 +18,7 @@ import ECharts from 'vue-echarts'
 Vue.use(VueAxios, axios)
 Vue.use(VueTruncate)
 Vue.use(new VueSocketIO({
-  connection: io('https://localhost/', {path: '/api/socket.io'}),
+  connection: io(`${window.location.origin}/`, {path: '/api/socket.io'}),
 }))
 
 Vue.component('v-chart', ECharts)
