@@ -6,7 +6,8 @@ from db.repositories.base import BaseRepository
 class ModelRepository(BaseRepository):
     def current_model_training_sample_count(self, label_id: int) -> int:
         return self._acc.fetch_value(
-            'SELECT number_training_samples FROM model WHERE label_id = %s',
+            'SELECT number_training_samples FROM model WHERE label_id = %s '
+            'AND number_training_samples is not NULL',
             (label_id,),
             default=0,
         )
