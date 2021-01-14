@@ -3,6 +3,7 @@ import traceback
 import math
 from pypika import PostgreSQLQuery, Table, Parameter
 from pypika.functions import Count
+from requests import HTTPError
 
 from apis.service.embedding_service_client import EmbeddingServiceClient
 from core.tasks import ForumProcessor
@@ -27,11 +28,8 @@ class CommentEmbedder(ForumProcessor):
     def process_batch(self, comment_batch):
         comment_texts = [concat(c[1], c[2]) for c in comment_batch if c[1] or c[2]]
         comment_ids = [c[0] for c in comment_batch if c[1] or c[2]]
-        comment_embeddings, success = EmbeddingServiceClient().embed(comment_texts)
-        if not success:
-            self.logger.error("No embeddings retrieved from embedding-service")
-            return False
-        else:
+        try:
+            comment_embeddings = EmbeddingServiceClient().embed(comment_texts)
             batch_update_comments = []
             for i, comment_embedding in enumerate(comment_embeddings):
                 comment_id = comment_ids[i]
@@ -39,6 +37,9 @@ class CommentEmbedder(ForumProcessor):
 
             self.cursor.executemany('UPDATE comments SET embedding = %s WHERE id = %s', batch_update_comments)
             return True
+        except HTTPError:
+            self.logger.error("No embeddings retrieved from embedding-service")
+            return False
 
     def init_cursor(self):
         try:

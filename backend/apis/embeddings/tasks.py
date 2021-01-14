@@ -1,8 +1,8 @@
 from http import HTTPStatus
 
-import functools
 import os
 from flask_restplus import Resource, fields, Namespace
+from requests import HTTPError
 
 import core.tasks
 from apis.service.embedding_service_client import EmbeddingServiceClient
@@ -145,15 +145,16 @@ class SimilarComments(Resource):
             return f"Error: could not find index for source_id {source_id}", HTTPStatus.BAD_REQUEST
 
         # get embedding
-        embeddings, status = EmbeddingServiceClient().embed(comment_texts)
-        if not status:
-            return {'message': embeddings}, HTTPStatus.INTERNAL_SERVER_ERROR
-        results = []
-        for embedding in embeddings:
-            nn_ids = retriever.get_nearest_for_embedding(embedding)
-            results.append([retriever.get_comment_text(id) for id in nn_ids])
+        try:
+            embeddings = EmbeddingServiceClient().embed(comment_texts)
+            results = []
+            for embedding in embeddings:
+                nn_ids = retriever.get_nearest_for_embedding(embedding)
+                results.append([retriever.get_comment_text(id) for id in nn_ids])
 
-        return results, HTTPStatus.OK
+            return results, HTTPStatus.OK
+        except HTTPError:
+            return '', HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 @ns.route('/source/<source_id>/embed')
