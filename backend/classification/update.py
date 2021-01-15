@@ -186,6 +186,7 @@ class LabelUpdater(ForumProcessor):
         )
         self.cursor.execute('COMMIT; TRUNCATE TABLE tmp_facts;')
         self.cursor.execute('VACUUM FULL ANALYZE facts;')
+        self.cursor.execute('REFRESH MATERIALIZED VIEW comments_time_summary;')
 
         # stability
         kappa_score = cohen_kappa_score(self.labels_old, self.labels_new)

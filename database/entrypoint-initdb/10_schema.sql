@@ -120,6 +120,15 @@ CREATE TABLE IF NOT EXISTS public.facts (
 	CONSTRAINT facts_pk PRIMARY KEY (comment_id,label_id)
 );
 
+CREATE MATERIALIZED VIEW public.comments_time_summary AS
+SELECT source_id, label_id, year, month, day, count(*) as num
+FROM comments
+JOIN (
+    SELECT label_id, comment_id FROM facts WHERE label = true  -- count by the labels it is assigned to
+    UNION ALL SELECT null label_id, c2.id comment_id FROM comments c2  -- or count all as NULL label_id
+) facts ON comments.id = facts.comment_id
+GROUP BY source_id, label_id, year, month, day;
+
 
 -- Drop table
 

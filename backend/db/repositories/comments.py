@@ -151,24 +151,41 @@ class CommentRepository(BaseRepository):
     ) -> Iterator[Dict]:
         args = QueryArguments()
 
-        comments = Table('comments')
-        fields = [comments.year, comments.month, comments.day][:granularity.value]
+        if keywords is None or len(keywords) == 0:
+            # optimized query using materialized comments_time_summary view
+            summary = Table('comments_time_summary')
+            fields = [summary.year, summary.month, summary.day][:granularity.value]
 
-        query = PostgreSQLQuery() \
-            .from_(comments) \
-            .select(pfn.Count('*').as_('count'), *fields) \
-            .where(comments.source_id == args.add(source_id)) \
-            .groupby(*fields)
+            query = PostgreSQLQuery() \
+                .from_(summary) \
+                .select(pfn.Sum('num').as_('count'), *fields) \
+                .where(fields.source_id == args.add(source_id)) \
+                .groupby(*fields)
 
-        for keyword in keywords or []:
-            arg = args.add(f'%{keyword}%')
-            query = query.where(comments.text.like(arg))
+            if label_id is not None:
+                query = query.where(summary.label_id == args.add(label_id))
+            else:
+                query = query.where(summary.label_id.isnull())
 
-        if label_id is not None:
-            facts = Table('facts')
-            query = query.inner_join(facts).on(facts.comment_id == comments.id) \
-                .where(facts.label_id == args.add(label_id)) \
-                .where(facts.label == True)
+        else:
+            comments = Table('comments')
+            fields = [comments.year, comments.month, comments.day][:granularity.value]
+
+            query = PostgreSQLQuery() \
+                .from_(comments) \
+                .select(pfn.Count('*').as_('count'), *fields) \
+                .where(comments.source_id == args.add(source_id)) \
+                .groupby(*fields)
+
+            for keyword in keywords:
+                arg = args.add(f'%{keyword}%')
+                query = query.where(comments.text.like(arg))
+
+            if label_id is not None:
+                facts = Table('facts')
+                query = query.inner_join(facts).on(facts.comment_id == comments.id) \
+                    .where(facts.label_id == args.add(label_id)) \
+                    .where(facts.label == True)
 
         return self._acc.fetch_all(query.get_sql(), args.values)
 
