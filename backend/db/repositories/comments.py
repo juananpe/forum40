@@ -158,8 +158,8 @@ class CommentRepository(BaseRepository):
 
             query = PostgreSQLQuery() \
                 .from_(summary) \
-                .select(pfn.Sum('num').as_('count'), *fields) \
-                .where(fields.source_id == args.add(source_id)) \
+                .select(pfn.Sum(summary.num).as_('count'), *fields) \
+                .where(summary.source_id == args.add(source_id)) \
                 .groupby(*fields)
 
             if label_id is not None:
