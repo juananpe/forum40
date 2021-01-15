@@ -158,7 +158,7 @@ class CommentRepository(BaseRepository):
 
             query = PostgreSQLQuery() \
                 .from_(summary) \
-                .select(pfn.Sum(summary.num).as_('count'), *fields) \
+                .select(pfn.Cast(pfn.Sum(summary.num), 'bigint').as_('count'), *fields) \
                 .where(summary.source_id == args.add(source_id)) \
                 .groupby(*fields)
 
