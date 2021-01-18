@@ -12,7 +12,7 @@ export const Endpoint = {
     ADD_ANNOTATION_TO_COMMENT: (comment_id, label_id, label) => `db/annotations/${comment_id}/${label_id}/${label}`,
     COMMENTS_COUNT: 'db/comments/count',
     COMMENTS_PARENTS: (commentId) => `db/comments/parent_recursive/${commentId}`,
-    COMMENTS_SIMILAR: 'similarity/embeddings/similar-ids',
+    COMMENTS_SIMILAR: (commentId) => `similarity/embeddings/comments/${commentId}/similar`,
     TIMESERIES: 'db/comments/timeseries',
     TIMESERIES_MULTI: 'db/comments/timeseries_multi',
     TEST_LOGIN: 'db/auth/test',

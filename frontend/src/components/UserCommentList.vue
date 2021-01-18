@@ -362,27 +362,15 @@ export default {
       }
     },
     async loadSimilarComments(comment) {
-      const selectedSource = this[Getters.getSelectedSource];
-      const payload = {
-        ids: [comment.id],
-        n: this.MAX_COMMENTS,
-        source_id: selectedSource.id
-      };
       try {
-        const { data } = await Service.post(Endpoint.COMMENTS_SIMILAR, payload);
-        let comment_ids = data[0];
-        // comment_ids = [1, 2, 3]; // for test purposes
-        if (comment_ids !== undefined) {
-          const comments = await Promise.all(
-            comment_ids.map(id =>
-              Service.get(
-                Endpoint.COMMENT_ID(id, this[Getters.labelParameters]),
-                this[Getters.jwt]
-              )
-            )
-          );
-          this.similar_comments = comments.map(response => response["data"]);
-        }
+        const method_url = Endpoint.COMMENTS_SIMILAR(comment.id);
+        const params = [
+            `n=${this.MAX_COMMENTS}`,
+            this[Getters.labelParameters],
+        ].filter(par => par).join('&');
+        const url = `${method_url}?${params}`;
+        const { data } = await Service.get(url);
+        this.similar_comments = data;
       } catch (e) {
         console.error('Could not load similar comments: ${e}');
       }
