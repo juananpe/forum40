@@ -83,43 +83,9 @@
         </tr>
       </template>
       <template v-slot:expanded-item="{ item, headers }">
-        <tr v-if="!similar_comments.length">
-          <td></td>
-          <td>
-            <v-btn
-              outlined
-              small
-              color="primary"
-              text
-              @click="loadSimilarComments(item)"
-            >{{ $t("comment_list.show_similar_comments") }}</v-btn>
-          </td>
-          <td></td>
-          <td v-for="(label, i) in selectedLabels" :key="item.id+i"></td>
-        </tr>
-        <tr
-          class="elevation-1 sim-comments"
-          v-for="(comment, i) in similar_comments.slice(1,MAX_COMMENTS)"
-          :key="i"
-        >
-          <td v-if="similar_comments.length>0"></td>
-          <td v-if="similar_comments.length>0">
-            <b>{{comment.title}}</b>
-            <br />
-            {{comment.text}}
-          </td>
-          <td v-if="similar_comments.length>0" class="text-right">{{ comment.timestamp | moment}}</td>
-
-          <td v-for="(label, i) in selectedLabels" :key="comment.id+i">
-            <UserCommentAnnotation
-              :commentId="comment.id"
-              :labelId="labels[label]"
-              :personalLabel="getPeronalAnnotation(comment.annotations, labels[label])"
-              :majority="getGroupAnnotation(comment.annotations, labels[label])"
-              :confidence="getConfidence(comment.annotations, labels[label])"
-            />
-          </td>
-        </tr>
+        <td :colspan="headers.length">
+          <UserCommentDetails :comment="item" />
+        </td>
       </template>
     </v-data-table>
   </div>
@@ -133,6 +99,7 @@ import moment from "moment";
 import { EventBus, Events } from "../event-bus";
 import UserCommentAnnotation from "./UserCommentAnnotation";
 import { mdiRobot } from "@mdi/js";
+import UserCommentDetails from './commentdetails/UserCommentDetails.vue';
 
 export default {
   name: "UserCommentList",
@@ -153,9 +120,7 @@ export default {
       teaserTextLength: 200,
       page: 1,
       rowsPerPage: 25,
-      svgPath: mdiRobot,
-      similar_comments: [],
-      MAX_COMMENTS: 11
+      svgPath: mdiRobot
     };
   },
   filters: {
@@ -247,14 +212,11 @@ export default {
     }
   },
   async mounted() {
-    this.similar_comments = [];
     EventBus.$on(Events.loggedIn, this.fetchComments);
     EventBus.$on(Events.sourceLoaded, this.loadTable);
   },
   watch: {
     [Getters.selectedLabels]: function() {
-      this.similar_comments = [];
-      this.setSelectedComment({});
       this.loadTable();
     },
     [State.selectedCategory]: async function() {
@@ -263,7 +225,6 @@ export default {
       this.loading = false;
     },
     async page() {
-      this.setSelectedComment({});
       this.loading = true;
       await this.fetchComments();
       this.loading = false;
@@ -275,7 +236,7 @@ export default {
     }
   },
   methods: {
-    ...mapMutations([Mutations.setSelectedComment, Mutations.setKeywordfilter]),
+    ...mapMutations([Mutations.setKeywordfilter]),
     async loadTable() {
       this.loading = true;
       this.page = 1;
@@ -350,30 +311,7 @@ export default {
       return label_sort_id === this.label_sort_id;
     },
     commentClicked(props) {
-      this.similar_comments = [];
       props.expand(!props.isExpanded);
-
-      if (!props.isExpanded) {
-        // working like this, but don't know why
-        const selectedComment = props.item;
-        this[Mutations.setSelectedComment](selectedComment);
-      } else {
-        this[Mutations.setSelectedComment]({});
-      }
-    },
-    async loadSimilarComments(comment) {
-      try {
-        const method_url = Endpoint.COMMENTS_SIMILAR(comment.id);
-        const params = [
-            `n=${this.MAX_COMMENTS}`,
-            this[Getters.labelParameters],
-        ].filter(par => par).join('&');
-        const url = `${method_url}?${params}`;
-        const { data } = await Service.get(url);
-        this.similar_comments = data;
-      } catch (e) {
-        console.error('Could not load similar comments: ${e}');
-      }
     },
     /*eslint no-unused-vars: ["error", { "args": "none" }]*/
     keywordChanged(e) {
@@ -382,7 +320,8 @@ export default {
     }
   },
   components: {
-    UserCommentAnnotation
+    UserCommentAnnotation,
+    UserCommentDetails
   }
 };
 </script>
@@ -400,9 +339,5 @@ export default {
 
 .tableColumn {
   min-width: 60px;
-}
-
-.sim-comments {
-  background-color: #eeeeff;
 }
 </style>
