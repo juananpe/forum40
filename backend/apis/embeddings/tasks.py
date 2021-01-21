@@ -39,7 +39,7 @@ id_model = ns.model('Id', {
 
 # API for service URL
 url_model = ns.model('URL', {
-    'service_url': fields.String(example='http://ltdemos.informatik.uni-hamburg.de/embedding-service'),
+    'service_url': fields.String(example='http://rzgpu1:5060/embed'),
 })
 
 
