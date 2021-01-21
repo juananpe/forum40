@@ -49,7 +49,7 @@ class CommentEmbedder(ForumProcessor):
                 .where(comments.source_id == Parameter('%s'))
 
             if not self.embed_all:
-                query = query.where(comments.embedding.notnull())
+                query = query.where(comments.embedding.isnull())
 
             self.cursor.execute(query.select(Count('*')).get_sql(), (self.source_id,))
             n_to_embed = self.cursor.fetchone()[0]
