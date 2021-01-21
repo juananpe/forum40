@@ -45,15 +45,6 @@ To run classification for one label, call `/api/classification/classification/up
 To index the new comments, call `/api/similarity/embeddings/source/{source_id}/index`.
 
 
-## Incremental database updates
-
-Embedding, indexing and classification should work with incremental comments in the database. We may run cron jobs for:
-* Every m minutes: crawling comments
-* Every m minutes: embedding comments
-* Every m minutes: indexing comments
-* ???: classification of comments only when there are new comments! [not working yet]
-
-
 ## Links
 
 - [Mockups](https://drive.google.com/file/d/1dHhMLJ3wGDxC2tQtV3n5kjjxIm-DBiaC/view?usp=sharing)
