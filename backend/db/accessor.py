@@ -1,4 +1,5 @@
 from psycopg2.extras import RealDictCursor
+from psycopg2 import ProgrammingError
 from typing import Optional, Dict, Any, Tuple, TypeVar, Iterator
 
 from db.driver import Connection, Cursor, QueryArgs
@@ -7,6 +8,10 @@ from db.driver import Connection, Cursor, QueryArgs
 class CursorType:
     TUPLE: Cursor[Tuple] = None
     DICT: Cursor[Dict] = RealDictCursor
+
+
+class NoResultError(Exception):
+    pass
 
 
 _no_default = object()
@@ -41,9 +46,15 @@ class DatabaseAccessor:
     def fetch_value(self, sql: str, args: Optional[QueryArgs] = None, default=_no_default):
         with self.create_cursor(type_=CursorType.TUPLE) as cur:
             cur.execute(sql, args)
-            result = cur.fetchone()
+            try:
+                result = cur.fetchone()
+            except ProgrammingError:
+                # probably due to a bug in psycopg2, fetchone sometimes throws a ProgrammingError
+                # for SELECT queries with empty result sets (psycopg2 v2.8.6)
+                result = None
+
             if result is None and default is _no_default:
-                raise Exception('Query did not return a result and no default is set')
+                raise NoResultError('Query did not return a result and no default is set')
 
             return result[0] if result is not None else default
 
