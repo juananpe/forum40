@@ -32,34 +32,17 @@ and run your npm commands there.
 - You should now be able to see comments appear in your instance in the web browser.
 
 ## Embedding generation and classification
+After loading new comments into the database, it is necessary to generate embeddings for them before they can be used for classification and the similar comment search functionality.
+The embedding generation has to be triggered via the API, which can be accessed interactively from the `/api/` subpath, i.e. on `http://mast-se.informatik.uni-hamburg.de/api/` for the demo deployment or `http://localhost/api/` for a local instance.
 
-- The following steps are nessecary to get classification and embedding functionality. Calculating the BERT embeddings for new comments may take some time and can be accelated with a GPU. Once the embeddings are available in the database, training and using classifiers is very fast. 
-- All these processes can be accessed from https://localhost/api/ url, or https://<your_hostname>/api/ if you deployed the application on a server. In the following examples we assume a local installation:
+Generating new embeddings may take a while, but can be accelerated by running the embedding service on a GPU compute node.
+If you have deployed the embedding service externally, use the `/api/similarity/embeddings/set-service-url` method to change the instance of the embedding service
+that the Forum 4.0 backend should use.
 
-3. Embedding of comments (under Similarity-API :: https://localhost/api/similarity)
-- Optional: run embedding container on GPU server and and configure service-URL via `/api/similarity/embeddings/set-service-url`
-- Start: `/api/similarity/embeddings/tasks/{taskname}/invoke/{source_id}` by providing taskname as 'embedding' and source_id as 1 (source_id denotes the database source from the available databases) before execute.
-- Check progress: `/api/similarity/embeddings/tasks/{taskname}` where taskname is 'embedding'.
-- Abort: ``/api/similarity/embeddings/tasks/{taskname}/abort` where taskname is 'embedding'.
-
-4. Indexing of embeddings (under Similarity-API :: https://localhost/api/similarity)
-- Start: `/api/similarity/embeddings/tasks/{taskname}/invoke/{source_id}` by providing taskname as 'indexing' and source_id as 1 before execute.
-- Check progress: `/api/similarity/embeddings/tasks/{taskname}` where taskname is 'indexing'.
-- Abort: ``/api/similarity/embeddings/tasks/{taskname}/abort` where taskname is 'indexing'.
-
-5. Classification of comments (under Classification-API :: https://localhost/api/classification)
-- Create a new label in the front-end (needs login), add some training data (minimum 25 positive and negative examples per category)
-- Train a model and classify all comments of a specific source_id for each labelname one by one: `/api/classification/classification/update`
-- Get information about training progress: `/api/classification/classification/history`: contains timestamp, task, label, training set size, cv acc, cv f1, stability score, duration as CSV
-
-
-## Incremental database updates
-
-Embedding, indexing and classification should work with incremental comments in the database. We may run cron jobs for:
-* Every m minutes: crawling comments
-* Every m minutes: embedding comments
-* Every m minutes: indexing comments
-* ???: classification of comments only when there are new comments! [not working yet]
+To generate embeddings for new comments, use the `/api/similarity/embeddings/source/{source_id}/embed` API method.
+After the embedding generation finishes, you can classify them and run indexing on the embeddings to enable similar comment search.
+To run classification for one label, call `/api/classification/classification/update`.
+To index the new comments, call `/api/similarity/embeddings/source/{source_id}/index`.
 
 
 ## Links
