@@ -7,6 +7,7 @@ export const Endpoint = {
     ADD_LABEL: (name, source_id) => `db/labels/binary/${name}/${source_id}`,
     COMMENTS: 'db/comments/',
     COMMENT_ID: (comment_id, labels) => `db/comments/${comment_id}?${labels}`,
+    COMMENT_DOCUMENT: (comment_id) => `db/comments/${comment_id}/document`,
     COMMENTS_TIME_HISTOGRAM: "db/comments/time_histogram",
     SOURCES: "db/sources/",
     ADD_ANNOTATION_TO_COMMENT: (comment_id, label_id, label) => `db/annotations/${comment_id}/${label_id}/${label}`,

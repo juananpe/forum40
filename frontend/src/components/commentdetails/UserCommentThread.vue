@@ -1,6 +1,7 @@
 <template>
-  <div>
-    <p></p>
+  <v-progress-circular v-if="threadComments === null" :indeterminate="true" />
+
+  <div v-else>
     <div v-for="(threadComment, i) in threadComments" v-bind:key="threadComment.id">
       <v-layout>
         <v-flex :[dynamicFlex(i)]="true" mb-1>
@@ -30,13 +31,14 @@ export default {
   },
   data() {
     return {
-      threadComments: [],
+      threadComments: null,
     }
   },
   watch: {
     comment: {
       immediate: true,
       async handler(comment) {
+        this.threadComments = null;
         const { data } = await Service.get(
           Endpoint.COMMENTS_PARENTS(this.comment.id),
           this[Getters.jwt],

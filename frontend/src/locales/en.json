@@ -72,9 +72,13 @@
   },
   "comment_details": {
     "thread": "Thread",
-    "similar": "Similar"
-  },
-  "comment_thread": {
-    "user_id": "UserID: {id}"
+    "document": "Document",
+    "similar": "Similar",
+    "comment_thread": {
+      "user_id": "UserID: {id}"
+    },
+    "document_position": {
+      "show_complete": "Show complete document"
+    }
   }
 }

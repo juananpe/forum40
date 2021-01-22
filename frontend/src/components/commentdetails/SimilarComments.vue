@@ -1,5 +1,7 @@
 <template>
-  <div class="comment-list">
+  <v-progress-circular v-if="similarComments === null" :indeterminate="true" />
+
+  <div v-else class="comment-list">
     <UserComment 
       v-for="similarComment of similarComments"
       :key="similarComment.id"
@@ -19,13 +21,14 @@ export default {
   props: ['comment'],
   data() {
     return {
-      similarComments: [],
+      similarComments: null,
     }
   },
   watch: {
     comment: {
       immediate: true,
       async handler(comment) {
+        this.similarComments = null;
         const { data } = await Service.get(Endpoint.COMMENTS_SIMILAR(comment.id));
         this.similarComments = data;
       },
