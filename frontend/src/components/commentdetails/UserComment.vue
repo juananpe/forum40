@@ -2,7 +2,7 @@
   <v-card v-if="comment">
     <v-card-title primary-title>
       <div>
-        {{ $t("comment_thread.user_id", {id: this.comment.user_id}) }}
+        {{ $t("comment_details.comment_thread.user_id", {id: this.comment.user_id}) }}
         {{this.comment.timestamp | moment}}
         <br>
         <h3 class="headline">

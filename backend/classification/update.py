@@ -259,7 +259,7 @@ class LabelUpdater(ForumProcessor):
         comment_ids, comment_texts = zip(*comments)
 
         # get CoLiBERT outputs
-        score_matrix = CoLiBertClient().score_all_pairs(contexts=[description], queries=comment_texts)
+        score_matrix = CoLiBertClient().score_all_pairs(queries=comment_texts, contexts=[description])
         scores = [s[0] for s in score_matrix]
 
         # update scores in DB

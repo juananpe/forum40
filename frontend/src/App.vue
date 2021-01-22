@@ -12,9 +12,6 @@
         <v-flex xs12>
           <UserCommentList />
         </v-flex>
-        <v-flex xs12>
-          <UserCommentThread />
-        </v-flex>
       </v-layout>
       <UpdateNotification />
     </v-container>
@@ -25,7 +22,6 @@
 import TopToolbar from "./components/TopToolbar";
 import UserCommentList from "./components/UserCommentList";
 import UserCommentFilter from "./components/UserCommentFilter";
-import UserCommentThread from "./components/UserCommentThread";
 import { mapActions } from "vuex";
 import ClassifierMetrics from "./components/classifiermetrics/ClassifierMetrics";
 import UpdateNotification from "@/components/updatenotification/UpdateNotification";
@@ -38,7 +34,6 @@ export default {
     TopToolbar,
     UserCommentList,
     UserCommentFilter,
-    UserCommentThread
   },
   methods: {
     ...mapActions(["start"])

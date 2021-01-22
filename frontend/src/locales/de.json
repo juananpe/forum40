@@ -54,7 +54,6 @@
     "title": "Kommentarliste",
     "search": "Textsuche",
     "page": "Seite {number}",
-    "show_similar_comments": "Ähnliche Kommentare anzeigen",
     "headers": {
       "comment_text": "Kommentartext",
       "date": "Datum"
@@ -71,8 +70,15 @@
       "state": "{count} annotierter \"{label}\" Kommentar. | {count} annotierte \"{label}\" Kommentare."
     }
   },
-  "comment_thread": {
-    "title": "Kommentar-Thread",
-    "user_id": "UserID: {id}"
+  "comment_details": {
+    "thread": "Thread",
+    "document": "Dokument",
+    "similar": "Ähnlich",
+    "comment_thread": {
+      "user_id": "UserID: {id}"
+    },
+    "document_position": {
+      "show_complete": "Ganzes Dokument zeigen"
+    }
   }
 }
