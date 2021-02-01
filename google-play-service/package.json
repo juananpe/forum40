@@ -2,7 +2,9 @@
   "name": "google-play-service",
   "version": "1.0.0",
   "description": "A microservice used to scrape google play apps including reviews",
-  "dependencies": {},
+  "dependencies": {
+    "google-play-scraper": "^8.0.2"
+  },
   "devDependencies": {
     "@tsconfig/node14": "^1.0.0",
     "@types/node": "^14.14.22",

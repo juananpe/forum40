@@ -73,6 +73,9 @@ services:
         build:
             context: ./google-play-service
             dockerfile: Dockerfile
+        environment:
+            LANG: de
+            COUNTRY: de
 
 volumes:
     db_data:
