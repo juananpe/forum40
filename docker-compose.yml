@@ -69,6 +69,10 @@ services:
             - ./embedding-service/model:/app/model
         depends_on:
             - db
+    google_play:
+        build:
+            context: ./google-play-service
+            dockerfile: Dockerfile
 
 volumes:
     db_data:

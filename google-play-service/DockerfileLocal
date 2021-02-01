@@ -1,0 +1,9 @@
+FROM node:14-alpine
+
+COPY docker-dev-entrypoint.sh /root/docker-dev-entrypoint.sh
+RUN chmod 744 /root/docker-dev-entrypoint.sh
+
+WORKDIR /app
+
+EXPOSE 80
+CMD ["/root/docker-dev-entrypoint.sh"]
