@@ -1,4 +1,4 @@
-import { Collection } from "./play";
+import { Collection } from "./play/types";
 
 export const LANG = process.env['LANG'] || 'en';
 export const COUNTRY = process.env['COUNTRY'] || 'us';

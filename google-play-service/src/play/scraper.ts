@@ -1,10 +1,7 @@
 import gplay from "google-play-scraper";
-import * as config from "./config";
+import * as config from "../config";
+import {Collection, App, AppBase, Review} from "./types";
 
-export import Collection = gplay.collection;
-export import AppBase = gplay.IAppItem;
-export import App = gplay.IAppItemFullDetail;
-export import Review = gplay.IReviewsItem;
 
 const baseOpts = {
 	lang: config.LANG,
