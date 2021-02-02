@@ -1,6 +1,6 @@
 import fetch from "node-fetch";
 import * as config from "./config";
-import { toCamelCase, toSnailCase } from "./util";
+import { toCamelCase, toSnakeCase } from "./util";
 
 
 export class DbApi {
@@ -28,7 +28,7 @@ export class DbApi {
 
 		const res = await fetch(url, {
 			method,
-			body: data ? JSON.stringify(toSnailCase(data)) : undefined,
+			body: data ? JSON.stringify(toSnakeCase(data)) : undefined,
 			headers: {
 				...(this.apiKey ? {'X-Access-Token': this.apiKey} : {}),
 				...(data ? {'Content-Type': 'application/json'} :  {}),

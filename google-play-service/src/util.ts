@@ -15,7 +15,7 @@ export const mapObjectKeysDeep = (val: any, transformFn: (key: string) => string
 	}
 };
 
-export const toSnailCase = (val: any): any => {
+export const toSnakeCase = (val: any): any => {
 	return mapObjectKeysDeep(val, key => snakeCase(key));
 };
 
