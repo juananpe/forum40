@@ -77,6 +77,7 @@ services:
             LANG: de
             COUNTRY: de
             MAX_REQUESTS_PER_SECOND: 10
+            REVIEW_MIN_DATE: '2021-02-02T15:08:15.547Z'
 
 volumes:
     db_data:

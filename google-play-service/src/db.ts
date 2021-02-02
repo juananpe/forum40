@@ -49,6 +49,10 @@ export class DbApi {
 
 	// Authentication
 
+	isAuthenticated = (): boolean => {
+		return this.apiKey !== null;
+	}
+
 	register = async (username: string, password: string) => {
 		const response = await this.post<AuthResponseData>('/auth/register', {username, password});
 		this.handleAuthResponse(response);
