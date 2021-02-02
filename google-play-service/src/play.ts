@@ -3,21 +3,24 @@ import * as config from "./config";
 
 export import Collection = gplay.collection;
 
+const baseOpts = {
+	lang: config.LANG,
+	country: config.COUNTRY,
+	throttle: config.THROTTLE || undefined,
+}
 
 export function fetchCollection(collection: Collection, num: number) {
 	return gplay.list({
+		...baseOpts,
 		collection,
 		num,
-		lang: config.LANG,
-		country: config.COUNTRY,
 	});
 }
 
 export function fetchApp(appId: string) {
 	return gplay.app({
+		...baseOpts,
 		appId,
-		lang: config.LANG,
-		country: config.COUNTRY,
 	});
 };
 
@@ -25,12 +28,11 @@ export async function* fetchReviews(appId: string, since?: Date) {
 	let paginationToken = null;
 	while (true) {
 		const {data, nextPaginationToken} = await gplay.reviews({
+			...baseOpts,
 			appId,
 			sort: gplay.sort.NEWEST,
 			paginate: true,
 			nextPaginationToken: paginationToken || undefined,
-			lang: config.LANG,
-			country: config.COUNTRY,
 		}) as any as {data: gplay.IReviewsItem[], nextPaginationToken: string};
 		// ^ typings in google-play-scraper are outdated (as of 2021-02-01)
 		paginationToken = nextPaginationToken;

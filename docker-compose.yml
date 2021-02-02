@@ -76,6 +76,7 @@ services:
         environment:
             LANG: de
             COUNTRY: de
+            MAX_REQUESTS_PER_SECOND: 10
 
 volumes:
     db_data:
