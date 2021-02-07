@@ -23,6 +23,11 @@ source_parser = reqparse.RequestParser()
 source_parser.add_argument('name', required=True)
 source_parser.add_argument('domain', required=True)
 
+document_list_parser = reqparse.RequestParser()
+document_list_parser.add_argument('source_id', required=True, type=int)
+document_list_parser.add_argument('limit', type=int, default=50, required=True)
+document_list_parser.add_argument('skip', type=int, default=0, required=True)
+
 document_parser = reqparse.RequestParser()
 document_parser.add_argument('url', required=True)
 document_parser.add_argument('title', required=True)

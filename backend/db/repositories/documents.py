@@ -1,6 +1,6 @@
 import datetime
 
-from typing import TypedDict, Optional, Dict, Set
+from typing import TypedDict, Optional, Dict, Set, Iterator, Any
 
 from db.repositories.base import BaseRepository
 
@@ -38,6 +38,18 @@ class DocumentRepository(BaseRepository):
             'SELECT id FROM documents WHERE source_id = %s AND external_id = %s LIMIT 1',
             (source_id, external_id),
             default=None,
+        )
+
+    def find_all_by_source_id(
+            self,
+            source_id: int,
+            limit: int = 100,
+            skip: int = 0,
+            fields: Set[str] = base_document_fields
+    ) -> Iterator[Dict[str, Any]]:
+        return self._acc.fetch_all(
+            f'SELECT {", ".join(fields)} FROM documents WHERE source_id = %s LIMIT %s OFFSET %s',
+            (source_id, limit, skip)
         )
 
     def insert(self, document: NewDocument) -> int:
