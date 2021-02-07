@@ -36,6 +36,7 @@ document_parser.add_argument('timestamp', required=True)
 document_parser.add_argument('metadata', default="")
 document_parser.add_argument('source_id', required=True)
 document_parser.add_argument('external_id', required=True)
+document_parser.add_argument('category', required=True)
 
 comment_parser_post = reqparse.RequestParser()
 comment_parser_post.add_argument('doc_id', default=None)

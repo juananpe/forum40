@@ -13,6 +13,7 @@ class NewDocument(TypedDict):
     text: str
     timestamp: datetime.datetime
     metadata: str
+    category: str
 
 
 base_document_fields = frozenset({'id'})
@@ -54,8 +55,8 @@ class DocumentRepository(BaseRepository):
 
     def insert(self, document: NewDocument) -> int:
         return self._acc.fetch_value(
-            'INSERT INTO documents (source_id, external_id, url, title, text, timestamp, metadata) '
-            'VALUES (%(source_id)s, %(external_id)s, %(url)s, %(title)s, %(text)s, %(timestamp)s, %(metadata)s) '
+            'INSERT INTO documents (source_id, external_id, url, title, text, timestamp, category, metadata) '
+            'VALUES (%(source_id)s, %(external_id)s, %(url)s, %(title)s, %(text)s, %(timestamp)s, %(category)s, %(metadata)s) '
             'RETURNING id',
             document,
         )
