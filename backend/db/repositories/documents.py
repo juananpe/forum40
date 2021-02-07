@@ -13,7 +13,7 @@ class NewDocument(TypedDict):
     text: str
     timestamp: datetime.datetime
     metadata: str
-    category: str
+    category: Optional[str]
 
 
 base_document_fields = frozenset({'id'})
