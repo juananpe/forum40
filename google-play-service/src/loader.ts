@@ -1,5 +1,5 @@
 import * as config from "./config";
-import {connect, IDbApi} from "./db";
+import {BaseDocument, connect, IDbApi} from "./db";
 import { IScraper } from "./play";
 
 
@@ -51,12 +51,31 @@ const loadSource = async (api: IDbApi): Promise<SourceTrackingData | null> => {
 	if (!source) {
 		return null;
 	}
-	
+
+	const documents = await getAllSourceDocuments(api, source.id);
+	const tracked = documents.flatMap(doc => !doc.externalId ? [] : [{
+		documentId: doc.id,
+		appId: doc.externalId,
+	}]);
+
 	return {
 		sourceId: source.id,
-		tracked: [],  // TODO: Load all document external ids to find which apps are currently tracked in database
+		tracked,
 	};
 };
+
+const getAllSourceDocuments = async (api: IDbApi, sourceId: number): Promise<BaseDocument[]> => {
+	const pageSize = 100;
+	const documents: BaseDocument[] = []
+	for (let pageIndex = 0;; pageIndex += 1) {
+		const {data} = await api.getDocumentsBySourceId(sourceId, pageSize, pageIndex*pageSize);
+		documents.push(...data)
+
+		if (data.length < pageSize) {
+			return documents;
+		}
+	}
+}
 
 const initializeSource = async (play: IScraper, api: IDbApi): Promise<SourceTrackingData> => {
 	const {data: source} = await api.createSource({
@@ -141,5 +160,5 @@ const insertNewReviews = async (play: IScraper, api: IDbApi, appId: string, sour
 		insertedCount += 1;
 	}
 	
-	console.log(`Finished update of ${appId}. Inserted new ${insertedCount} reviews.`)
+	console.log(`Finished update of ${appId}. Inserted ${insertedCount} new reviews.`)
 }

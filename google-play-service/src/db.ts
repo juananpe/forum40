@@ -18,6 +18,7 @@ export interface IDbApi {
 	createComment: (comment: NewComment) => Promise<Response<CreateCommentResponseData>>;
 
 	// Documents
+	getDocumentsBySourceId: (sourceId: number, limit: number, skip: number) => Promise<Response<BaseDocument[]>>;
 	createDocument: (document: NewDocument) => Promise<Response<CreateDocumentResponseData>>;
 };
 
@@ -130,6 +131,10 @@ class DbApi implements IDbApi {
 
 	// Documents
 
+	getDocumentsBySourceId = (sourceId: number, limit: number, skip: number) => {
+		return this.get<BaseDocument[]>(`documents/?source_id=${sourceId}&limit=${limit}&skip=${skip}`);
+	}
+
 	createDocument = (document: NewDocument) => {
 		return this.post<CreateDocumentResponseData>('/documents/', document);
 	};
@@ -201,6 +206,17 @@ export interface NewDocument {
 	metadata?: string | null,
 	sourceId: number,
 	externalId: string,
+}
+
+export interface BaseDocument {
+	id: number,
+	sourceId: number,
+	externalId: string | null,
+	timestamp: string | null,
+	category: string | null,
+	url: string | null,
+	metadata: string | null,
+	title: string | null,
 }
 
 export interface CreateDocumentResponseData {

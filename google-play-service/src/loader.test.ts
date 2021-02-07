@@ -5,6 +5,7 @@ import {mocked} from "ts-jest/utils";
 import { update } from "./loader";
 import { asyncIterable } from "./util";
 import { collection } from "google-play-scraper";
+import { throws } from "assert";
 
 jest.mock('./db');
 jest.mock('./config', () => ({
@@ -56,7 +57,7 @@ test('should update on subsequent runs', async () => {
 		registered: true,
 		sourceExists: true,
 		documents: loaded.map(({app}) => app.appId),
-		comments: loaded.flatMap(({reviews}) => reviews.slice(0, nOldReviewsPerApp + nLoadedReviewsPerApp).map(review => review.id)),
+		comments: loaded.flatMap(({reviews}) => reviews.slice(nOldReviewsPerApp, nOldReviewsPerApp + nLoadedReviewsPerApp).map(review => review.id)),
 	}));
 
 	const mockScraper = new MockScraper(playMockData);
@@ -68,7 +69,7 @@ test('should update on subsequent runs', async () => {
 	expect(dbMock.register).not.toHaveBeenCalled();
 	expect(dbMock.createSource).not.toHaveBeenCalled();
 	expect((new Set(dbMock.state.documents)).size).toBe(loaded.length);
-	expect(dbMock.createComment).toHaveBeenCalledTimes(loaded.length * (nReviewsPerApp - nOldReviewsPerApp - nLoadedReviewsPerApp)); // only called with new comments
+	expect(dbMock.createComment).toHaveBeenCalledTimes(loaded.length * (nReviewsPerApp - nOldReviewsPerApp - nLoadedReviewsPerApp + 1)); // only called with new comments +1 to see collision
 	expect((new Set(dbMock.state.comments)).size).toBe(loaded.length * (nReviewsPerApp - nOldReviewsPerApp));
 });
 
@@ -199,6 +200,19 @@ class MockDbApi implements IDbApi {
 	});
 
 	// Documents
+	getDocumentsBySourceId = jest.fn((sourceId: number, limit: number, skip: number) => Promise.resolve({
+		status: 200,
+		data: this.state.documents.slice(skip, skip+limit).map((externalId, index) => ({
+			id: index,
+			externalId,
+			sourceId: 1,
+			url: null,
+			title: null,
+			timestamp: null,
+			category: null,
+			metadata: null,
+		}))
+	}))
 	createDocument = jest.fn(({externalId}) => this.insert(this.state.documents, {externalId}));
 
 	// Comments
