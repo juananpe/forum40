@@ -5,6 +5,7 @@ export const COUNTRY = process.env['COUNTRY'] || 'us';
 export const THROTTLE = process.env['MAX_REQUESTS_PER_SECOND'] ? parseInt(process.env['MAX_REQUESTS_PER_SECOND']) : null;
 export const API_BASE_URL = 'http://backend/api';
 export const AUTH_REFRESH_INTERVAL = 5 * 60 * 1000;
+export const UPDATE_INTERVAL = process.env['UPDATE_INTERVAL'] ? parseInt(process.env['UPDATE_INTERVAL']) : 3 * 60 * 60 * 1000;
 export const USER_NAME = 'google-play-service';
 export const USER_PASSWORD = 'abc';  // TODO: Docker secrets
 export const SOURCE_NAME = 'Google Play';

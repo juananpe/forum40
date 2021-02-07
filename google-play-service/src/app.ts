@@ -3,14 +3,18 @@ import * as config from "./config";
 import { Scraper } from "./play";
 
 const main = async () => {
-	const play = new Scraper({
+	const scraper = new Scraper({
 		lang: config.LANG,
 		country: config.COUNTRY,
 		throttle: config.THROTTLE || undefined,
-	})
+	});
 
-	await update(play);
-	console.log('done');
+	update(scraper);
+
+	setInterval(
+		() => update(scraper),
+		config.UPDATE_INTERVAL,
+	);
 }
 
 main();
