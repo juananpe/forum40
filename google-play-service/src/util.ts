@@ -23,3 +23,8 @@ export const toCamelCase = (val: any): any => {
 	return mapObjectKeysDeep(val, key => camelCase(key));
 };
 
+
+export async function* asyncIterable<T>(items: T[]) {
+	yield* items;
+}
+

@@ -1,28 +1,28 @@
 import * as config from "./config";
-import { DbApi } from "./db";
-import * as play from "./play";
+import {connect, IDbApi} from "./db";
+import { IScraper } from "./play";
 
 
-export const update = async () => {
+export const update = async (play: IScraper) => {
 	console.log('Updating reviews from Google Play Store')
 	if (config.REVIEW_MIN_DATE !== null) {
 		console.log(`Will not load reviews written before ${config.REVIEW_MIN_DATE.toUTCString()}`)
 	}
 
-	const api = new DbApi()
+	const api = connect()
 	await loginOrRegister(api);
-	const {sourceId, tracked} = await loadOrInitializeSource(api);
+	const {sourceId, tracked} = await loadOrInitializeSource(play, api);
 
 	console.log(`Updating reviews for ${tracked.length} apps`)
 	for (const {appId, documentId} of tracked) {
-		await insertNewReviews(api, appId, sourceId, documentId);
+		await insertNewReviews(play, api, appId, sourceId, documentId);
 	}
 };
 
 
 // Authentication
 
-const loginOrRegister = async (api: DbApi) => {
+const loginOrRegister = async (api: IDbApi) => {
 	await api.login(config.USER_NAME, config.USER_PASSWORD);
 	if (api.isAuthenticated()) {
 		return;
@@ -37,16 +37,16 @@ const loginOrRegister = async (api: DbApi) => {
 
 // Source and documents
 
-const loadOrInitializeSource = async (api: DbApi): Promise<SourceTrackingData> => {
+const loadOrInitializeSource = async (play: IScraper, api: IDbApi): Promise<SourceTrackingData> => {
 	const loadedSource = await loadSource(api);
 	if (loadedSource) {
 		return loadedSource;
 	}
 
-	return initializeSource(api);
+	return initializeSource(play, api);
 };
 
-const loadSource = async (api: DbApi): Promise<SourceTrackingData | null> => {
+const loadSource = async (api: IDbApi): Promise<SourceTrackingData | null> => {
 	const {data: source} = await api.getSourceByName(config.SOURCE_NAME);
 	if (!source) {
 		return null;
@@ -58,12 +58,12 @@ const loadSource = async (api: DbApi): Promise<SourceTrackingData | null> => {
 	};
 };
 
-const initializeSource = async (api: DbApi): Promise<SourceTrackingData> => {
+const initializeSource = async (play: IScraper, api: IDbApi): Promise<SourceTrackingData> => {
 	const {data: source} = await api.createSource({
 		name: config.SOURCE_NAME,
 		domain: config.SOURCE_DOMAIN,
 	});
-	const tracked = await insertAppsFromTrackedCollections(api, source.id);
+	const tracked = await insertAppsFromTrackedCollections(play, api, source.id);
 
 	return {
 		sourceId: source.id,
@@ -71,11 +71,11 @@ const initializeSource = async (api: DbApi): Promise<SourceTrackingData> => {
 	}
 }
 
-const insertAppsFromTrackedCollections = async (api: DbApi, sourceId: number): Promise<TrackItem[]> => {
+const insertAppsFromTrackedCollections = async (play: IScraper, api: IDbApi, sourceId: number): Promise<TrackItem[]> => {
 	const tracked: TrackItem[] = [];
 	for (const {collection, num} of config.TRACKED_COLLECTIONS) {
 		const apps = await play.fetchCollection(collection, num);
-		console.log(`Will track ${apps.length} apps from collection ${apps}`, apps.map(app => app.appId));
+		console.log(`Will track ${apps.length} apps from collection ${collection}:`, apps.map(app => app.appId));
 		for (const baseApp of apps) {
 			const {appId, url, title, description, updated, ...metadata} = await play.fetchApp(baseApp.appId);
 
@@ -113,7 +113,7 @@ interface TrackItem {
 
 // Reviews
 
-const insertNewReviews = async (api: DbApi, appId: string, sourceId: number, documentId: number) => {
+const insertNewReviews = async (play: IScraper, api: IDbApi, appId: string, sourceId: number, documentId: number) => {
 	console.log(`Updating reviews for ${appId}`);
 
 	let insertedCount = 0;

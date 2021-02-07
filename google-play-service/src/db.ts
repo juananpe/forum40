@@ -3,9 +3,32 @@ import * as config from "./config";
 import { toCamelCase, toSnakeCase } from "./util";
 
 
-export class DbApi {
-	apiKey: string | null;
-	authRefreshTimeoutId: NodeJS.Timeout | null;
+export interface IDbApi {
+	// Authentication
+	isAuthenticated: () => boolean;
+	login: (username: string, password: string) => Promise<Response<AuthResponseData | null>>;
+	register: (username: string, password: string) => Promise<Response<AuthResponseData>>;
+	refreshToken: () => void;
+
+	// Sources
+	getSourceByName: (name: string) => Promise<Response<Source | null>>
+	createSource: (source: NewSource) => Promise<Response<CreateSourceResponseData>>;
+
+	// Comments
+	createComment: (comment: NewComment) => Promise<Response<CreateCommentResponseData>>;
+
+	// Documents
+	createDocument: (document: NewDocument) => Promise<Response<CreateDocumentResponseData>>;
+};
+
+export const connect = (): IDbApi => {
+	return new DbApi();
+}
+
+
+class DbApi implements IDbApi {
+	private apiKey: string | null;
+	private authRefreshTimeoutId: NodeJS.Timeout | null;
 
 	constructor() {
 		this.apiKey = null;
@@ -15,15 +38,15 @@ export class DbApi {
 
 	// Basic communication
 
-	protected get = <T>(path: string): Promise<Response<T>> => {
+	private get = <T>(path: string): Promise<Response<T>> => {
 		return this.call(path);
 	};
 
-	protected post = <T>(path: string, data?: any): Promise<Response<T>> => {
+	private post = <T>(path: string, data?: any): Promise<Response<T>> => {
 		return this.call(path, 'POST', data);
 	};
 
-	protected call = async <T>(path: string, method: string = 'GET', data?: any): Promise<Response<T>> => {
+	private call = async <T>(path: string, method: string = 'GET', data?: any): Promise<Response<T>> => {
 		const url = `${config.API_BASE_URL}/db${path}`;
 
 		const res = await fetch(url, {
@@ -71,7 +94,7 @@ export class DbApi {
 		return response;
 	}
 
-	protected handleAuthResponse = (response: Response<AuthResponseData>) => {
+	private handleAuthResponse = (response: Response<AuthResponseData>) => {
 		if (this.authRefreshTimeoutId) {
 			clearTimeout(this.authRefreshTimeoutId);
 			this.authRefreshTimeoutId = null;
@@ -158,7 +181,7 @@ export interface NewComment {
 	text: string,
 	embedding?: string | null,
 	timestamp?: string | null,
-	externalId?: string | null,
+	externalId: string, // TODO: Make required in backend
 };
 
 export interface CreateCommentResponseData {

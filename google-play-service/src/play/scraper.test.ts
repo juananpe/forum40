@@ -1,5 +1,5 @@
 import {mocked} from 'ts-jest/utils';
-import {fetchReviews} from './scraper';
+import {IScraper, Scraper} from './scraper';
 import * as gplay from 'google-play-scraper';
 jest.mock('google-play-scraper');
 
@@ -34,16 +34,18 @@ describe('fetch reviews', () => {
 	});
 
 	test('should return all reviews', async () => {
+		const play = makeScraper();
 		let index = 0;
-		for await (const review of fetchReviews('com.jest.example')) {
+		for await (const review of play.fetchReviews('com.jest.example')) {
 			expect(review).toBe(reviews[index]);
 			index += 1
 		};
 	});
 
 	test('should only fetch required pages', async () => {
+		const play = makeScraper();
 		let index = 0;
-		for await (const review of fetchReviews('com.jest.example')) {
+		for await (const review of play.fetchReviews('com.jest.example')) {
 			if (index === 60) {
 				break;
 			}
@@ -54,3 +56,10 @@ describe('fetch reviews', () => {
 	});
 })
 
+
+const makeScraper = (): IScraper => {
+	return new Scraper({
+		lang: 'en',
+		country: 'us',
+	});
+}
