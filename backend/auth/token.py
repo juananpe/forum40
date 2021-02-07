@@ -17,10 +17,6 @@ class TokenData(TypedDict):
     exp: datetime.datetime
 
 
-def return_error_msg(msg):
-    return {'message': msg}, HTTPStatus.UNAUTHORIZED
-
-
 def check_if_token_exists(token):
     return token is not None
 
@@ -62,7 +58,7 @@ def check_source_id(wrapped, instance, args, kwargs):
     if source_id:
         token = request.headers['x-access-token'] if 'x-access-token' in request.headers else None
         if not check_source_id_access(source_id, token):
-            return return_error_msg('Cannot access source_id.')
+            return '', HTTPStatus.FORBIDDEN
     return wrapped(*args, **kwargs)
 
 
@@ -71,11 +67,11 @@ def token_required(wrapped, instance, args, kwargs):
     token = request.headers['x-access-token'] if 'x-access-token' in request.headers else None
 
     if not check_if_token_exists(token):
-        return return_error_msg('Token is missing.')
+        return '', HTTPStatus.FORBIDDEN
 
     success, data = check_if_token_is_valid_and_get_data(token)
     if not success:
-        return return_error_msg('Token is invalid.')
+        return '', HTTPStatus.UNAUTHORIZED
 
     return wrapped(data, *args, **kwargs)
 
