@@ -82,7 +82,7 @@ class DbApi implements IDbApi {
 	}
 
 	register = async (username: string, password: string) => {
-		const response = await this.post<AuthResponseData>('/auth/register', {username, password});
+		const response = await this.post<AuthResponseData>('/auth/register/', {name: username, password});
 		this.handleAuthResponse(response);
 		return response;
 	};
