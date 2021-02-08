@@ -78,6 +78,11 @@ services:
             COUNTRY: de
             MAX_REQUESTS_PER_SECOND: 10
             REVIEW_MIN_DATE: '2021-02-02T15:08:15.547Z'
+        depends_on:
+            - secrets
+            - backend
+        secrets:
+            - google_play_user_password
 
 volumes:
     db_data:
@@ -89,3 +94,5 @@ secrets:
         file: ./secrets/store/jwt_key
     db_password:
         file: ./secrets/store/db_password.txt
+    google_play_user_password:
+        file: ./secrets/store/google_play_user_password.txt
