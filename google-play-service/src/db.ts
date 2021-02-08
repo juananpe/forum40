@@ -20,6 +20,10 @@ export interface IDbApi {
 	// Documents
 	getDocumentsBySourceId: (sourceId: number, limit: number, skip: number) => Promise<Response<BaseDocument[]>>;
 	createDocument: (document: NewDocument) => Promise<Response<CreateDocumentResponseData>>;
+
+	// Embeddings
+	embed: (sourceId: number) => Promise<Response<null>>;
+	index: (sourceId: number) => Promise<Response<null>>;
 };
 
 export const connect = (): IDbApi => {
@@ -132,12 +136,23 @@ class DbApi implements IDbApi {
 	// Documents
 
 	getDocumentsBySourceId = (sourceId: number, limit: number, skip: number) => {
-		return this.get<BaseDocument[]>(`documents/?source_id=${sourceId}&limit=${limit}&skip=${skip}`);
+		return this.get<BaseDocument[]>(`/documents/?source_id=${sourceId}&limit=${limit}&skip=${skip}`);
 	}
 
 	createDocument = (document: NewDocument) => {
 		return this.post<CreateDocumentResponseData>('/documents/', document);
 	};
+
+
+	// Embeddings
+
+	embed = (sourceId: number) => {
+		return this.post<null>(`/embeddings/source/${sourceId}/embed`);
+	}
+
+	index = (sourceId: number) => {
+		return this.post<null>(`/embeddings/source/${sourceId}/index`);
+	}
 };
 
 

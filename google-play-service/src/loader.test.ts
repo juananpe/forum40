@@ -45,6 +45,9 @@ test('should initialize on first start', async () => {
 	expect(dbMock.createSource).toHaveBeenCalled();
 	expect((new Set(dbMock.state.documents)).size).toBe(3);
 	expect((new Set(dbMock.state.comments)).size).toBe(3 * (nReviewsPerApp - nOldReviewsPerApp));
+	
+	expect(dbMock.embed).toHaveBeenCalled();
+	expect(dbMock.index).toHaveBeenCalled();
 });
 
 
@@ -71,6 +74,9 @@ test('should update on subsequent runs', async () => {
 	expect((new Set(dbMock.state.documents)).size).toBe(loaded.length);
 	expect(dbMock.createComment).toHaveBeenCalledTimes(loaded.length * (nReviewsPerApp - nOldReviewsPerApp - nLoadedReviewsPerApp + 1)); // only called with new comments +1 to see collision
 	expect((new Set(dbMock.state.comments)).size).toBe(loaded.length * (nReviewsPerApp - nOldReviewsPerApp));
+
+	expect(dbMock.embed).toHaveBeenCalled();
+	expect(dbMock.index).toHaveBeenCalled();
 });
 
 
@@ -217,6 +223,16 @@ class MockDbApi implements IDbApi {
 
 	// Comments
 	createComment = jest.fn(({externalId}) => this.insert(this.state.comments, {externalId, sourceId: 2}));
+
+	// Embeddings
+	embed = jest.fn(() => Promise.resolve({
+		status: 204,
+		data: null,
+	}))
+	index = jest.fn(() => Promise.resolve({
+		status: 204,
+		data: null,
+	}))
 
 	// Utils
 	insert = <T extends {externalId: string}>(list: string[], obj: T) => {

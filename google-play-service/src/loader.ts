@@ -17,6 +17,10 @@ export const update = async (play: IScraper) => {
 	for (const {appId, documentId} of tracked) {
 		await insertNewReviews(play, api, appId, sourceId, documentId);
 	}
+
+	console.log('Triggering embedding and reindexing')
+	await api.embed(sourceId);
+	await api.index(sourceId);
 };
 
 
