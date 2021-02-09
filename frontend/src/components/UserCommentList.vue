@@ -133,10 +133,11 @@ export default {
   computed: {
     ...mapState([State.labels, State.selectedCategory]),
     ...mapGetters([
+      Getters.selectedLabelIds,
       Getters.keywordfilter,
       Getters.selectedLabels,
       Getters.jwtLoggedIn,
-      Getters.getSelectedSource
+      Getters.getSelectedSource,
     ]),
     loggedIn() {
       return this[Getters.jwtLoggedIn];
@@ -251,10 +252,10 @@ export default {
     async fetchComments() {
       const { data } = await Service.getComments(this[Getters.getSelectedSource].id, {
         labelIds: this[Getters.selectedLabelIds],
-        keywords: this[Getters.keywordfilter].split(' '),
+        keywords: this[Getters.keywordfilter].split(' ').filter(kw => kw.length >= 1),
         limit: this.rowsPerPage,
         skip: (this.page - 1) * this.rowsPerPage,
-        sort: this.label_sort_id,
+        labelSortId: this.label_sort_id,
         order: this.label_sort_id ? this.order : null,
         category: this[State.selectedCategory] || null,
       })

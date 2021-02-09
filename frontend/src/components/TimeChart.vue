@@ -146,12 +146,11 @@ export default {
     getLabelTimeHistogram: function (labelId) {
       const granularity = { y: 'year', m: 'month', d: 'day' }[this[Getters.timeFrequency]];
       
-      return Service.getTimeHistogram(
-        this[Getters.getSelectedSource].id,
+      return Service.getTimeHistogram(this[Getters.getSelectedSource].id, {
         labelId,
         granularity,
-        this[Getters.keywordfilter],
-      );
+        keywords: this[Getters.keywordfilter].split(' ').filter(kw => kw.length > 0),
+      });
     },
     removeAllLabels: function() {
       this.local_chart_state = [];

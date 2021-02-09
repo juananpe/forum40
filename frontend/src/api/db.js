@@ -62,7 +62,7 @@ const service = {
     getParentComments: (commentId) =>
         client.get(`/db/comments/parent_recursive/${commentId}`),
 
-    getTimeHistogram: (sourceId, labelId, granularity, keywords) =>
+    getTimeHistogram: (sourceId, {labelId, granularity, keywords}) =>
         client.get(`/db/comments/time_histogram`, {
             params: {
                 source_id: sourceId,
