@@ -16,8 +16,6 @@
 </template>
 
 <script>
-import { Getters } from "../../store/const";
-import { mapGetters } from "vuex";
 import Service, { Endpoint } from "../../api/db";
 import UserComment from './UserComment';
 
@@ -26,9 +24,6 @@ export default {
     UserComment
   },
   props: ['comment'],
-  computed: {
-    ...mapGetters([Getters.jwt])
-  },
   data() {
     return {
       threadComments: null,
@@ -40,8 +35,7 @@ export default {
       async handler(comment) {
         this.threadComments = null;
         const { data } = await Service.get(
-          Endpoint.COMMENTS_PARENTS(this.comment.id),
-          this[Getters.jwt],
+          Endpoint.COMMENTS_PARENTS(this.comment.id)
         );
         this.threadComments = data.comments;
       },

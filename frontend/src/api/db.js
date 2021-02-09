@@ -1,4 +1,6 @@
 import axios from "axios";
+import store from "../store";
+import { Getters } from "../store/const";
 
 export const API_URL = process.env.VUE_APP_ROOT_API
 
@@ -24,29 +26,34 @@ export const Endpoint = {
     CATEGORIES: (labelId) => `db/documents/categories/${labelId}`
 }
 
+const client = axios.create({
+    baseURL: process.env.VUE_APP_ROOT_API
+});
+
+client.interceptors.request.use(config => {
+    const jwt = store.getters[Getters.jwt];
+
+    return {
+        ...config,
+        headers: {
+            ...(jwt ? {'X-Access-Token': jwt} : {}),
+            ...(config.headers || {}),
+        }
+    }
+});
+
 class Service {
-
-    static async get(path, jwt) {
-        if (jwt)
-            return await axios.get(`${API_URL}${path}`, { headers: { "x-access-token": `${jwt}` } });
-        else
-            return await axios.get(`${API_URL}${path}`);
+    static get(path) {
+        return client.get(path);
     }
 
-    static async post(path, payload, jwt) {
-        if (jwt)
-            return await axios.post(`${API_URL}${path}`, payload, { headers: { "x-access-token": `${jwt}` } });
-        else
-            return await axios.post(`${API_URL}${path}`, payload);
+    static async post(path, payload) {
+        return client.post(path, payload);
     }
 
-    static async put(path, payload, jwt) {
-        if (jwt)
-            return await axios.put(`${API_URL}${path}`, payload, { headers: { "x-access-token": `${jwt}` } });
-        else
-            return await axios.put(`${API_URL}${path}`, payload);
+    static async put(path, payload) {
+        return client.put(path, payload);
     }
-
 }
 
 export default Service;

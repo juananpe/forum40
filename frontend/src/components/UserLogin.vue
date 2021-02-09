@@ -88,7 +88,7 @@ export default {
     };
   },
   computed: {
-    ...mapGetters([Getters.jwt, Getters.jwtUser, Getters.jwtLoggedIn])
+    ...mapGetters([Getters.jwtUser, Getters.jwtLoggedIn])
   },
   methods: {
     ...mapActions([Actions.login, Actions.logout]),
@@ -104,8 +104,7 @@ export default {
     },
     async checkLogin() {
       const { data } = await Service.get(
-        Endpoint.TEST_LOGIN,
-        this[Getters.jwt]
+        Endpoint.TEST_LOGIN
       );
       if (data.ok === this[Getters.jwtUser]) {
         this.testalert = true;

@@ -24,8 +24,8 @@ export default {
         // TODO: Stop refresh token requests
         commit(Mutations.setJWT, '');
     },
-    [Actions.refreshToken]: async function ({ commit, state }) {
-        const { data } = await Service.get(Endpoint.REFRESH_TOKEN, state.currentJWT);
+    [Actions.refreshToken]: async function ({ commit }) {
+        const { data } = await Service.get(Endpoint.REFRESH_TOKEN);
         if (data.token) {
             commit(Mutations.setJWT, data.token);
             return true;

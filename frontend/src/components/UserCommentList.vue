@@ -137,7 +137,6 @@ export default {
       Getters.selectedLabels,
       Getters.labelParameters,
       Getters.jwtUser,
-      Getters.jwt,
       Getters.jwtLoggedIn,
       Getters.getSelectedSource
     ]),
@@ -293,8 +292,7 @@ export default {
     },
     async fetchComments() {
       const { data } = await Service.get(
-        `${Endpoint.COMMENTS}?${this.pageQueryString}`,
-        this[Getters.jwt]
+        `${Endpoint.COMMENTS}?${this.pageQueryString}`
       );
       this.comments = data;
     },

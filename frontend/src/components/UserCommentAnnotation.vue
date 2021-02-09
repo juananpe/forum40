@@ -116,9 +116,7 @@ export default {
             this.commentId,
             this.labelId,
             +value
-          ),
-          {},
-          this[Getters.jwt]
+          )
         );
         const { annotations } = data;
         const label_name = this[Getters.getLabelname](this.labelId);
@@ -134,7 +132,7 @@ export default {
     }
   },
   computed: {
-    ...mapGetters([Getters.jwt, Getters.jwtLoggedIn, Getters.getLabelname]),
+    ...mapGetters([Getters.jwtLoggedIn, Getters.getLabelname]),
     loggedIn() {
       return this[Getters.jwtLoggedIn];
     },

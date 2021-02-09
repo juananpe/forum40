@@ -101,8 +101,7 @@ export default {
       Mutations.setSources
     ]),
     async fetchSources() {
-      const token = this[Getters.jwt];
-      const { data } = await Service.get(Endpoint.SOURCES, token);
+      const { data } = await Service.get(Endpoint.SOURCES);
       if (data.length > 0) {
         this[Mutations.setSources](data);
         this[Mutations.setSource](data[0].name);
@@ -131,8 +130,7 @@ export default {
           Endpoint.ADD_LABEL(this.newLabel, this[Getters.getSelectedSource].id),
           {
             "description": this.newSeed,
-          },
-          this[Getters.jwt]
+          }
         );
         this.fetchLabels();
         this.success = true;
@@ -157,7 +155,6 @@ export default {
   computed: {
     ...mapState([State.sources, State.source, State.labels]),
     ...mapGetters([
-      Getters.jwt,
       Getters.selectedLabels,
       Getters.jwtLoggedIn,
       Getters.getSelectedSource
