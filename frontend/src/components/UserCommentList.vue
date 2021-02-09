@@ -92,7 +92,7 @@
 </template>
 
 <script>
-import Service, { Endpoint } from "../api/db";
+import Service from "../api/db";
 import { State, Getters, Mutations } from "../store/const";
 import { mapState, mapGetters, mapMutations } from "vuex";
 import moment from "moment";
@@ -135,9 +135,6 @@ export default {
     ...mapGetters([
       Getters.keywordfilter,
       Getters.selectedLabels,
-      Getters.labelParameters,
-      Getters.jwtUser,
-      Getters.jwt,
       Getters.jwtLoggedIn,
       Getters.getSelectedSource
     ]),
@@ -170,46 +167,6 @@ export default {
         })),
       ]
     },
-    pageQueryString() {
-      const parameters = [];
-
-      // add source
-      const selectedSource = this[Getters.getSelectedSource];
-      if (selectedSource) parameters.push(`source_id=${selectedSource.id}`);
-
-      // add labels
-      const labelParameters = this[Getters.labelParameters];
-      if (labelParameters) parameters.push(labelParameters);
-
-      // add keyword
-      if (this.enteredKeyword) {
-        const keywords = this.enteredKeyword.split(" ");
-        keywords.forEach(kw => parameters.push(`keyword=${kw}`));
-      }
-
-      // add skip
-      const skip = (this.page - 1) * this.rowsPerPage;
-      parameters.push(`skip=${skip}`);
-
-      // add limit
-      parameters.push(`limit=${this.rowsPerPage}`);
-
-      // add sorting
-      if (this.label_sort_id) {
-        parameters.push(`order=${this.order}`);
-        parameters.push(`label_sort_id=${this.label_sort_id}`);
-      }
-
-      //add category
-      const category = this[State.selectedCategory];
-      if(category) {
-        parameters.push(`category=${category}`)
-      }
-
-      const queryString = parameters.join("&");
-
-      return queryString;
-    }
   },
   async mounted() {
     EventBus.$on(Events.loggedIn, this.fetchComments);
@@ -292,10 +249,16 @@ export default {
       return words;
     },
     async fetchComments() {
-      const { data } = await Service.get(
-        `${Endpoint.COMMENTS}?${this.pageQueryString}`,
-        this[Getters.jwt]
-      );
+      const { data } = await Service.getComments(this[Getters.getSelectedSource].id, {
+        labelIds: this[Getters.selectedLabelIds],
+        keywords: this[Getters.keywordfilter].split(' '),
+        limit: this.rowsPerPage,
+        skip: (this.page - 1) * this.rowsPerPage,
+        sort: this.label_sort_id,
+        order: this.label_sort_id ? this.order : null,
+        category: this[State.selectedCategory] || null,
+      })
+
       this.comments = data;
     },
     sortClickListener({ header }) {

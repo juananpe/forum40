@@ -1,52 +1,90 @@
 import axios from "axios";
+import store from "../store";
+import { Getters } from "../store/const";
+import Qs from "qs";
 
-export const API_URL = process.env.VUE_APP_ROOT_API
 
-export const Endpoint = {
-    LABELS: (source_id) => `db/labels/${source_id}`,
-    ADD_LABEL: (name, source_id) => `db/labels/binary/${name}/${source_id}`,
-    COMMENTS: 'db/comments/',
-    COMMENT_ID: (comment_id, labels) => `db/comments/${comment_id}?${labels}`,
-    COMMENT_DOCUMENT: (comment_id) => `db/comments/${comment_id}/document`,
-    COMMENTS_TIME_HISTOGRAM: "db/comments/time_histogram",
-    SOURCES: "db/sources/",
-    ADD_ANNOTATION_TO_COMMENT: (comment_id, label_id, label) => `db/annotations/${comment_id}/${label_id}/${label}`,
-    COMMENTS_COUNT: 'db/comments/count',
-    COMMENTS_PARENTS: (commentId) => `db/comments/parent_recursive/${commentId}`,
-    COMMENTS_SIMILAR: (commentId) => `similarity/embeddings/comments/${commentId}/similar`,
-    TIMESERIES: 'db/comments/timeseries',
-    TIMESERIES_MULTI: 'db/comments/timeseries_multi',
-    TEST_LOGIN: 'db/auth/test',
-    REFRESH_TOKEN: 'db/auth/refreshToken',
-    LOGIN: (username, password) => `db/auth/login/${username}/${password}`,
-    LOGOUT: 'db/auth/logout',
-    MODELS: (labelId) => `db/models/${labelId}`,
-    CATEGORIES: (labelId) => `db/documents/categories/${labelId}`
+const client = axios.create({
+    baseURL: process.env.VUE_APP_ROOT_API,
+    paramsSerializer: (params) => 
+        Qs.stringify(params, {
+            arrayFormat: 'repeat',
+            skipNulls: true,
+        }),
+});
+
+client.interceptors.request.use(config => {
+    const jwt = store.getters[Getters.jwt];
+
+    return {
+        ...config,
+        headers: {
+            ...(jwt ? {'X-Access-Token': jwt} : {}),
+            ...(config.headers || {}),
+        }
+    }
+});
+
+const service = {
+    login: (username, password) =>
+        client.get(`/db/auth/login/${username}/${password}`),
+
+    refreshToken: () =>
+        client.get(`/db/auth/refreshToken`),
+
+    testLogin: () =>
+        client.get(`/db/auth/test`),
+
+    getModels: (labelId) =>
+        client.get(`/db/models/${labelId}`),
+
+    getCommentDocument: (commentId) =>
+        client.get(`/db/comments/${commentId}/document`),
+
+    getSources: () =>
+        client.get(`/db/sources/`),
+
+    getLabels: (sourceId) =>
+        client.get(`/db/labels/${sourceId}`),
+
+    createLabel: (sourceId, name, description) =>
+        client.put(`/db/labels/binary/${name}/${sourceId}`, {description}),
+
+    getCategories: (labelId) =>
+        client.get(`/db/documents/categories/${labelId}`),
+
+    annotateComment: (commentId, labelId, label) => 
+        client.put(`/db/annotations/${commentId}/${labelId}/${Number(label)}`),
+    
+    getSimilarComments: (commentId) =>
+        client.get(`/similarity/embeddings/comments/${commentId}/similar`),
+
+    getParentComments: (commentId) =>
+        client.get(`/db/comments/parent_recursive/${commentId}`),
+
+    getTimeHistogram: (sourceId, labelId, granularity, keywords) =>
+        client.get(`/db/comments/time_histogram`, {
+            params: {
+                source_id: sourceId,
+                label: labelId,
+                granularity: granularity,
+                keyword: keywords,
+            }
+        }),
+    
+    getComments: (sourceId, {labelIds, keywords, skip, limit, labelSortId, order, category}) =>
+        client.get(`/db/comments/`, {
+            params: {
+                label: labelIds,
+                source_id: sourceId,
+                keyword: keywords,
+                skip: skip,
+                limit: limit,
+                order: order,
+                label_sort_id: labelSortId,
+                category: category,
+            }
+        }),
 }
 
-class Service {
-
-    static async get(path, jwt) {
-        if (jwt)
-            return await axios.get(`${API_URL}${path}`, { headers: { "x-access-token": `${jwt}` } });
-        else
-            return await axios.get(`${API_URL}${path}`);
-    }
-
-    static async post(path, payload, jwt) {
-        if (jwt)
-            return await axios.post(`${API_URL}${path}`, payload, { headers: { "x-access-token": `${jwt}` } });
-        else
-            return await axios.post(`${API_URL}${path}`, payload);
-    }
-
-    static async put(path, payload, jwt) {
-        if (jwt)
-            return await axios.put(`${API_URL}${path}`, payload, { headers: { "x-access-token": `${jwt}` } });
-        else
-            return await axios.put(`${API_URL}${path}`, payload);
-    }
-
-}
-
-export default Service;
+export default service;

@@ -14,15 +14,10 @@
 </template>
 
 <script>
-import { Getters } from "../../store/const";
-import { mapGetters } from "vuex";
-import Service, { Endpoint } from "../../api/db";
+import Service from "../../api/db";
 
 export default {
   props: ['comment'],
-  computed: {
-    ...mapGetters([Getters.jwt])
-  },
   data() {
     return {
       document: null,
@@ -73,10 +68,7 @@ export default {
       immediate: true,
       async handler(comment) {
         this.document = null;
-        const { data: doc } = await Service.get(
-          Endpoint.COMMENT_DOCUMENT(this.comment.id),
-          this[Getters.jwt],
-        );
+        const { data: doc } = await Service.getCommentDocument(this.comment.id);
         this.document = {
           ...doc,
           paragraphs: doc.paragraphs.map((par, i) => ({...par, index: i})),

@@ -17,7 +17,7 @@
 </style>
 
 <script>
-import Service, { Endpoint } from "../api/db";
+import Service from "../api/db";
 
 import { State, Getters } from "../store/const";
 import { mapState, mapGetters } from "vuex";
@@ -64,7 +64,7 @@ export default {
     },
     initChart: async function() {
       var source_id = this[Getters.getSelectedSource].id
-      var response = Service.get(Endpoint.LABELS(source_id));
+      var response = Service.getLabels(source_id);
       return response.then((value) => {
         value.data.labels.push(this.$i18n.t("time_chart.series_total"));
 
@@ -107,9 +107,7 @@ export default {
     resetChartToOrigin: async function() {
       this.removeAllLabels();
 
-      const { data } = await Service.get(
-        `${Endpoint.COMMENTS_TIME_HISTOGRAM}?granularity=${this.selectGranularity()}&source_id=${this[Getters.getSelectedSource].id}&${this.textFilterArg("?")}`
-      );
+      const { data } = await this.getLabelTimeHistogram(null);
 
       if (this[Getters.selectedLabels].length == 0) {
         this.addSeriesToChat(data, this.$i18n.t("time_chart.series_total"));
@@ -117,15 +115,10 @@ export default {
     },
     updateChart: async function() {
       var chart_options = this.chart_options;
-      var textFilterArg = this.textFilterArg;
       chart_options.series.forEach(async (x) => {
         if (chart_options.legend.selected[x.name]) {
-          const label_id = this[State.labels][x.name];
-          const { data } = label_id ?
-              await Service.get(`${Endpoint.COMMENTS_TIME_HISTOGRAM}?granularity=${this.selectGranularity()}&source_id=${this[Getters.getSelectedSource].id}&label=${label_id}${textFilterArg("&")}`)
-              :
-              await Service.get(`${Endpoint.COMMENTS_TIME_HISTOGRAM}?granularity=${this.selectGranularity()}&source_id=${this[Getters.getSelectedSource].id}&${textFilterArg("&")}`);
-
+          const labelId = this[State.labels][x.name];
+          const { data } = await this.getLabelTimeHistogram(labelId);
           chart_options.xAxis.data = data["time"];
           x.data = data.data;
         }
@@ -144,23 +137,21 @@ export default {
         var label = this[Getters.selectedLabels][
           this[Getters.selectedLabels].length - 1
         ];
-        const label_id = this[State.labels][label];
-        const { data } = await Service.get(
-          `${Endpoint.COMMENTS_TIME_HISTOGRAM}?granularity=${this.selectGranularity()}&source_id=${this[Getters.getSelectedSource].id}&label=${label_id}${this.textFilterArg("&")}`
-        );
+        const labelId = this[State.labels][label];
+        const { data } = await this.getLabelTimeHistogram(labelId);
         this.addSeriesToChat(data, label);
       }
       this.removeDisabledLabels();
     },
-    textFilterArg: function(prefix) {
-      if (this[Getters.keywordfilter]) {
-        return `${prefix}keyword=${this[Getters.keywordfilter]}`;
-      } else {
-        return "";
-      }
-    },
-    selectGranularity: function() {
-      return { y: 'year', m: 'month', d: 'day' }[this[Getters.timeFrequency]];
+    getLabelTimeHistogram: function (labelId) {
+      const granularity = { y: 'year', m: 'month', d: 'day' }[this[Getters.timeFrequency]];
+      
+      return Service.getTimeHistogram(
+        this[Getters.getSelectedSource].id,
+        labelId,
+        granularity,
+        this[Getters.keywordfilter],
+      );
     },
     removeAllLabels: function() {
       this.local_chart_state = [];

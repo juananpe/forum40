@@ -11,7 +11,6 @@
 <script>
 import { Getters, Mutations } from "../store/const";
 import { mapGetters, mapMutations } from "vuex";
-import Service, { Endpoint } from "../api/db";
 
 export default {
   methods: {
