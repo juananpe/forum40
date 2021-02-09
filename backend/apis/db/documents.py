@@ -1,10 +1,12 @@
 from http import HTTPStatus
 
 from flask_restplus import Resource, Namespace
+from typing import Optional
 
-from auth.token import token_required, TokenData
+from auth.token import token_required, token_optional, TokenData, allow_access_source_id
 from db import Database, with_database
-from db.db_models import document_parser
+from db.db_models import document_parser, document_list_parser
+from db.repositories.documents import document_fields
 
 ns = Namespace('documents', description="documents api")
 
@@ -27,7 +29,23 @@ class Categories(Resource):
 
 
 @ns.route('/')
-class DocumentsPost(Resource):
+class DocumentsRoot(Resource):
+    @token_optional
+    @with_database
+    @ns.expect(document_list_parser)
+    @ns.doc(security='apikey')
+    def get(self, db: Database, token_data: Optional[TokenData]):
+        args = document_list_parser.parse_args()
+        if not allow_access_source_id(args['source_id'], token_data):
+            return '', HTTPStatus.FORBIDDEN
+
+        return list(db.documents.find_all_by_source_id(
+            source_id=args['source_id'],
+            limit=args['limit'],
+            skip=args['skip'],
+            fields=document_fields(metadata=True) | {'title'},
+        ))
+
     @token_required
     @with_database
     @ns.expect(document_parser)

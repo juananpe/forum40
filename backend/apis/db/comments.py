@@ -136,7 +136,7 @@ class CommentsParentRec(Resource):
         if len(comments) == 0:
             return '', HTTPStatus.NOT_FOUND
         elif not allow_access_source_id(comments[0]['source_id'], token_data):
-            return '', HTTPStatus.UNAUTHORIZED
+            return '', HTTPStatus.FORBIDDEN
 
         return {
             "comments": list(reversed(comments)),
@@ -155,7 +155,7 @@ class Comment(Resource):
 
         comment = db.comments.find_by_id(comment_id, fields=comment_fields(content=True, metadata=True))
         if not allow_access_source_id(comment['source_id'], token_data):
-            return '', HTTPStatus.UNAUTHORIZED
+            return '', HTTPStatus.FORBIDDEN
 
         load_annotations(
             db=db,
@@ -176,7 +176,7 @@ class CommentArticle(Resource):
         comment = db.comments.find_by_id(comment_id, fields={'source_id', 'doc_id', 'title', 'text'})
         comment_full_text = concat(comment['title'], comment['text'])
         if not allow_access_source_id(comment['source_id'], token_data):
-            return '', HTTPStatus.UNAUTHORIZED
+            return '', HTTPStatus.FORBIDDEN
 
         doc = db.documents.find_by_id(comment['doc_id'], fields={'url', 'title', 'text'})
         paragraph_contents = doc.pop('text').split('\n')
