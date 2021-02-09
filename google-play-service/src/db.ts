@@ -220,6 +220,7 @@ export interface NewDocument {
 	timestamp: string,
 	metadata?: string | null,
 	sourceId: number,
+	category?: string | null,
 	externalId: string,
 }
 

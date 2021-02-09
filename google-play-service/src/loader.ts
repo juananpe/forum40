@@ -100,16 +100,16 @@ const insertAppsFromTrackedCollections = async (play: IScraper, api: IDbApi, sou
 		const apps = await play.fetchCollection(collection, num);
 		console.log(`Will track ${apps.length} apps from collection ${collection}:`, apps.map(app => app.appId));
 		for (const baseApp of apps) {
-			const {appId, url, title, description, updated, ...metadata} = await play.fetchApp(baseApp.appId);
+			const {appId, url, title, description, updated, genre, ...metadata} = await play.fetchApp(baseApp.appId);
 
 			const {data: document} = await api.createDocument({
-				// TODO: category, markup
 				url,
 				externalId: appId,
 				sourceId,
 				text: description,
 				title,
 				timestamp: new Date(updated).toISOString(),
+				category: genre,
 				metadata: JSON.stringify(metadata),
 			});
 			
