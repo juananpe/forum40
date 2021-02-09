@@ -38,7 +38,7 @@
 	import Vue from "vue";
 	import {mapGetters} from "vuex";
 	import {Getters} from "../../store/const";
-	import Service, {Endpoint} from "../../api/db";
+	import Service from "../../api/db";
 	import moment from "moment";
 	import MinimalLineChart from "./MinimalLineChart";
 	import ScoreBar from "./ScoreBar";
@@ -100,7 +100,7 @@
 		},
 		methods: {
 			async fetchLabelModels(labelId) {
-				const { data } = await Service.get(Endpoint.MODELS(labelId));
+				const { data } = await Service.getModels(labelId);
 				Vue.set(this.labelModels, labelId, data);
 			},
 			formatPercent(v) {

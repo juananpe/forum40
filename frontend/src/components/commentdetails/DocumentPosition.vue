@@ -14,7 +14,7 @@
 </template>
 
 <script>
-import Service, { Endpoint } from "../../api/db";
+import Service from "../../api/db";
 
 export default {
   props: ['comment'],
@@ -68,9 +68,7 @@ export default {
       immediate: true,
       async handler(comment) {
         this.document = null;
-        const { data: doc } = await Service.get(
-          Endpoint.COMMENT_DOCUMENT(this.comment.id)
-        );
+        const { data: doc } = await Service.getCommentDocument(this.comment.id);
         this.document = {
           ...doc,
           paragraphs: doc.paragraphs.map((par, i) => ({...par, index: i})),

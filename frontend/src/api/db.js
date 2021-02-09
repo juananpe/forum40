@@ -1,28 +1,16 @@
 import axios from "axios";
 import store from "../store";
 import { Getters } from "../store/const";
+import Qs from "qs";
 
-export const API_URL = process.env.VUE_APP_ROOT_API
-
-export const Endpoint = {
-    LABELS: (source_id) => `db/labels/${source_id}`,
-    ADD_LABEL: (name, source_id) => `db/labels/binary/${name}/${source_id}`,
-    COMMENTS: 'db/comments/',
-    COMMENT_DOCUMENT: (comment_id) => `db/comments/${comment_id}/document`,
-    COMMENTS_TIME_HISTOGRAM: "db/comments/time_histogram",
-    SOURCES: "db/sources/",
-    ADD_ANNOTATION_TO_COMMENT: (comment_id, label_id, label) => `db/annotations/${comment_id}/${label_id}/${label}`,
-    COMMENTS_PARENTS: (commentId) => `db/comments/parent_recursive/${commentId}`,
-    COMMENTS_SIMILAR: (commentId) => `similarity/embeddings/comments/${commentId}/similar`,
-    TEST_LOGIN: 'db/auth/test',
-    REFRESH_TOKEN: 'db/auth/refreshToken',
-    LOGIN: (username, password) => `db/auth/login/${username}/${password}`,
-    MODELS: (labelId) => `db/models/${labelId}`,
-    CATEGORIES: (labelId) => `db/documents/categories/${labelId}`
-}
 
 const client = axios.create({
-    baseURL: process.env.VUE_APP_ROOT_API
+    baseURL: process.env.VUE_APP_ROOT_API,
+    paramsSerializer: (params) => 
+        Qs.stringify(params, {
+            arrayFormat: 'repeat',
+            skipNulls: true,
+        }),
 });
 
 client.interceptors.request.use(config => {
@@ -37,18 +25,66 @@ client.interceptors.request.use(config => {
     }
 });
 
-class Service {
-    static get(path) {
-        return client.get(path);
-    }
+const service = {
+    login: (username, password) =>
+        client.get(`/db/auth/login/${username}/${password}`),
 
-    static async post(path, payload) {
-        return client.post(path, payload);
-    }
+    refreshToken: () =>
+        client.get(`/db/auth/refreshToken`),
 
-    static async put(path, payload) {
-        return client.put(path, payload);
-    }
+    testLogin: () =>
+        client.get(`/db/auth/test`),
+
+    getModels: (labelId) =>
+        client.get(`/db/models/${labelId}`),
+
+    getCommentDocument: (commentId) =>
+        client.get(`/db/comments/${commentId}/document`),
+
+    getSources: () =>
+        client.get(`/db/sources/`),
+
+    getLabels: (sourceId) =>
+        client.get(`/db/labels/${sourceId}`),
+
+    createLabel: (sourceId, name, description) =>
+        client.put(`/db/labels/binary/${name}/${sourceId}`, {description}),
+
+    getCategories: (labelId) =>
+        client.get(`/db/documents/categories/${labelId}`),
+
+    annotateComment: (commentId, labelId, label) => 
+        client.put(`/db/annotations/${commentId}/${labelId}/${Number(label)}`),
+    
+    getSimilarComments: (commentId) =>
+        client.get(`/similarity/embeddings/comments/${commentId}/similar`),
+
+    getParentComments: (commentId) =>
+        client.get(`/db/comments/parent_recursive/${commentId}`),
+
+    getTimeHistogram: (sourceId, labelId, granularity, keywords) =>
+        client.get(`/db/comments/time_histogram`, {
+            params: {
+                source_id: sourceId,
+                label: labelId,
+                granularity: granularity,
+                keyword: keywords,
+            }
+        }),
+    
+    getComments: (sourceId, {labelIds, keywords, skip, limit, labelSortId, order, category}) =>
+        client.get(`/db/comments/`, {
+            params: {
+                label: labelIds,
+                source_id: sourceId,
+                keyword: keywords,
+                skip: skip,
+                limit: limit,
+                order: order,
+                label_sort_id: labelSortId,
+                category: category,
+            }
+        }),
 }
 
-export default Service;
+export default service;

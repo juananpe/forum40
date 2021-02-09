@@ -19,7 +19,7 @@
 </template>
 
 <script>
-import Service, { Endpoint } from "../api/db";
+import Service from "../api/db";
 import { State, Getters, Mutations } from "../store/const";
 import { mapState, mapGetters, mapMutations } from "vuex";
 import ECharts from "vue-echarts";
@@ -58,7 +58,7 @@ export default {
       this[Mutations.setCategory](value);
     },
     fetchCategories(newSelectedId) {
-      Service.get(Endpoint.CATEGORIES(newSelectedId)).then(({ data }) => {
+      Service.getCategories(newSelectedId).then(({ data }) => {
         this.categories = data.names;
         this.pie.series[0].data = data.data.sort((a, b) => a.value > b.value);
       });

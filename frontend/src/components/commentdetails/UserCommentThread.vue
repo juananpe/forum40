@@ -16,7 +16,7 @@
 </template>
 
 <script>
-import Service, { Endpoint } from "../../api/db";
+import Service from "../../api/db";
 import UserComment from './UserComment';
 
 export default {
@@ -34,9 +34,7 @@ export default {
       immediate: true,
       async handler(comment) {
         this.threadComments = null;
-        const { data } = await Service.get(
-          Endpoint.COMMENTS_PARENTS(this.comment.id)
-        );
+        const { data } = await Service.getParentComments(this.comment.id);
         this.threadComments = data.comments;
       },
     },

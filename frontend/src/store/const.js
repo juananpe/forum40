@@ -19,7 +19,7 @@ export const Getters = {
     jwtUser: 'jwtUser',
     jwtExpiration: 'jwtExpiration',
     jwtLoggedIn: 'jwtLoggedIn',
-    labelParameters: 'labelParameters',
+    selectedLabelIds: 'selectedLabelIds',
     selectedLabels: 'selectedLabels',
     keywordfilter: 'keywordfilter',
     activeFilters: 'activeFilters',

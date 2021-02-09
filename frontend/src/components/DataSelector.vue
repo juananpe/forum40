@@ -80,7 +80,7 @@
 <script>
 import { State, Getters, Mutations } from "../store/const";
 import { mapState, mapGetters, mapMutations } from "vuex";
-import Service, { Endpoint } from "../api/db";
+import Service from "../api/db";
 import { EventBus, Events } from "../event-bus";
 
 export default {
@@ -101,7 +101,7 @@ export default {
       Mutations.setSources
     ]),
     async fetchSources() {
-      const { data } = await Service.get(Endpoint.SOURCES);
+      const { data } = await Service.getSources();
       if (data.length > 0) {
         this[Mutations.setSources](data);
         this[Mutations.setSource](data[0].name);
@@ -109,8 +109,8 @@ export default {
       }
     },
     async fetchLabels() {
-      const { data } = await Service.get(
-        Endpoint.LABELS(this[Getters.getSelectedSource].id)
+      const { data } = await Service.getLabels(
+        this[Getters.getSelectedSource].id
       );
       const labels = {};
       const labels_names = data.labels;
@@ -126,12 +126,7 @@ export default {
       if (this.selectedSource === undefined) return;
       this.dialog = false;
       try {
-        await Service.put(
-          Endpoint.ADD_LABEL(this.newLabel, this[Getters.getSelectedSource].id),
-          {
-            "description": this.newSeed,
-          }
-        );
+        await Service.createLabel(this[Getters.getSelectedSource].id, this.newLabel, this.newSeed);
         this.fetchLabels();
         this.success = true;
       } catch (error) {
