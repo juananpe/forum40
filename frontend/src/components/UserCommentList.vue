@@ -80,6 +80,13 @@
               :confidence="getConfidence(props.item.annotations, labels[label])"
             />
           </td>
+          <td class="text-center actionsCell">
+            <div class="actionsContainer">
+              <v-btn icon @click="toggleSimilar(props.item)">
+                <Similar />
+              </v-btn>
+            </div>
+          </td>
         </tr>
       </template>
       <template v-slot:expanded-item="{ item, headers }">
@@ -100,6 +107,7 @@ import { EventBus, Events } from "../event-bus";
 import UserCommentAnnotation from "./UserCommentAnnotation";
 import { mdiRobot } from "@mdi/js";
 import UserCommentDetails from './commentdetails/UserCommentDetails.vue';
+import Similar from './icons/Similar.vue';
 
 export default {
   name: "UserCommentList",
@@ -107,7 +115,7 @@ export default {
     return {
       enteredKeyword: "",
       headerPrefix: "header.",
-      comments: [],
+      pageComments: [],
       order: 2,
       label_sort_id: null,
       expanded: [],
@@ -120,7 +128,7 @@ export default {
       teaserTextLength: 200,
       page: 1,
       rowsPerPage: 25,
-      svgPath: mdiRobot
+      svgPath: mdiRobot,
     };
   },
   filters: {
@@ -141,6 +149,14 @@ export default {
     ]),
     loggedIn() {
       return this[Getters.jwtLoggedIn];
+    },
+    comments() {
+      const expandSimilar = (val) =>
+        Array.isArray(val)
+        ? val.flatMap(val => expandSimilar(val))
+        : [val, ...(val.similar || []).flatMap(expandSimilar)];
+      
+      return expandSimilar(this.pageComments);
     },
     commentsTableHeader() {
       return [
@@ -166,8 +182,15 @@ export default {
           width: "15%",
           labelColumn: true
         })),
+        {
+          text: this.$i18n.t("comment_list.headers.actions"),
+          align: "left",
+          sortable: false,
+          value: "actions",
+          width: "15%",
+        }
       ]
-    },
+    }
   },
   async mounted() {
     EventBus.$on(Events.loggedIn, this.fetchComments);
@@ -200,6 +223,17 @@ export default {
       this.page = 1;
       await this.fetchComments();
       this.loading = false;
+    },
+    async toggleSimilar(comment) {
+      if (comment.similar) {
+        this.$set(comment, 'similar', null);
+      } else {
+        const { data } = await Service.getSimilarComments(comment.id, {
+          n: 5,
+          labelIds: this[Getters.selectedLabelIds],
+        });
+        this.$set(comment, 'similar', data.slice(1).map(similarComment => ({...similarComment, isSimilar: true})));
+      }
     },
     getHeaderSlotname(header) {
       return this.headerPrefix + header;
@@ -260,7 +294,7 @@ export default {
         category: this[State.selectedCategory] || null,
       })
 
-      this.comments = data;
+      this.pageComments = data;
     },
     sortClickListener({ header }) {
       const label = header.text;
@@ -285,7 +319,8 @@ export default {
   },
   components: {
     UserCommentAnnotation,
-    UserCommentDetails
+    UserCommentDetails,
+    Similar
   }
 };
 </script>
@@ -303,5 +338,15 @@ export default {
 
 .tableColumn {
   min-width: 60px;
+}
+
+.actionsCell {
+  vertical-align: middle;
+}
+
+.actionsContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

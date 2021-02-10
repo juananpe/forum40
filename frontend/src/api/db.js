@@ -56,8 +56,13 @@ const service = {
     annotateComment: (commentId, labelId, label) => 
         client.put(`/db/annotations/${commentId}/${labelId}/${Number(label)}`),
     
-    getSimilarComments: (commentId) =>
-        client.get(`/similarity/embeddings/comments/${commentId}/similar`),
+    getSimilarComments: (commentId, {n, labelIds} = {}) =>
+        client.get(`/similarity/embeddings/comments/${commentId}/similar`, {
+            params: {
+                n: n,
+                label: labelIds,
+            }
+        }),
 
     getParentComments: (commentId) =>
         client.get(`/db/comments/parent_recursive/${commentId}`),

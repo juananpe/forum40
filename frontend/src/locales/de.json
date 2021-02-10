@@ -56,7 +56,8 @@
     "page": "Seite {number}",
     "headers": {
       "comment_text": "Kommentartext",
-      "date": "Datum"
+      "date": "Datum",
+      "actions": "Aktionen"
     },
     "annotation": {
       "human": {
