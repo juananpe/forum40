@@ -51,7 +51,7 @@
       >{{ $t("comment_list.page", {number: Math.floor(pageStart/rowsPerPage)+1})}}</template>
 
       <template v-slot:item="props">
-        <tr class="mb-2" v-if="props.item.title || props.item.text">
+        <tr :class="{'mb-2': true, 'similarComment': props.item.isSimilar}" v-if="props.item.title || props.item.text">
           <td @click="commentClicked(props)">
             <v-icon v-if="!props.isExpanded">expand_more</v-icon>
 
@@ -349,4 +349,15 @@ export default {
   align-items: center;
   justify-content: center;
 }
+
+.similarComment {
+  animation: highlight-similar 750ms 200ms forwards ease-out;
+}
+
+@keyframes highlight-similar {
+  0% { background-color: transparent; }
+  30% { background-color: #c0c6f1; }
+  100% { background-color: #f2f3fb; }
+}
+
 </style>
