@@ -85,15 +85,18 @@
               <v-btn icon @click="toggleSimilar(props.item)">
                 <Similar />
               </v-btn>
+              <UserCommentDetailsDialog :comment="props.item">
+                <template #activator="{ on, attrs}">
+                  <v-btn icon v-on="on" v-bind="attrs">
+                    <v-icon>chevron_right</v-icon>
+                  </v-btn>
+                </template>
+              </UserCommentDetailsDialog>
             </div>
           </td>
         </tr>
       </template>
-      <template v-slot:expanded-item="{ item, headers }">
-        <td :colspan="headers.length">
-          <UserCommentDetails :comment="item" />
-        </td>
-      </template>
+      <template #expanded-item />
     </v-data-table>
   </div>
 </template>
@@ -106,8 +109,8 @@ import moment from "moment";
 import { EventBus, Events } from "../event-bus";
 import UserCommentAnnotation from "./UserCommentAnnotation";
 import { mdiRobot } from "@mdi/js";
-import UserCommentDetails from './commentdetails/UserCommentDetails.vue';
 import Similar from './icons/Similar.vue';
+import UserCommentDetailsDialog from './commentdetails/UserCommentDetailsDialog.vue';
 
 export default {
   name: "UserCommentList",
@@ -235,6 +238,7 @@ export default {
         this.$set(comment, 'similar', data.slice(1).map(similarComment => ({...similarComment, isSimilar: true})));
       }
     },
+
     getHeaderSlotname(header) {
       return this.headerPrefix + header;
     },
@@ -319,8 +323,8 @@ export default {
   },
   components: {
     UserCommentAnnotation,
-    UserCommentDetails,
-    Similar
+    Similar,
+    UserCommentDetailsDialog,
   }
 };
 </script>
