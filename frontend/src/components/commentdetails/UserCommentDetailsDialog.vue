@@ -4,11 +4,16 @@
 			<slot name="activator" v-bind="slotProps" />
 		</template>
 
-		<v-card>
-			<v-card-title>Comment Details</v-card-title>
+		<v-card class="pb-8">
+			<v-card-title>Thread</v-card-title>
+			<v-card elevation="4" class="mx-10 mt-3 py-10 px-6">
+				<UserCommentThread :comment="comment" />
+			</v-card>
 
-			<UserCommentThread :comment="comment" />
-			<DocumentPosition :comment="comment" />
+			<v-card-title>Document</v-card-title>
+			<v-card elevation="4" class="mx-10 mt-3 pt-10 px-6">
+				<DocumentPosition :comment="comment" />
+			</v-card>
 		</v-card>
 	</v-dialog>
 </template>

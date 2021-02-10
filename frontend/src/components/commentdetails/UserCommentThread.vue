@@ -3,14 +3,9 @@
 
   <div v-else>
     <div v-for="(threadComment, i) in threadComments" v-bind:key="threadComment.id">
-      <v-layout>
-        <v-flex :[dynamicFlex(i)]="true" mb-1>
-          <div :class="dynamicClasses(i)">
-            #{{i+1}}
-            <UserComment :comment="threadComment"/>
-          </div>
-        </v-flex>
-      </v-layout>
+      <div :class="wrapperClasses(i)" :style="wrapperStyles(i)">
+        <UserComment :comment="threadComment"/>
+      </div>
     </div>
   </div>
 </template>
@@ -34,23 +29,25 @@ export default {
       immediate: true,
       async handler(comment) {
         this.threadComments = null;
-        const { data } = await Service.getParentComments(this.comment.id);
+        const { data } = await Service.getParentComments(comment.id);
         this.threadComments = data.comments;
       },
     },
   },
   methods: {
-    dynamicFlex(i) {
-      return `offset-xs${i}`;
-    },
-    dynamicClasses(i) {
-      const lastElement = i == this.threadComments.length - 1;
+    wrapperStyles(i) {
       return {
-        indigo: !lastElement,
-        "white--text": !lastElement,
-        yellow: lastElement,
-        "black--text": lastElement
-      };
+        marginLeft: `${i*1}rem`,
+        marginRight: `${(this.threadComments.length-i)*1}rem`,
+      }
+    },
+    wrapperClasses(i) {
+      const isLastElement = i == this.threadComments.length - 1;
+      if (isLastElement) {
+        return ['indigo lighten-3', 'rounded', 'pa-1']
+      } else {
+        return ['mb-3'];
+      }
     }
   }
 }
@@ -60,5 +57,9 @@ export default {
   .comment {
     border-left: 0.4rem solid rgba(0, 0, 0, 0.2);
     padding: 0.4rem 0.8rem;
+  }
+
+  .rounded {
+    border-radius: 0.25rem;
   }
 </style>
