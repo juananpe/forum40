@@ -17,10 +17,6 @@ class TokenData(TypedDict):
     exp: datetime.datetime
 
 
-def return_error_msg(msg):
-    return {'message': msg}, HTTPStatus.UNAUTHORIZED
-
-
 def check_if_token_exists(token):
     return token is not None
 
@@ -41,17 +37,17 @@ def create_token(user_id: int, user_name: str, user_role: str) -> str:
     ), JWT_KEY).decode('UTF-8')
 
 
-def check_source_id_access(source_id, token):
+def check_source_id_access(source_id: int, token: str):
     success, data = check_if_token_is_valid_and_get_data(token)
     return allow_access_source_id(source_id, data)
 
 
 @with_database
-def is_source_id_protected(db: Database, source_id):
+def is_source_id_protected(db: Database, source_id: int):
     return db.sources.find_by_id(source_id)['protected']
 
 
-def allow_access_source_id(source_id, token_data: Optional[TokenData]):
+def allow_access_source_id(source_id: int, token_data: Optional[TokenData]):
     is_admin = token_data is not None and token_data['role'] == 'admin'
     return is_admin or not is_source_id_protected(source_id)
 
@@ -62,7 +58,7 @@ def check_source_id(wrapped, instance, args, kwargs):
     if source_id:
         token = request.headers['x-access-token'] if 'x-access-token' in request.headers else None
         if not check_source_id_access(source_id, token):
-            return return_error_msg('Cannot access source_id.')
+            return '', HTTPStatus.FORBIDDEN
     return wrapped(*args, **kwargs)
 
 
@@ -71,11 +67,11 @@ def token_required(wrapped, instance, args, kwargs):
     token = request.headers['x-access-token'] if 'x-access-token' in request.headers else None
 
     if not check_if_token_exists(token):
-        return return_error_msg('Token is missing.')
+        return '', HTTPStatus.FORBIDDEN
 
     success, data = check_if_token_is_valid_and_get_data(token)
     if not success:
-        return return_error_msg('Token is invalid.')
+        return '', HTTPStatus.UNAUTHORIZED
 
     return wrapped(data, *args, **kwargs)
 

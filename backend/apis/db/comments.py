@@ -7,6 +7,7 @@ from flask import request
 from flask_restplus import Resource, Namespace, inputs
 from typing import List, Dict, Optional, Iterable, Tuple
 
+from apis.service.colibert_client import CoLiBertClient
 from apis.utils.transformation import slice_dicts
 from auth.token import token_optional, check_source_id, allow_access_source_id, TokenData
 from auth.token import token_required
@@ -15,6 +16,7 @@ from db.db_models import comments_parser_sl, comment_parser_post, comments_list_
     group_by_model, comment_parser
 from db.repositories.comments import TimestampSorting, Order, FactSorting, UncertaintyOrder, \
     Granularity, comment_fields
+from embeddings.utils import concat
 
 ns = Namespace('comments', description="comments api")
 min_date = date(2016, 6, 1)
@@ -134,7 +136,7 @@ class CommentsParentRec(Resource):
         if len(comments) == 0:
             return '', HTTPStatus.NOT_FOUND
         elif not allow_access_source_id(comments[0]['source_id'], token_data):
-            return '', HTTPStatus.UNAUTHORIZED
+            return '', HTTPStatus.FORBIDDEN
 
         return {
             "comments": list(reversed(comments)),
@@ -153,7 +155,7 @@ class Comment(Resource):
 
         comment = db.comments.find_by_id(comment_id, fields=comment_fields(content=True, metadata=True))
         if not allow_access_source_id(comment['source_id'], token_data):
-            return '', HTTPStatus.UNAUTHORIZED
+            return '', HTTPStatus.FORBIDDEN
 
         load_annotations(
             db=db,
@@ -163,6 +165,32 @@ class Comment(Resource):
         )
 
         return comment
+
+
+@ns.route('/<int:comment_id>/document')
+class CommentArticle(Resource):
+    @token_optional
+    @with_database
+    @ns.doc(securits='apikey')
+    def get(self, db: Database, token_data: TokenData, comment_id: int):
+        comment = db.comments.find_by_id(comment_id, fields={'source_id', 'doc_id', 'title', 'text'})
+        comment_full_text = concat(comment['title'], comment['text'])
+        if not allow_access_source_id(comment['source_id'], token_data):
+            return '', HTTPStatus.FORBIDDEN
+
+        doc = db.documents.find_by_id(comment['doc_id'], fields={'url', 'title', 'text'})
+        paragraph_contents = doc.pop('text').split('\n')
+        scores = CoLiBertClient().score_all_pairs(
+            queries=[comment_full_text],
+            contexts=paragraph_contents,
+        )
+
+        doc['paragraphs'] = [
+            {'content': content, 'link_score': score}
+            for content, score in zip(paragraph_contents, scores[0])
+        ]
+
+        return doc
 
 
 def load_annotations(db: Database, comments: List[Dict], label_ids: List[int], user_id: Optional[int] = None):

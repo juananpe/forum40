@@ -51,7 +51,7 @@
       >{{ $t("comment_list.page", {number: Math.floor(pageStart/rowsPerPage)+1})}}</template>
 
       <template v-slot:item="props">
-        <tr class="mb-2" v-if="props.item.title || props.item.text">
+        <tr :class="{'mb-2': true, 'similarComment': props.item.isSimilar}" v-if="props.item.title || props.item.text">
           <td @click="commentClicked(props)">
             <v-icon v-if="!props.isExpanded">expand_more</v-icon>
 
@@ -80,59 +80,37 @@
               :confidence="getConfidence(props.item.annotations, labels[label])"
             />
           </td>
-        </tr>
-      </template>
-      <template v-slot:expanded-item="{ item, headers }">
-        <tr v-if="!similar_comments.length">
-          <td></td>
-          <td>
-            <v-btn
-              outlined
-              small
-              color="primary"
-              text
-              @click="loadSimilarComments(item)"
-            >{{ $t("comment_list.show_similar_comments") }}</v-btn>
-          </td>
-          <td></td>
-          <td v-for="(label, i) in selectedLabels" :key="item.id+i"></td>
-        </tr>
-        <tr
-          class="elevation-1 sim-comments"
-          v-for="(comment, i) in similar_comments.slice(1,MAX_COMMENTS)"
-          :key="i"
-        >
-          <td v-if="similar_comments.length>0"></td>
-          <td v-if="similar_comments.length>0">
-            <b>{{comment.title}}</b>
-            <br />
-            {{comment.text}}
-          </td>
-          <td v-if="similar_comments.length>0" class="text-right">{{ comment.timestamp | moment}}</td>
-
-          <td v-for="(label, i) in selectedLabels" :key="comment.id+i">
-            <UserCommentAnnotation
-              :commentId="comment.id"
-              :labelId="labels[label]"
-              :personalLabel="getPeronalAnnotation(comment.annotations, labels[label])"
-              :majority="getGroupAnnotation(comment.annotations, labels[label])"
-              :confidence="getConfidence(comment.annotations, labels[label])"
-            />
+          <td class="text-center actionsCell">
+            <div class="actionsContainer">
+              <v-btn icon @click="toggleSimilar(props.item)">
+                <Similar />
+              </v-btn>
+              <UserCommentDetailsDialog :comment="props.item">
+                <template #activator="{ on, attrs}">
+                  <v-btn icon v-on="on" v-bind="attrs">
+                    <v-icon>chevron_right</v-icon>
+                  </v-btn>
+                </template>
+              </UserCommentDetailsDialog>
+            </div>
           </td>
         </tr>
       </template>
+      <template #expanded-item />
     </v-data-table>
   </div>
 </template>
 
 <script>
-import Service, { Endpoint } from "../api/db";
+import Service from "../api/db";
 import { State, Getters, Mutations } from "../store/const";
 import { mapState, mapGetters, mapMutations } from "vuex";
 import moment from "moment";
 import { EventBus, Events } from "../event-bus";
 import UserCommentAnnotation from "./UserCommentAnnotation";
 import { mdiRobot } from "@mdi/js";
+import Similar from './icons/Similar.vue';
+import UserCommentDetailsDialog from './commentdetails/UserCommentDetailsDialog.vue';
 
 export default {
   name: "UserCommentList",
@@ -140,7 +118,7 @@ export default {
     return {
       enteredKeyword: "",
       headerPrefix: "header.",
-      comments: [],
+      pageComments: [],
       order: 2,
       label_sort_id: null,
       expanded: [],
@@ -154,8 +132,6 @@ export default {
       page: 1,
       rowsPerPage: 25,
       svgPath: mdiRobot,
-      similar_comments: [],
-      MAX_COMMENTS: 11
     };
   },
   filters: {
@@ -168,16 +144,22 @@ export default {
   computed: {
     ...mapState([State.labels, State.selectedCategory]),
     ...mapGetters([
+      Getters.selectedLabelIds,
       Getters.keywordfilter,
       Getters.selectedLabels,
-      Getters.labelParameters,
-      Getters.jwtUser,
-      Getters.jwt,
       Getters.jwtLoggedIn,
-      Getters.getSelectedSource
+      Getters.getSelectedSource,
     ]),
     loggedIn() {
       return this[Getters.jwtLoggedIn];
+    },
+    comments() {
+      const expandSimilar = (val) =>
+        Array.isArray(val)
+        ? val.flatMap(val => expandSimilar(val))
+        : [val, ...(val.similar || []).flatMap(expandSimilar)];
+      
+      return expandSimilar(this.pageComments);
     },
     commentsTableHeader() {
       return [
@@ -203,58 +185,22 @@ export default {
           width: "15%",
           labelColumn: true
         })),
+        {
+          text: this.$i18n.t("comment_list.headers.actions"),
+          align: "left",
+          sortable: false,
+          value: "actions",
+          width: "15%",
+        }
       ]
-    },
-    pageQueryString() {
-      const parameters = [];
-
-      // add source
-      const selectedSource = this[Getters.getSelectedSource];
-      if (selectedSource) parameters.push(`source_id=${selectedSource.id}`);
-
-      // add labels
-      const labelParameters = this[Getters.labelParameters];
-      if (labelParameters) parameters.push(labelParameters);
-
-      // add keyword
-      if (this.enteredKeyword) {
-        const keywords = this.enteredKeyword.split(" ");
-        keywords.forEach(kw => parameters.push(`keyword=${kw}`));
-      }
-
-      // add skip
-      const skip = (this.page - 1) * this.rowsPerPage;
-      parameters.push(`skip=${skip}`);
-
-      // add limit
-      parameters.push(`limit=${this.rowsPerPage}`);
-
-      // add sorting
-      if (this.label_sort_id) {
-        parameters.push(`order=${this.order}`);
-        parameters.push(`label_sort_id=${this.label_sort_id}`);
-      }
-
-      //add category
-      const category = this[State.selectedCategory];
-      if(category) {
-        parameters.push(`category=${category}`)
-      }
-
-      const queryString = parameters.join("&");
-
-      return queryString;
     }
   },
   async mounted() {
-    this.similar_comments = [];
     EventBus.$on(Events.loggedIn, this.fetchComments);
     EventBus.$on(Events.sourceLoaded, this.loadTable);
   },
   watch: {
     [Getters.selectedLabels]: function() {
-      this.similar_comments = [];
-      this.setSelectedComment({});
       this.loadTable();
     },
     [State.selectedCategory]: async function() {
@@ -263,7 +209,6 @@ export default {
       this.loading = false;
     },
     async page() {
-      this.setSelectedComment({});
       this.loading = true;
       await this.fetchComments();
       this.loading = false;
@@ -275,13 +220,25 @@ export default {
     }
   },
   methods: {
-    ...mapMutations([Mutations.setSelectedComment, Mutations.setKeywordfilter]),
+    ...mapMutations([Mutations.setKeywordfilter]),
     async loadTable() {
       this.loading = true;
       this.page = 1;
       await this.fetchComments();
       this.loading = false;
     },
+    async toggleSimilar(comment) {
+      if (comment.similar) {
+        this.$set(comment, 'similar', null);
+      } else {
+        const { data } = await Service.getSimilarComments(comment.id, {
+          n: 5,
+          labelIds: this[Getters.selectedLabelIds],
+        });
+        this.$set(comment, 'similar', data.slice(1).map(similarComment => ({...similarComment, isSimilar: true})));
+      }
+    },
+
     getHeaderSlotname(header) {
       return this.headerPrefix + header;
     },
@@ -331,11 +288,17 @@ export default {
       return words;
     },
     async fetchComments() {
-      const { data } = await Service.get(
-        `${Endpoint.COMMENTS}?${this.pageQueryString}`,
-        this[Getters.jwt]
-      );
-      this.comments = data;
+      const { data } = await Service.getComments(this[Getters.getSelectedSource].id, {
+        labelIds: this[Getters.selectedLabelIds],
+        keywords: this[Getters.keywordfilter].split(' ').filter(kw => kw.length >= 1),
+        limit: this.rowsPerPage,
+        skip: (this.page - 1) * this.rowsPerPage,
+        labelSortId: this.label_sort_id,
+        order: this.label_sort_id ? this.order : null,
+        category: this[State.selectedCategory] || null,
+      })
+
+      this.pageComments = data;
     },
     sortClickListener({ header }) {
       const label = header.text;
@@ -350,30 +313,7 @@ export default {
       return label_sort_id === this.label_sort_id;
     },
     commentClicked(props) {
-      this.similar_comments = [];
       props.expand(!props.isExpanded);
-
-      if (!props.isExpanded) {
-        // working like this, but don't know why
-        const selectedComment = props.item;
-        this[Mutations.setSelectedComment](selectedComment);
-      } else {
-        this[Mutations.setSelectedComment]({});
-      }
-    },
-    async loadSimilarComments(comment) {
-      try {
-        const method_url = Endpoint.COMMENTS_SIMILAR(comment.id);
-        const params = [
-            `n=${this.MAX_COMMENTS}`,
-            this[Getters.labelParameters],
-        ].filter(par => par).join('&');
-        const url = `${method_url}?${params}`;
-        const { data } = await Service.get(url);
-        this.similar_comments = data;
-      } catch (e) {
-        console.error('Could not load similar comments: ${e}');
-      }
     },
     /*eslint no-unused-vars: ["error", { "args": "none" }]*/
     keywordChanged(e) {
@@ -382,7 +322,9 @@ export default {
     }
   },
   components: {
-    UserCommentAnnotation
+    UserCommentAnnotation,
+    Similar,
+    UserCommentDetailsDialog,
   }
 };
 </script>
@@ -402,7 +344,24 @@ export default {
   min-width: 60px;
 }
 
-.sim-comments {
-  background-color: #eeeeff;
+.actionsCell {
+  vertical-align: middle;
 }
+
+.actionsContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.similarComment {
+  animation: highlight-similar 750ms 200ms forwards ease-out;
+}
+
+@keyframes highlight-similar {
+  0% { background-color: transparent; }
+  30% { background-color: #c0c6f1; }
+  100% { background-color: #f2f3fb; }
+}
+
 </style>

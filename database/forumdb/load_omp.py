@@ -13,6 +13,7 @@ from tqdm import tqdm, trange
 
 from forumdb.constants import OmpTables, OMP_DB_FILE, PG_USER, PG_DB, OMP_EMBEDDINGS_FILE
 from forumdb.tools import dict_factory, insert, Inserter, omp_data
+from forumdb.html_to_text import html_to_text
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.DEBUG)
 
@@ -55,13 +56,14 @@ if __name__ == "__main__":
     # documents
     document_lookup = insert(
         conn,
-        "INSERT INTO documents (external_id, category, url, title, text, timestamp, source_id) VALUES %s RETURNING id",
+        "INSERT INTO documents (external_id, category, url, title, text, markup, timestamp, source_id) VALUES %s RETURNING id",
         {art['ID_Article']: (
             str(art["ID_Article"]),
             art["Path"].split('/')[1] if '/' in art["Path"] else art["Path"],  # category
             art["Path"],  # url
             art["Title"],  # title
-            art["Body"],  # text
+            html_to_text(art["Body"]),  # text
+            art["Body"],  # markup
             art["publishingDate"],  # timestamp
             source_id,  # source_id
         ) for art in omp[OmpTables.ARTICLES]},

@@ -222,7 +222,7 @@ class LabelUpdater(ForumProcessor):
     def init_model_table(self):
         self.cursor.execute(
             'INSERT INTO model (label_id, timestamp) VALUES (%s, CURRENT_TIMESTAMP) RETURNING id',
-            (self.label_id),
+            (self.label_id,),
         )
         self.model_entry_id = self.cursor.fetchone()[0]
         self.logger.info(f"Init Model Entry: {self.label_id=}")
@@ -259,7 +259,7 @@ class LabelUpdater(ForumProcessor):
         comment_ids, comment_texts = zip(*comments)
 
         # get CoLiBERT outputs
-        score_matrix = CoLiBertClient().score_all_pairs(contexts=[description], queries=comment_texts)
+        score_matrix = CoLiBertClient().score_all_pairs(queries=comment_texts, contexts=[description])
         scores = [s[0] for s in score_matrix]
 
         # update scores in DB

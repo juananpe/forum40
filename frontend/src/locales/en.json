@@ -54,10 +54,10 @@
     "title": "Comment List",
     "search": "Text search",
     "page": "Page {number}",
-    "show_similar_comments": "Show similar comments",
     "headers": {
       "comment_text": "Comment body",
-      "date": "Date"
+      "date": "Date",
+      "actions": "Actions"
     },
     "annotation": {
       "human": {
@@ -71,8 +71,15 @@
       "state": "{count} annotated \"{label}\" comment. | {count} annotated \"{label}\" comments."
     }
   },
-  "comment_thread": {
-    "title": "Comment Thread",
-    "user_id": "UserID: {id}"
+  "comment_details": {
+    "thread": "Thread",
+    "document": "Document",
+    "similar": "Similar",
+    "comment_thread": {
+      "user_id": "UserID: {id}"
+    },
+    "document_position": {
+      "show_complete": "Show complete document"
+    }
   }
 }

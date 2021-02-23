@@ -75,7 +75,7 @@
 </template>
 
 <script>
-import Service, { Endpoint } from "../api/db";
+import Service from "../api/db";
 import { mapGetters } from "vuex";
 import { Getters } from "../store/const";
 import { mdiCropSquare, mdiCheckBoxOutline } from "@mdi/js";
@@ -111,14 +111,10 @@ export default {
   methods: {
     async annotate(value) {
       try {
-        const { data } = await Service.put(
-          Endpoint.ADD_ANNOTATION_TO_COMMENT(
-            this.commentId,
-            this.labelId,
-            +value
-          ),
-          {},
-          this[Getters.jwt]
+        const { data } = await Service.annotateComment(
+          this.commentId,
+          this.labelId,
+          value
         );
         const { annotations } = data;
         const label_name = this[Getters.getLabelname](this.labelId);
@@ -134,7 +130,7 @@ export default {
     }
   },
   computed: {
-    ...mapGetters([Getters.jwt, Getters.jwtLoggedIn, Getters.getLabelname]),
+    ...mapGetters([Getters.jwtLoggedIn, Getters.getLabelname]),
     loggedIn() {
       return this[Getters.jwtLoggedIn];
     },

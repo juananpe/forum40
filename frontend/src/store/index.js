@@ -22,7 +22,6 @@ const state = {
     [State.selectedViewAggregations]: {
         [State.timeFrequency] : 'm'
     },
-    [State.selectedComment]: {},
     [State.currentJWT]: '',
     [State.now]: new Date(),
     [State.refreshTokenInterval]: null
