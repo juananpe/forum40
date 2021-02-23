@@ -21,6 +21,7 @@
   "scripts": {
     "test": "jest",
     "build": "tsc",
+    "serve": "node ./dist/app.js",
     "dev": "ts-node-dev --respawn ./src/app.ts"
   },
   "author": "Tim Pietz <tim@pietz.me>",
