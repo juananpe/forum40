@@ -61,10 +61,22 @@
     },
     "annotation": {
       "human": {
+        "header": {
+          "user": "Your classification",
+          "majority": "Majority classification"
+        },
         "majority": "Majority classification ({agree} out of {total})",
         "no_majority": "No further labels available"
       },
       "classifier": {
+        "header": {
+          "title": "Automatic classification",
+          "order": {
+            "positive": "Positive first",
+            "negative": "Negative first",
+            "uncertain": "Uncertain first"
+          }
+        },
         "estimate": "Automated classification ({confidence} confidence)",
         "no_estimate": "No classification available"
       },

@@ -34,13 +34,15 @@
         <div :key="i">
           <div class="mb-1 columnTitle">{{header.text}}</div>
           <div v-if="header.labelColumn" :key="i" class="tableColumn">
-            <v-icon v-if="loggedIn">person</v-icon>
-            <v-icon v-if="!loggedIn">people</v-icon>
-            <v-icon @click="sortClickListener({header})" class="ml-1">{{svgPath}}</v-icon>
+            <v-icon v-if="loggedIn" :title="$t('comment_list.annotation.human.header.user')">person</v-icon>
+            <v-icon v-if="!loggedIn" :title="$t('comment_list.annotation.human.header.majority')">people</v-icon>
+            <v-btn icon @click="sortClickListener({header})" :title="$t('comment_list.annotation.classifier.header.title')" class="d-inline-block">
+              <v-icon>{{svgPath}}</v-icon>
+            </v-btn>
             <div v-if="showSortArrow(header)" @click="sortClickListener({header})">
-              <v-icon v-if="order===2">arrow_downward</v-icon>
-              <v-icon v-else-if="order===1">arrow_upward</v-icon>
-              <v-icon v-else>check_circle_outline</v-icon>
+              <v-icon v-if="order===2" :title="$t('comment_list.annotation.classifier.header.order.positive')">arrow_downward</v-icon>
+              <v-icon v-else-if="order===1" :title="$t('comment_list.annotation.classifier.header.order.negative')">arrow_upward</v-icon>
+              <v-icon v-else :title="$t('comment_list.annotation.classifier.header.order.uncertain')">check_circle_outline</v-icon>
             </div>
           </div>
         </div>
