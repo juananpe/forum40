@@ -194,7 +194,7 @@ class CommentArticle(Resource):
 
 
 def load_annotations(db: Database, comments: List[Dict], label_ids: List[int], user_id: Optional[int] = None):
-    if len(label_ids) == 0:
+    if len(comments) == 0 or len(label_ids) == 0:
         return
 
     comment_ids = [comment['id'] for comment in comments]

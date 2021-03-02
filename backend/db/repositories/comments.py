@@ -3,7 +3,7 @@ from enum import IntEnum
 
 import datetime
 from psycopg2.extras import execute_values
-from pypika import PostgreSQLQuery, Table, Order, functions as pfn
+from pypika import PostgreSQLQuery, Table, Order, Criterion, functions as pfn
 from typing import Iterable, Dict, Optional, Union, TypedDict, List, Set, Iterator
 
 from db.repositories.base import BaseRepository
@@ -128,7 +128,10 @@ class CommentRepository(BaseRepository):
             query = query.orderby(comments.timestamp, order=sorting.order)
         elif isinstance(sorting, FactSorting):
             facts = Table('facts')
-            query = query.inner_join(facts).on(facts.comment_id == comments.id)
+            query = query.inner_join(facts).on(Criterion.all([
+                facts.comment_id == comments.id,
+                facts.label_id == args.add(sorting.label_id)
+            ]))
             if sorting.order is UncertaintyOrder:
                 query = query.orderby(facts.uncertaintyorder, order=Order.desc)
             else:
