@@ -21,15 +21,6 @@ docker-compose exec frontend sh
 ```
 and run your npm commands there.
 
-## Crawling Realtime Data
-
-- The spon-realtime-crawler project demonstrates how you can incoporate continuous comment import by repeatedly crawling comments from a news website (spiegel.de)
-
-- Clone the https://git.haw-hamburg.de/forum40/spon-realtime-crawler project and follow the installation instructions.
-
-- Change the defaults at the top of the main.py script and insert the username and password that you have created in the previous step. You can also configure the crawling interval.
-
-- You should now be able to see comments appear in your instance in the web browser.
 
 ## Embedding generation and classification
 After loading new comments into the database, it is necessary to generate embeddings for them before they can be used for classification and the similar comment search functionality.
