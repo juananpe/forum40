@@ -18,7 +18,7 @@ RUN apt-get update \
   && wget -qO- https://github.com/OFAI/million-post-corpus/releases/download/v1.0.0/million_post_corpus.tar.bz2 \
      | tar -xj -C /var/lib/postgresql/initdb/ --strip-components 1 "million_post_corpus/corpus.sqlite3" \
   && echo "Downloading pre-computed BERT embeddings for OMP…" \
-  && wget -P /var/lib/postgresql/initdb/ https://mast-scan.informatik.uni-hamburg.de/omp_bert_embeddings.hdf5 \
+  && wget -P /var/lib/postgresql/initdb/ https://scan.informatik.uni-hamburg.de/omp_bert_embeddings.hdf5 \
   && chown -R postgres:postgres /var/lib/postgresql/initdb/ \
   && apt-get remove -y \
      wget \
