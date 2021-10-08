@@ -2,7 +2,7 @@ FROM python:3.8
 
 # system packages
 RUN apt-get update
-RUN apt-get install -y python-pybind11
+RUN apt-get install -y python3-pybind11
 
 # python packages
 COPY requirements.txt /app/

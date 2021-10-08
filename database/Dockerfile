@@ -24,7 +24,7 @@ RUN apt-get update \
      wget \
 # install python for omp import
   && apt-get install -y --no-install-recommends \
-     python3 python3-pip \
+     python3 python3-dev python3-pip postgresql-13-cron  \
   && rm -rf /var/lib/apt/lists/*
 
 # Install script dependencies

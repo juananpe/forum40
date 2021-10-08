@@ -2,7 +2,7 @@ FROM python:3.9
 
 # system packages
 RUN apt-get update && apt-get install -y \
-  python-pybind11 \
+  python3-pybind11 \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/app
